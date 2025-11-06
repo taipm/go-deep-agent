@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/openai/openai-go/v3"
 	"github.com/taipm/go-deep-agent/agent"
 )
 
@@ -18,142 +18,169 @@ func main() {
 	}
 
 	ctx := context.Background()
-
-	// Example 1: Using OpenAI
-	fmt.Println("=== Example 1: OpenAI Chat ===")
-	openaiAgent, err := agent.NewAgent(agent.Config{
-		Provider: agent.ProviderOpenAI,
-		Model:    "gpt-4o-mini",
-		APIKey:   os.Getenv("OPENAI_API_KEY"),
-	})
-	if err != nil {
-		log.Fatalf("Failed to create OpenAI agent: %v", err)
+	apiKey := os.Getenv("OPENAI_API_KEY")
+	if apiKey == "" {
+		log.Fatal("OPENAI_API_KEY environment variable is required")
 	}
 
-	result, err := openaiAgent.Chat(ctx, "What is the capital of Vietnam?", nil)
+	// Example 1: Simple Chat with Builder API
+	fmt.Println("=== Example 1: Simple Chat ===")
+	response, err := agent.NewOpenAI("gpt-4o-mini", apiKey).
+		Ask(ctx, "What is the capital of Vietnam?")
 	if err != nil {
-		log.Printf("OpenAI chat error: %v", err)
+		log.Printf("Error: %v", err)
 	} else {
-		fmt.Printf("OpenAI Response: %s\n\n", result.Content)
+		fmt.Printf("Response: %s\n\n", response)
 	}
 
-	// Example 2: Using Ollama
-	fmt.Println("=== Example 2: Ollama Chat ===")
-	ollamaAgent, err := agent.NewAgent(agent.Config{
-		Provider: agent.ProviderOllama,
-		Model:    "qwen3:1.7b",
-		BaseURL:  "http://localhost:11434/v1",
-	})
-	if err != nil {
-		log.Fatalf("Failed to create Ollama agent: %v", err)
-	}
+	// Example 2: Chat with System Prompt and Temperature
+	fmt.Println("=== Example 2: System Prompt & Temperature ===")
+	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+		WithSystem("You are a helpful assistant that explains concepts in simple terms.").
+		WithTemperature(0.7)
 
-	result, err = ollamaAgent.Chat(ctx, "What is the capital of Vietnam?", nil)
+	response, err = builder.Ask(ctx, "Explain quantum computing")
 	if err != nil {
-		log.Printf("Ollama chat error: %v", err)
+		log.Printf("Error: %v", err)
 	} else {
-		fmt.Printf("Ollama Response: %s\n\n", result.Content)
+		fmt.Printf("Response: %s\n\n", response)
 	}
 
-	// Example 3: Streaming with OpenAI
-	fmt.Println("=== Example 3: Streaming Response ===")
+	// Example 3: Streaming Response
+	fmt.Println("=== Example 3: Streaming ===")
 	fmt.Print("Streaming: ")
-	result, err = openaiAgent.Chat(ctx, "Write a haiku about AI", &agent.ChatOptions{
-		Stream: true,
-		OnStream: func(delta string) {
-			fmt.Print(delta)
-		},
-	})
+	response, err = agent.NewOpenAI("gpt-4o-mini", apiKey).
+		OnStream(func(content string) {
+			fmt.Print(content)
+		}).
+		Stream(ctx, "Write a haiku about AI")
 	if err != nil {
-		log.Printf("Streaming error: %v", err)
+		log.Printf("Error: %v", err)
 	}
-	fmt.Println()
+	fmt.Printf("\nComplete response: %s\n\n", response)
 
-	// Example 4: Chat with conversation history
-	fmt.Println("=== Example 4: Conversation History ===")
-	result, err = openaiAgent.Chat(ctx, "", &agent.ChatOptions{
-		Messages: []openai.ChatCompletionMessageParamUnion{
-			openai.SystemMessage("You are a helpful assistant that speaks like a pirate."),
-			openai.UserMessage("What is machine learning?"),
-		},
-	})
+	// Example 4: Conversation with Memory
+	fmt.Println("=== Example 4: Conversation Memory ===")
+	builder = agent.NewOpenAI("gpt-4o-mini", apiKey).
+		WithMemory()
+
+	// First message
+	response, err = builder.Ask(ctx, "My name is John and I'm from Vietnam")
 	if err != nil {
-		log.Printf("Chat with history error: %v", err)
+		log.Printf("Error: %v", err)
 	} else {
-		fmt.Printf("Response: %s\n\n", result.Content)
+		fmt.Printf("Response: %s\n", response)
 	}
 
-	// Example 5: Tool calling (function calling)
+	// Follow-up that requires memory
+	response, err = builder.Ask(ctx, "What's my name and where am I from?")
+	if err != nil {
+		log.Printf("Error: %v", err)
+	} else {
+		fmt.Printf("Follow-up Response: %s\n\n", response)
+	}
+
+	// Example 5: Tool Calling with Auto-Execution
 	fmt.Println("=== Example 5: Tool Calling ===")
-	tools := []openai.ChatCompletionToolUnionParam{
-		openai.ChatCompletionFunctionTool(openai.FunctionDefinitionParam{
-			Name:        "get_weather",
-			Description: openai.String("Get the current weather in a given location"),
-			Parameters: openai.FunctionParameters{
-				"type": "object",
-				"properties": map[string]any{
-					"location": map[string]string{
-						"type":        "string",
-						"description": "The city and state, e.g. San Francisco, CA",
-					},
-					"unit": map[string]any{
-						"type": "string",
-						"enum": []string{"celsius", "fahrenheit"},
-					},
-				},
-				"required": []string{"location"},
-			},
-		}),
-	}
+	weatherTool := agent.NewTool("get_weather", "Get the current weather for a location").
+		AddParameter("location", "string", "The city name", true).
+		AddParameter("units", "string", "Temperature units (celsius/fahrenheit)", false).
+		WithHandler(func(args string) (string, error) {
+			return fmt.Sprintf("The weather in Hanoi is sunny, 25°C"), nil
+		})
 
-	result, err = openaiAgent.Chat(ctx, "What's the weather like in Hanoi?", &agent.ChatOptions{
-		Tools: tools,
-	})
+	builder = agent.NewOpenAI("gpt-4o-mini", apiKey).
+		WithTools(weatherTool).
+		WithAutoExecute(true)
+
+	response, err = builder.Ask(ctx, "What's the weather like in Hanoi?")
 	if err != nil {
-		log.Printf("Tool calling error: %v", err)
+		log.Printf("Error: %v", err)
 	} else {
-		if len(result.Completion.Choices) > 0 && len(result.Completion.Choices[0].Message.ToolCalls) > 0 {
-			toolCall := result.Completion.Choices[0].Message.ToolCalls[0]
-			fmt.Printf("Tool called: %s\n", toolCall.Function.Name)
-			fmt.Printf("Arguments: %s\n\n", toolCall.Function.Arguments)
-		} else {
-			fmt.Printf("Response: %s\n\n", result.Content)
-		}
+		fmt.Printf("Response: %s\n\n", response)
 	}
 
-	// Example 6: Advanced usage with structured outputs
+	// Example 6: Structured Outputs with JSON Schema
 	fmt.Println("=== Example 6: Structured Outputs ===")
-	structuredCompletion, err := openaiAgent.GetCompletion(ctx, openai.ChatCompletionNewParams{
-		Messages: []openai.ChatCompletionMessageParamUnion{
-			openai.UserMessage("Extract the name and age from: John is 25 years old"),
-		},
-		Model: "gpt-4o-mini",
-		ResponseFormat: openai.ChatCompletionNewParamsResponseFormatUnion{
-			OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
-				JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
-					Name:        "person_info",
-					Description: openai.String("Extract person information"),
-					Schema: openai.FunctionParameters{
-						"type": "object",
-						"properties": map[string]any{
-							"name": map[string]string{
-								"type": "string",
-							},
-							"age": map[string]string{
-								"type": "integer",
-							},
-						},
-						"required":             []string{"name", "age"},
-						"additionalProperties": false,
-					},
-					Strict: openai.Bool(true),
-				},
+	personSchema := map[string]interface{}{
+		"type": "object",
+		"properties": map[string]interface{}{
+			"name": map[string]interface{}{
+				"type":        "string",
+				"description": "The person's name",
+			},
+			"age": map[string]interface{}{
+				"type":        "integer",
+				"description": "The person's age",
 			},
 		},
-	})
-	if err != nil {
-		log.Printf("Structured output error: %v", err)
-	} else {
-		fmt.Printf("Structured Response: %s\n\n", structuredCompletion.Choices[0].Message.Content)
+		"required":             []string{"name", "age"},
+		"additionalProperties": false,
 	}
+
+	response, err = agent.NewOpenAI("gpt-4o-mini", apiKey).
+		WithJSONSchema("person_info", "Extract person information", personSchema, true).
+		Ask(ctx, "Extract info: John is 25 years old")
+	if err != nil {
+		log.Printf("Error: %v", err)
+	} else {
+		fmt.Printf("Structured Response: %s\n\n", response)
+	}
+
+	// Example 7: Error Handling with Timeout and Retry
+	fmt.Println("=== Example 7: Error Handling ===")
+	response, err = agent.NewOpenAI("gpt-4o-mini", apiKey).
+		WithTimeout(10*time.Second).
+		WithRetry(3).
+		WithExponentialBackoff().
+		Ask(ctx, "What is machine learning?")
+	if err != nil {
+		// Check error type
+		if agent.IsTimeoutError(err) {
+			log.Printf("Request timed out: %v", err)
+		} else if agent.IsRateLimitError(err) {
+			log.Printf("Rate limit exceeded: %v", err)
+		} else {
+			log.Printf("Error: %v", err)
+		}
+	} else {
+		fmt.Printf("Response: %s\n\n", response)
+	}
+
+	// Example 8: Production-Ready Configuration
+	fmt.Println("=== Example 8: Production Configuration ===")
+	response, err = agent.NewOpenAI("gpt-4o-mini", apiKey).
+		WithSystem("You are a helpful assistant").
+		WithTemperature(0.7).
+		WithMaxTokens(500).
+		WithMemory().
+		WithMaxHistory(10).
+		WithTimeout(30*time.Second).
+		WithRetry(3).
+		WithExponentialBackoff().
+		Ask(ctx, "Explain the benefits of Go programming language")
+	if err != nil {
+		log.Printf("Error: %v", err)
+	} else {
+		fmt.Printf("Response: %s\n\n", response)
+	}
+
+	// Example 9: Managing Conversation History
+	fmt.Println("=== Example 9: History Management ===")
+	builder = agent.NewOpenAI("gpt-4o-mini", apiKey).
+		WithMemory()
+
+	// Have a conversation
+	builder.Ask(ctx, "I love programming in Go")
+	builder.Ask(ctx, "What are goroutines?")
+
+	// Get conversation history
+	history := builder.GetHistory()
+	fmt.Printf("Conversation has %d messages\n", len(history))
+
+	// Clear conversation but keep system prompt
+	builder.Clear()
+	fmt.Printf("After clear: %d messages (system prompt preserved)\n", len(builder.GetHistory()))
+
+	fmt.Println("\n=== All Examples Complete ===")
 }
