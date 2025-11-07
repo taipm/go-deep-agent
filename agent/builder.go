@@ -62,6 +62,10 @@ type Builder struct {
 	retryDelay    time.Duration // Base delay between retries (default 1s)
 	useExpBackoff bool          // Use exponential backoff for retries
 
+	// Multimodal support
+	pendingImages []ImageContent // Images to include in next message
+	lastError     error          // Last error from multimodal operations
+
 	// OpenAI client (lazy initialized)
 	client *openai.Client
 }
@@ -591,6 +595,13 @@ func (b *Builder) WithResponseFormat(format *openai.ChatCompletionNewParamsRespo
 //	response := builder.Ask(ctx, "What is the capital of France?")
 //	fmt.Println(response) // "Paris is the capital of France."
 func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
+	// Check for multimodal errors
+	if b.lastError != nil {
+		err := b.lastError
+		b.lastError = nil // Clear error
+		return "", err
+	}
+
 	// Ensure client is initialized
 	if err := b.ensureClient(); err != nil {
 		return "", fmt.Errorf("failed to initialize client: %w", err)
@@ -601,8 +612,11 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 		return b.askWithToolExecution(ctx, message)
 	}
 
-	// Build messages array
+	// Build messages array (includes multimodal content if images added)
 	messages := b.buildMessages(message)
+
+	// Clear pending images after building messages
+	b.pendingImages = nil
 
 	// Execute request
 	completion, err := b.executeSyncRaw(ctx, messages)
@@ -623,8 +637,11 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 
 // askWithToolExecution handles the tool execution loop.
 func (b *Builder) askWithToolExecution(ctx context.Context, message string) (string, error) {
-	// Build messages array
+	// Build messages array (includes multimodal content if images added)
 	messages := b.buildMessages(message)
+
+	// Clear pending images after building messages
+	b.pendingImages = nil
 
 	// Tool execution loop
 	for round := 0; round < b.maxToolRounds; round++ {
@@ -750,13 +767,23 @@ func (b *Builder) AskMultiple(ctx context.Context, message string) ([]string, er
 //	    fmt.Print(content)
 //	}).Stream(ctx, "Tell me a story")
 func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
+	// Check for multimodal errors
+	if b.lastError != nil {
+		err := b.lastError
+		b.lastError = nil // Clear error
+		return "", err
+	}
+
 	// Ensure client is initialized
 	if err := b.ensureClient(); err != nil {
 		return "", fmt.Errorf("failed to initialize client: %w", err)
 	}
 
-	// Build messages array
+	// Build messages array (includes multimodal content if images added)
 	messages := b.buildMessages(message)
+
+	// Clear pending images after building messages
+	b.pendingImages = nil
 
 	// Build params
 	params := b.buildParams(messages)
@@ -856,21 +883,38 @@ func (b *Builder) ensureClient() error {
 
 // buildMessages constructs the full message array for the request.
 func (b *Builder) buildMessages(userMessage string) []openai.ChatCompletionMessageParamUnion {
-	var messages []Message
+	result := []openai.ChatCompletionMessageParamUnion{}
 
 	// Add system prompt if set
 	if b.systemPrompt != "" {
-		messages = append(messages, System(b.systemPrompt))
+		result = append(result, openai.SystemMessage(b.systemPrompt))
 	}
 
-	// Add conversation history
-	messages = append(messages, b.messages...)
+	// Add conversation history (convert existing messages)
+	result = append(result, convertMessages(b.messages)...)
 
-	// Add current user message
-	messages = append(messages, User(userMessage))
+	// Add current user message with multimodal support
+	contentParts := b.buildContentParts(userMessage)
 
-	// Convert to OpenAI format
-	return convertMessages(messages)
+	// Check if we have multimodal content (array) or simple text (string)
+	switch content := contentParts.(type) {
+	case string:
+		// Simple text message
+		result = append(result, openai.UserMessage(content))
+	case []openai.ChatCompletionContentPartUnionParam:
+		// Multimodal message with images
+		userMsg := openai.ChatCompletionUserMessageParam{
+			Content: openai.ChatCompletionUserMessageParamContentUnion{
+				OfArrayOfContentParts: content,
+			},
+			Role: "user",
+		}
+		result = append(result, openai.ChatCompletionMessageParamUnion{
+			OfUser: &userMsg,
+		})
+	}
+
+	return result
 }
 
 // buildParams builds ChatCompletionNewParams with all configured options.

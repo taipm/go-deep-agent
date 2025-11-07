@@ -15,7 +15,8 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 - ⚡ **Error Recovery** - Smart retries with exponential backoff
 - 🎛️ **Advanced Controls** - Temperature, top-p, tokens, penalties, seed
 - 🧪 **Production Ready** - Timeouts, retries, comprehensive error handling
-- ✅ **Well Tested** - 76 tests, 50.9% coverage, 34+ working examples
+- 🖼️ **Multimodal** - Vision support for GPT-4 Vision (images via URL/file/base64)
+- ✅ **Well Tested** - 242 tests, 62.6% coverage, 41+ working examples
 
 ## 📦 Installation
 
@@ -189,7 +190,33 @@ savedHistory := builder.GetHistory()
 builder.SetHistory(savedHistory)
 ```
 
-## � Builder API Methods
+### 9. Multimodal - Vision (GPT-4 Vision)
+
+```go
+// Analyze image from URL
+response, err := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithImage("https://example.com/photo.jpg").
+    Ask(ctx, "What do you see in this image?")
+
+// Compare multiple images with detail control
+response, err := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithImageURL("https://example.com/image1.jpg", agent.ImageDetailLow).
+    WithImageURL("https://example.com/image2.jpg", agent.ImageDetailHigh).
+    Ask(ctx, "Compare these two images")
+
+// Analyze local image file
+response, err := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithImageFile("./chart.png", agent.ImageDetailHigh).
+    Ask(ctx, "Extract data from this chart")
+
+// Conversation with images
+builder := agent.NewOpenAI("gpt-4o-mini", apiKey).WithMemory()
+builder.WithImage("https://example.com/photo.jpg").
+    Ask(ctx, "What's in this image?")
+builder.Ask(ctx, "What colors are prominent?") // Remembers the image
+```
+
+## 📖 Builder API Methods
 
 ### Core Methods
 
@@ -228,6 +255,16 @@ builder.SetHistory(savedHistory)
 - `WithAutoExecute(enable)` - Auto-execute tool calls
 - `WithMaxToolRounds(max)` - Max execution rounds (default 5)
 - `OnToolCall(callback)` - Tool call callback
+
+### Multimodal Support (Vision)
+
+- `WithImage(url)` - Add image with auto detail level
+- `WithImageURL(url, detail)` - Add image with specific detail (Low/High)
+- `WithImageFile(filePath, detail)` - Add local image file
+- `WithImageBase64(base64Data, mimeType, detail)` - Add base64-encoded image
+- `ClearImages()` - Remove pending images
+
+Supported models: `gpt-4o`, `gpt-4o-mini`, `gpt-4-turbo`, `gpt-4-vision-preview`
 
 ### Structured Outputs
 

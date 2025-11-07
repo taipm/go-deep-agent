@@ -32,3 +32,26 @@ go run main.go
 3. **Conversation History** - Multi-turn conversations
 4. **Tool Calling** - Function calling với tools
 5. **Structured Outputs** - JSON schema validation
+6. **Multimodal (Vision)** - Image analysis với GPT-4 Vision
+
+### Multimodal Example
+
+Phân tích ảnh với GPT-4 Vision:
+
+```bash
+# Set API key
+export OPENAI_API_KEY=your-api-key
+
+# Chạy multimodal examples
+go run examples/builder_multimodal.go
+```
+
+Các tính năng:
+
+- Mô tả ảnh từ URL
+- So sánh nhiều ảnh
+- Control detail levels (low/high)
+- OCR - extract text từ ảnh
+- Phân tích local image files
+- Chart/graph analysis
+- Multi-turn conversation với ảnh
