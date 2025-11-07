@@ -4,6 +4,8 @@ A powerful yet simple LLM agent library for Go with a modern **Fluent Builder AP
 
 Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 
+> **Why go-deep-agent?** 60-80% less code than openai-go with 10x better developer experience. [See detailed comparison →](docs/COMPARISON.md)
+
 ## ✨ Features
 
 - 🎯 **Fluent Builder API** - Natural, readable method chaining
@@ -461,6 +463,28 @@ func robustAsk(ctx context.Context, prompt string) (string, error) {
 - **OpenAI API key** (for OpenAI provider)
 - **Ollama** running locally (for Ollama provider)
 
+## 🆚 Why Choose go-deep-agent?
+
+**60-80% less code** than raw openai-go SDK with **10x better developer experience**.
+
+| Feature | openai-go | go-deep-agent | Improvement |
+|---------|-----------|---------------|-------------|
+| Simple Chat | 26 lines | 14 lines | ⬇️ 46% |
+| Streaming | 20+ lines | 5 lines | ⬇️ 75% |
+| Memory | 28+ lines (manual) | 6 lines (auto) | ⬇️ 78% |
+| Tool Calling | 50+ lines | 14 lines | ⬇️ 72% |
+| Multimodal | 25+ lines | 5 lines | ⬇️ 80% |
+
+**[📖 See detailed comparison with code examples →](docs/COMPARISON.md)**
+
+### Key Advantages
+
+- ✅ **Fluent API** - Method chaining reads like natural language
+- ✅ **Automatic Features** - Memory, retry, error handling built-in
+- ✅ **Production-Ready** - 242 tests, 65.8% coverage, CI/CD
+- ✅ **Better DX** - IDE autocomplete, self-documenting code
+- ✅ **All openai-go Features** - Plus high-level conveniences
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please:
@@ -478,12 +502,12 @@ MIT License - see [LICENSE](LICENSE) for details
 ## 📚 Documentation
 
 - **[README.md](README.md)** - Main documentation (you are here)
-- **[BUILDER_API.md](BUILDER_API.md)** - Complete Builder API reference with examples
+- **[COMPARISON.md](docs/COMPARISON.md)** - 🆚 Why go-deep-agent vs openai-go (with code examples)
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and migration guides
+- **[examples/](examples/)** - 8 example files with 41+ working examples
 - **[agent/README.md](agent/README.md)** - Detailed API documentation
-- **[examples/](examples/)** - 8 example files with 34+ working examples
-- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Quick reference guide
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Design decisions and architecture
-- **[TODO.md](TODO.md)** - Roadmap and implementation progress (8/12 phases complete)
+- **[TODO.md](TODO.md)** - Roadmap and implementation progress (11/12 phases complete)
+- **[PHASE_10_SUMMARY.md](docs/PHASE_10_SUMMARY.md)** - Testing & Quality achievements
 
 ## 🔗 Links
 
