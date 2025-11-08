@@ -66,8 +66,17 @@ type Builder struct {
 	pendingImages []ImageContent // Images to include in next message
 	lastError     error          // Last error from multimodal operations
 
+	// Batch processing
+	batchSize            int                               // Max concurrent requests in batch (default: 5)
+	batchDelay           time.Duration                     // Delay between batch chunks
+	onBatchProgress      func(completed, total int)        // Batch progress callback
+	onBatchItemComplete  func(result BatchResult)          // Individual item completion callback
+
 	// OpenAI client (lazy initialized)
 	client *openai.Client
+	
+	// Usage tracking
+	lastUsage TokenUsage // Last request token usage
 }
 
 // New creates a new Builder with the specified provider and model.
@@ -625,6 +634,13 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 	}
 
 	result := completion.Choices[0].Message.Content
+
+	// Track token usage
+	b.lastUsage = TokenUsage{
+		PromptTokens:     int(completion.Usage.PromptTokens),
+		CompletionTokens: int(completion.Usage.CompletionTokens),
+		TotalTokens:      int(completion.Usage.TotalTokens),
+	}
 
 	// Auto-memory: store this conversation turn
 	if b.autoMemory {
