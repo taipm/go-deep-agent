@@ -16,10 +16,10 @@ type TokenUsage struct {
 
 // BatchResult represents the result of a single batch request
 type BatchResult struct {
-	Index    int    // Original index in the batch
-	Prompt   string // Original prompt
-	Response string // LLM response
-	Error    error  // Error if request failed
+	Index    int        // Original index in the batch
+	Prompt   string     // Original prompt
+	Response string     // LLM response
+	Error    error      // Error if request failed
 	Tokens   TokenUsage // Token usage for this request
 }
 
@@ -27,16 +27,16 @@ type BatchResult struct {
 type BatchOptions struct {
 	// MaxConcurrency limits concurrent requests (default: 5)
 	MaxConcurrency int
-	
+
 	// DelayBetweenBatches adds delay between batch chunks (default: 0)
 	DelayBetweenBatches time.Duration
-	
+
 	// ContinueOnError continues processing if individual requests fail (default: true)
 	ContinueOnError bool
-	
+
 	// OnProgress callback for tracking progress (optional)
 	OnProgress func(completed, total int)
-	
+
 	// OnItemComplete callback when each item completes (optional)
 	OnItemComplete func(result BatchResult)
 }
@@ -111,38 +111,38 @@ func (b *Builder) BatchWithOptions(ctx context.Context, prompts []string, opts *
 
 	total := len(prompts)
 	results := make([]BatchResult, total)
-	
+
 	// Channel for work items
 	type workItem struct {
 		index  int
 		prompt string
 	}
-	
+
 	workChan := make(chan workItem, total)
 	resultChan := make(chan BatchResult, total)
-	
+
 	// Fill work channel
 	for i, prompt := range prompts {
 		workChan <- workItem{index: i, prompt: prompt}
 	}
 	close(workChan)
-	
+
 	// Worker pool
 	var wg sync.WaitGroup
 	completed := 0
 	var completedMu sync.Mutex
-	
+
 	for i := 0; i < opts.MaxConcurrency; i++ {
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()
-			
+
 			for work := range workChan {
 				// Add delay if specified and not first batch
 				if opts.DelayBetweenBatches > 0 && work.index > 0 {
 					time.Sleep(opts.DelayBetweenBatches)
 				}
-				
+
 				// Create a new builder for this request to ensure thread-safety
 				// Copy only the essential configuration
 				agentCopy := NewOpenAI(b.model, b.apiKey)
@@ -164,7 +164,7 @@ func (b *Builder) BatchWithOptions(ctx context.Context, prompts []string, opts *
 				if b.maxRetries > 0 {
 					agentCopy = agentCopy.WithRetry(b.maxRetries)
 				}
-				
+
 				// Copy tools
 				for _, tool := range b.tools {
 					agentCopy.tools = append(agentCopy.tools, tool)
@@ -172,10 +172,10 @@ func (b *Builder) BatchWithOptions(ctx context.Context, prompts []string, opts *
 				if b.autoExecute {
 					agentCopy = agentCopy.WithAutoExecute(true)
 				}
-				
+
 				// Execute request
 				response, err := agentCopy.Ask(ctx, work.prompt)
-				
+
 				result := BatchResult{
 					Index:    work.index,
 					Prompt:   work.prompt,
@@ -183,25 +183,25 @@ func (b *Builder) BatchWithOptions(ctx context.Context, prompts []string, opts *
 					Error:    err,
 					Tokens:   agentCopy.lastUsage,
 				}
-				
+
 				resultChan <- result
-				
+
 				// Update progress
 				completedMu.Lock()
 				completed++
 				currentCompleted := completed
 				completedMu.Unlock()
-				
+
 				// Call progress callback
 				if opts.OnProgress != nil {
 					opts.OnProgress(currentCompleted, total)
 				}
-				
+
 				// Call item complete callback
 				if opts.OnItemComplete != nil {
 					opts.OnItemComplete(result)
 				}
-				
+
 				// Check if we should stop on error
 				if err != nil && !opts.ContinueOnError {
 					// Drain work channel to stop other workers
@@ -215,16 +215,16 @@ func (b *Builder) BatchWithOptions(ctx context.Context, prompts []string, opts *
 			}
 		}(i)
 	}
-	
+
 	// Wait for all workers to complete
 	wg.Wait()
 	close(resultChan)
-	
+
 	// Collect results
 	for result := range resultChan {
 		results[result.Index] = result
 	}
-	
+
 	// Check if any errors occurred and ContinueOnError is false
 	if !opts.ContinueOnError {
 		for _, result := range results {
@@ -233,7 +233,7 @@ func (b *Builder) BatchWithOptions(ctx context.Context, prompts []string, opts *
 			}
 		}
 	}
-	
+
 	return results, nil
 }
 
@@ -244,7 +244,7 @@ func (b *Builder) BatchSimple(ctx context.Context, prompts []string) ([]string, 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	responses := make([]string, len(results))
 	for i, result := range results {
 		if result.Error == nil {
@@ -253,7 +253,7 @@ func (b *Builder) BatchSimple(ctx context.Context, prompts []string) ([]string, 
 			responses[i] = "" // Empty string for failed requests
 		}
 	}
-	
+
 	return responses, nil
 }
 
@@ -262,31 +262,31 @@ func (b *Builder) BatchWithRetry(ctx context.Context, prompts []string, maxRetri
 	if maxRetries <= 0 {
 		return b.Batch(ctx, prompts)
 	}
-	
+
 	results, err := b.Batch(ctx, prompts)
 	if err != nil {
 		return results, err
 	}
-	
+
 	// Retry failed requests
 	for retry := 0; retry < maxRetries; retry++ {
 		var failedPrompts []string
 		var failedIndices []int
-		
+
 		for i, result := range results {
 			if result.Error != nil {
 				failedPrompts = append(failedPrompts, result.Prompt)
 				failedIndices = append(failedIndices, i)
 			}
 		}
-		
+
 		if len(failedPrompts) == 0 {
 			break // All succeeded
 		}
-		
+
 		// Retry failed requests
 		retryResults, _ := b.Batch(ctx, failedPrompts)
-		
+
 		// Update results
 		for i, idx := range failedIndices {
 			if retryResults[i].Error == nil {
@@ -295,19 +295,19 @@ func (b *Builder) BatchWithRetry(ctx context.Context, prompts []string, maxRetri
 			}
 		}
 	}
-	
+
 	return results, nil
 }
 
 // GetBatchStats returns statistics about batch results
 type BatchStats struct {
-	Total         int
-	Successful    int
-	Failed        int
-	TotalTokens   int
-	PromptTokens  int
+	Total            int
+	Successful       int
+	Failed           int
+	TotalTokens      int
+	PromptTokens     int
 	CompletionTokens int
-	AverageTime   time.Duration
+	AverageTime      time.Duration
 }
 
 // GetBatchStats computes statistics from batch results
@@ -315,7 +315,7 @@ func GetBatchStats(results []BatchResult) BatchStats {
 	stats := BatchStats{
 		Total: len(results),
 	}
-	
+
 	for _, result := range results {
 		if result.Error == nil {
 			stats.Successful++
@@ -326,6 +326,6 @@ func GetBatchStats(results []BatchResult) BatchStats {
 			stats.Failed++
 		}
 	}
-	
+
 	return stats
 }
