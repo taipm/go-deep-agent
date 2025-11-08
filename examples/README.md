@@ -1,57 +1,158 @@
 # Examples
 
-Thư mục này chứa các ví dụ sử dụng go-deep-agent.
+This directory contains comprehensive examples demonstrating various features of the go-deep-agent library.
 
-## Chạy examples
+## Prerequisites
 
-### Ollama Example
+All examples require an OpenAI API key (except Ollama example):
 
 ```bash
-# Đảm bảo Ollama đang chạy
+export OPENAI_API_KEY="your-api-key-here"
+```
+
+## Available Examples
+
+### 1. Basic Agent (ollama_example.go)
+
+Demonstrates basic agent functionality with Ollama integration.
+
+```bash
+# Ensure Ollama is running
 ollama serve
 
-# Chạy example
-cd examples
-go run ollama_example.go
+# Run example
+go run examples/ollama_example.go
 ```
 
-### OpenAI Example (từ main.go)
+### 2. Batch Processing (batch_processing.go)
+
+Shows how to process multiple prompts concurrently with various configurations.
+
+**Features demonstrated:**
+- Simple batch processing
+- Progress tracking with callbacks
+- Concurrency control
+- Per-item completion callbacks
+- Batch statistics (tokens, success rate)
+- Retry mechanisms
 
 ```bash
-# Set API key
-export OPENAI_API_KEY=your-api-key
-
-# Chạy tất cả examples
-go run main.go
+go run examples/batch_processing.go
 ```
 
-## Các ví dụ có sẵn
+**Key Examples:**
+- `simpleBatch()` - Process 5 prompts in parallel
+- `batchWithProgress()` - Track progress with real-time updates
+- `batchWithConcurrency()` - Control worker pool size (3 workers, 500ms delay)
+- `batchWithCallbacks()` - Per-item completion notifications
+- `batchStats()` - Aggregate metrics (tokens, success/failure rates)
+- `batchWithRetry()` - Automatic retry up to 3 times
 
-1. **Chat cơ bản** - Simple question-answer
-2. **Streaming** - Real-time streaming responses
-3. **Conversation History** - Multi-turn conversations
-4. **Tool Calling** - Function calling với tools
-5. **Structured Outputs** - JSON schema validation
-6. **Multimodal (Vision)** - Image analysis với GPT-4 Vision
+### 3. RAG (Retrieval-Augmented Generation) (rag_example.go)
 
-### Multimodal Example
+Demonstrates RAG functionality for context-aware responses using document retrieval.
 
-Phân tích ảnh với GPT-4 Vision:
+**Features demonstrated:**
+- Basic RAG with document chunks
+- Custom RAG configuration (chunk size, overlap, TopK)
+- Document metadata management
+- Custom retriever functions
+- Retrieving and inspecting relevant documents
+- Documentation Q&A system
 
 ```bash
-# Set API key
-export OPENAI_API_KEY=your-api-key
+go run examples/rag_example.go
+```
 
-# Chạy multimodal examples
+**Key Examples:**
+- `basicRAG()` - Simple knowledge base about programming languages
+- `ragWithConfig()` - Custom chunk size (300), overlap (50), and TopK (1)
+- `ragWithMetadata()` - Documents with source tracking
+- `customRetriever()` - Custom lookup function for external knowledge bases
+- `inspectRetrievedDocs()` - Examine retrieved documents and relevance scores
+- `documentationQA()` - API documentation assistant with low temperature (0.3)
+
+### 4. Multimodal (Vision) (builder_multimodal.go)
+
+Image analysis with GPT-4 Vision.
+
+**Features:**
+- Describe images from URL
+- Compare multiple images
+- Control detail levels (low/high)
+- OCR - extract text from images
+- Analyze local image files
+- Chart/graph analysis
+- Multi-turn conversation with images
+
+```bash
 go run examples/builder_multimodal.go
 ```
 
-Các tính năng:
+## Running Examples
 
-- Mô tả ảnh từ URL
-- So sánh nhiều ảnh
-- Control detail levels (low/high)
-- OCR - extract text từ ảnh
-- Phân tích local image files
-- Chart/graph analysis
-- Multi-turn conversation với ảnh
+Each example is self-contained and can be run independently:
+
+```bash
+# Run specific example
+go run examples/batch_processing.go
+go run examples/rag_example.go
+go run examples/ollama_example.go
+
+# Or build and run
+go build examples/batch_processing.go
+./batch_processing
+```
+
+## Example Output
+
+### Batch Processing Output:
+```
+Batch processing completed!
+Total: 5 prompts
+Success: 5, Failed: 0
+Total tokens: 850 (prompt: 250, completion: 600)
+```
+
+### RAG Output:
+```
+Question: Who created the Go programming language?
+Answer: Go was created by Robert Griesemer, Rob Pike, and Ken Thompson at Google.
+
+Retrieved 2 documents:
+  1. Source: golang.org (Score: 0.95)
+  2. Source: go-history.md (Score: 0.78)
+```
+
+## Configuration Options
+
+### Batch Processing Options:
+- `MaxConcurrency` - Worker pool size (default: 5, range: 1-100)
+- `DelayBetweenBatches` - Delay between request batches
+- `ContinueOnError` - Continue processing if individual requests fail
+- `OnProgress` - Callback for progress tracking (completed/total)
+- `OnItemComplete` - Callback when each item completes
+
+### RAG Options:
+- `ChunkSize` - Size of document chunks (default: 1000 chars)
+- `ChunkOverlap` - Overlap between chunks (default: 200 chars)
+- `TopK` - Number of chunks to retrieve (default: 3)
+- `MinScore` - Minimum relevance score threshold (default: 0.0)
+- `Separator` - Separator between retrieved chunks
+- `IncludeScores` - Show relevance scores in context
+
+## Notes
+
+- All examples use `gpt-4o-mini` model by default
+- Batch processing respects rate limits with configurable delays
+- RAG uses TF-IDF-based similarity scoring with exact phrase bonuses
+- Custom retrievers enable integration with vector databases or external APIs
+- Examples include error handling and graceful degradation
+
+## Next Steps
+
+After running these examples, explore:
+- Combining batch processing with RAG for large-scale Q&A
+- Implementing custom retrievers for your specific knowledge base
+- Experimenting with different chunk sizes and TopK values
+- Building production systems with token tracking and monitoring

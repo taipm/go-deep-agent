@@ -67,14 +67,21 @@ type Builder struct {
 	lastError     error          // Last error from multimodal operations
 
 	// Batch processing
-	batchSize            int                               // Max concurrent requests in batch (default: 5)
-	batchDelay           time.Duration                     // Delay between batch chunks
-	onBatchProgress      func(completed, total int)        // Batch progress callback
-	onBatchItemComplete  func(result BatchResult)          // Individual item completion callback
+	batchSize           int                        // Max concurrent requests in batch (default: 5)
+	batchDelay          time.Duration              // Delay between batch chunks
+	onBatchProgress     func(completed, total int) // Batch progress callback
+	onBatchItemComplete func(result BatchResult)   // Individual item completion callback
+
+	// RAG (Retrieval-Augmented Generation)
+	ragEnabled        bool         // Whether RAG is enabled
+	ragDocuments      []Document   // Documents for RAG
+	ragRetriever      RAGRetriever // Custom retriever function
+	ragConfig         *RAGConfig   // RAG configuration
+	lastRetrievedDocs []Document   // Last retrieved documents
 
 	// OpenAI client (lazy initialized)
 	client *openai.Client
-	
+
 	// Usage tracking
 	lastUsage TokenUsage // Last request token usage
 }
@@ -619,6 +626,22 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 	// If auto-execute is enabled and we have tools, use tool execution loop
 	if b.autoExecute && len(b.tools) > 0 {
 		return b.askWithToolExecution(ctx, message)
+	}
+
+	// RAG: Retrieve and inject relevant context if enabled
+	if b.ragEnabled {
+		docs, err := b.retrieveRelevantDocs(message)
+		if err != nil {
+			return "", fmt.Errorf("RAG retrieval failed: %w", err)
+		}
+
+		b.lastRetrievedDocs = docs
+
+		if len(docs) > 0 {
+			// Inject context into the message
+			ragContext := b.buildRAGContext(docs)
+			message = fmt.Sprintf("Context:\n%s\n\nQuestion: %s", ragContext, message)
+		}
 	}
 
 	// Build messages array (includes multimodal content if images added)
