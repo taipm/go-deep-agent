@@ -255,13 +255,23 @@ func (m *Memory) Stats(ctx context.Context) MemoryStats {
 
 	if m.config.EpisodicEnabled {
 		stats.EpisodicSize = m.episodic.Size()
-		// TODO: Get oldest/newest timestamps from episodic
+
+		// Get oldest/newest timestamps from episodic memory
+		if episodicImpl, ok := m.episodic.(*EpisodicMemoryImpl); ok {
+			stats.EpisodicOldest = episodicImpl.GetOldestTimestamp()
+			stats.EpisodicNewest = episodicImpl.GetNewestTimestamp()
+			stats.AverageImportance = episodicImpl.GetAverageImportance()
+		}
 	}
 
 	if m.config.SemanticEnabled {
 		stats.SemanticSize = m.semantic.Size()
 		stats.TotalFacts = m.semantic.Size()
-		// TODO: Get categories from semantic
+
+		// Get categories from semantic memory
+		if semanticImpl, ok := m.semantic.(*SemanticMemoryImpl); ok {
+			stats.SemanticCategories = semanticImpl.GetCategories()
+		}
 	}
 
 	return stats
@@ -300,7 +310,7 @@ func (m *Memory) calculateImportance(msg Message) float64 {
 		score += weights.PersonalInfo
 	}
 
-	// Check if it'm a Q&A pair
+	// Check if it's a Q&A pair
 	if isQuestionOrAnswer(content) {
 		score += weights.QuestionAnswer
 	}
@@ -323,16 +333,8 @@ func (m *Memory) calculateImportance(msg Message) float64 {
 		}
 	}
 
-	// Normalize to 0-1 range
-	// Max possible score is sum of all weights
-	maxScore := weights.ExplicitRemember + weights.PersonalInfo +
-		weights.SuccessfulAction + weights.EmotionalContent +
-		weights.ReferencedCount + weights.QuestionAnswer + weights.Length
-
-	if maxScore > 0 {
-		score = score / maxScore
-	}
-
+	// Return raw score (not normalized)
+	// Threshold should be configured based on weight values (e.g., 0.7 for high importance)
 	return score
 }
 
@@ -365,7 +367,7 @@ func containsRememberKeywords(content string) bool {
 		"note that", "make sure", "always", "never forget",
 	}
 
-	contentLower := content
+	contentLower := toLower(content)
 	for _, keyword := range keywords {
 		if contains(contentLower, keyword) {
 			return true
@@ -381,7 +383,7 @@ func containsPersonalInfo(content string) bool {
 		"my preference", "I like", "I love", "I hate", "I prefer",
 	}
 
-	contentLower := content
+	contentLower := toLower(content)
 	for _, pattern := range personalPatterns {
 		if contains(contentLower, pattern) {
 			return true
@@ -398,7 +400,7 @@ func isQuestionOrAnswer(content string) bool {
 
 	// Check if it starts with question words
 	questionWords := []string{"what", "where", "when", "why", "who", "how", "which"}
-	contentLower := content
+	contentLower := toLower(content)
 	for _, word := range questionWords {
 		if startsWithWord(contentLower, word) {
 			return true
@@ -408,14 +410,69 @@ func isQuestionOrAnswer(content string) bool {
 	return false
 }
 
-func contains(m, substr string) bool {
-	// Simple case-insensitive contains
-	// TODO: Use proper string matching
-	return len(m) >= len(substr)
+func contains(s, substr string) bool {
+	// Case-insensitive contains using strings package
+	s = toLower(s)
+	substr = toLower(substr)
+	return indexOfSubstring(s, substr) >= 0
 }
 
-func startsWithWord(m, word string) bool {
-	// Simple word boundary check
-	// TODO: Use proper word boundary detection
-	return len(m) >= len(word)
+func toLower(s string) string {
+	// Simple ASCII lowercase conversion
+	result := make([]byte, len(s))
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c >= 'A' && c <= 'Z' {
+			c = c + ('a' - 'A')
+		}
+		result[i] = c
+	}
+	return string(result)
+}
+
+func indexOfSubstring(s, substr string) int {
+	// Simple substring search
+	if len(substr) == 0 {
+		return 0
+	}
+	if len(substr) > len(s) {
+		return -1
+	}
+
+	for i := 0; i <= len(s)-len(substr); i++ {
+		match := true
+		for j := 0; j < len(substr); j++ {
+			if s[i+j] != substr[j] {
+				match = false
+				break
+			}
+		}
+		if match {
+			return i
+		}
+	}
+	return -1
+}
+
+func startsWithWord(s, word string) bool {
+	// Case-insensitive word boundary check
+	s = toLower(s)
+	word = toLower(word)
+
+	if len(s) < len(word) {
+		return false
+	}
+
+	// Check if starts with word
+	if indexOfSubstring(s, word) != 0 {
+		return false
+	}
+
+	// Check word boundary (space or end of string after word)
+	if len(s) == len(word) {
+		return true
+	}
+
+	nextChar := s[len(word)]
+	return nextChar == ' ' || nextChar == '\t' || nextChar == '\n'
 }

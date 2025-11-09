@@ -505,6 +505,49 @@ func (e *EpisodicMemoryImpl) Size() int {
 	return len(e.messages)
 }
 
+// GetOldestTimestamp returns the timestamp of the oldest message
+// Returns zero time if no messages exist
+func (e *EpisodicMemoryImpl) GetOldestTimestamp() time.Time {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	if len(e.messages) == 0 {
+		return time.Time{}
+	}
+
+	return e.messages[0].Message.Timestamp
+}
+
+// GetNewestTimestamp returns the timestamp of the newest message
+// Returns zero time if no messages exist
+func (e *EpisodicMemoryImpl) GetNewestTimestamp() time.Time {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	if len(e.messages) == 0 {
+		return time.Time{}
+	}
+
+	return e.messages[len(e.messages)-1].Message.Timestamp
+}
+
+// GetAverageImportance calculates the average importance score
+func (e *EpisodicMemoryImpl) GetAverageImportance() float64 {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	if len(e.messages) == 0 {
+		return 0.0
+	}
+
+	var sum float64
+	for _, m := range e.messages {
+		sum += m.Importance
+	}
+
+	return sum / float64(len(e.messages))
+}
+
 // hasTags checks if message has all required tags
 func hasTags(msg Message, requiredTags []string) bool {
 	if msg.Metadata == nil {

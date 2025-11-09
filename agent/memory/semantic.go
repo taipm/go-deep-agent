@@ -132,6 +132,26 @@ func (s *SemanticMemoryImpl) Size() int {
 	return len(s.facts)
 }
 
+// GetCategories returns all unique categories in semantic memory
+func (s *SemanticMemoryImpl) GetCategories() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	categoryMap := make(map[string]bool)
+	for _, fact := range s.facts {
+		if fact.Category != "" {
+			categoryMap[fact.Category] = true
+		}
+	}
+
+	categories := make([]string, 0, len(categoryMap))
+	for category := range categoryMap {
+		categories = append(categories, category)
+	}
+
+	return categories
+}
+
 // generateFactID generates a unique ID for a fact
 func generateFactID() string {
 	return fmt.Sprintf("fact_%d", time.Now().UnixNano())
