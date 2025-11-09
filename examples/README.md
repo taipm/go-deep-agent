@@ -12,7 +12,79 @@ export OPENAI_API_KEY="your-api-key-here"
 
 ## Available Examples
 
-### 1. Basic Agent (ollama_example.go)
+### 1. Interactive Chatbot CLI (chatbot_cli.go) 🆕
+
+An interactive command-line chatbot with conversation memory, streaming, and multiple AI providers.
+
+**Features demonstrated:**
+- Interactive chat loop with real-time input
+- Model selection (GPT-4o-mini, GPT-4o, GPT-4-turbo, Ollama)
+- Streaming vs non-streaming mode
+- Conversation memory toggle
+- Built-in commands (/help, /stats, /clear, /exit)
+- Response time tracking
+- Cache statistics monitoring
+
+```bash
+# Set API key
+export OPENAI_API_KEY="your-api-key-here"
+
+# Run chatbot
+go run examples/chatbot_cli.go
+```
+
+**Interactive Flow:**
+```
+═══════════════════════════════════════════════════════════
+   🤖 GO-DEEP-AGENT CHATBOT CLI
+   Interactive AI Assistant powered by go-deep-agent
+═══════════════════════════════════════════════════════════
+
+Select AI Provider:
+1. OpenAI (GPT-4o-mini) - Fast, efficient
+2. OpenAI (GPT-4o) - Most capable
+3. OpenAI (GPT-4-turbo) - Advanced reasoning
+4. Ollama (llama3.2) - Local, private
+
+Your choice (1-4): 1
+Enable streaming mode? (y/n): y
+Enable conversation memory? (y/n): y
+
+✅ Conversation memory enabled (max 20 messages)
+✅ Streaming mode enabled
+
+────────────────────────────────────────────────────────────
+🤖 Chatbot ready! Type your message and press Enter.
+💡 Commands: /help, /stats, /clear, /exit
+────────────────────────────────────────────────────────────
+
+You: What is Go programming language?
+AI:  Go is a statically typed, compiled programming language designed 
+at Google by Robert Griesemer, Rob Pike, and Ken Thompson...
+
+⏱️  Response time: 1.23s
+
+You: /stats
+
+📊 Cache Statistics:
+  Hits:       0
+  Misses:     1
+  Size:       1 entries
+  Evictions:  0
+  Hit Rate:   0.00%
+
+You: /exit
+
+👋 Goodbye! Thanks for chatting!
+```
+
+**Commands:**
+- `/help` - Show available commands
+- `/stats` - Display cache statistics
+- `/clear` - Clear cache
+- `/exit` or `/quit` or `/q` - Exit chatbot
+
+### 2. Basic Agent (ollama_example.go)
 
 Demonstrates basic agent functionality with Ollama integration.
 
@@ -24,7 +96,7 @@ ollama serve
 go run examples/ollama_example.go
 ```
 
-### 2. Batch Processing (batch_processing.go)
+### 2. Basic Agent (ollama_example.go)
 
 Shows how to process multiple prompts concurrently with various configurations.
 
@@ -48,7 +120,7 @@ go run examples/batch_processing.go
 - `batchStats()` - Aggregate metrics (tokens, success/failure rates)
 - `batchWithRetry()` - Automatic retry up to 3 times
 
-### 3. RAG (Retrieval-Augmented Generation) (rag_example.go)
+### 3. Batch Processing (batch_processing.go)
 
 Demonstrates RAG functionality for context-aware responses using document retrieval.
 
@@ -72,7 +144,7 @@ go run examples/rag_example.go
 - `inspectRetrievedDocs()` - Examine retrieved documents and relevance scores
 - `documentationQA()` - API documentation assistant with low temperature (0.3)
 
-### 4. Multimodal (Vision) (builder_multimodal.go)
+### 4. RAG (Retrieval-Augmented Generation) (rag_example.go)
 
 Image analysis with GPT-4 Vision.
 
@@ -89,7 +161,7 @@ Image analysis with GPT-4 Vision.
 go run examples/builder_multimodal.go
 ```
 
-### 5. Redis Cache (cache_redis_example.go)
+### 5. Multimodal (Vision) (builder_multimodal.go)
 
 Demonstrates Redis-based distributed caching for AI responses.
 
@@ -132,7 +204,7 @@ Note: Memory cache is fastest but not shared across instances
 Redis cache is slightly slower but shared and persistent
 ```
 
-## Running Examples
+### 6. Redis Cache (cache_redis_example.go)
 
 Each example is self-contained and can be run independently:
 
