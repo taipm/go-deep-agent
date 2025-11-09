@@ -22,7 +22,9 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 - 📚 **RAG Support** - Retrieval-Augmented Generation with document chunking (v0.4.0)
 - 💾 **Response Caching** - Intelligent caching with TTL and LRU eviction (v0.4.0)
 - 🔢 **Vector Embeddings** - OpenAI & Ollama embeddings with similarity search (v0.5.0 🆕)
-- ✅ **Well Tested** - 364+ tests, 65%+ coverage, 48+ working examples
+- 🗄️ **Vector Databases** - ChromaDB & Qdrant integration for semantic search (v0.5.0 🆕)
+- 🧠 **Vector RAG** - Semantic retrieval with auto-embedding and priority system (v0.5.0 🆕)
+- ✅ **Well Tested** - 414+ tests, 65%+ coverage, 61+ working examples
 
 ## 📦 Installation
 
@@ -222,6 +224,115 @@ builder.WithImage("https://example.com/photo.jpg").
 builder.Ask(ctx, "What colors are prominent?") // Remembers the image
 ```
 
+### 10. Vector RAG - Semantic Search (v0.5.0 🆕)
+
+```go
+// Setup vector database and embeddings
+embedding, _ := agent.NewOllamaEmbedding(
+    "http://localhost:11434",
+    "nomic-embed-text", // Free local embeddings
+)
+
+store, _ := agent.NewChromaStore("http://localhost:8000")
+store.WithEmbedding(embedding)
+
+// Create collection
+config := &agent.CollectionConfig{
+    Name:           "company-kb",
+    Dimension:      768,
+    DistanceMetric: agent.DistanceMetricCosine,
+}
+store.CreateCollection(ctx, "company-kb", config)
+
+// Create agent with vector RAG
+ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithVectorRAG(embedding, store, "company-kb").
+    WithRAGTopK(3).         // Retrieve top 3 similar docs
+    WithMemory()
+
+// Add knowledge base
+docs := []string{
+    "Our refund policy allows full refunds within 30 days.",
+    "Customer support is available 24/7 at support@company.com.",
+    "We support integrations with Slack, Teams, and Salesforce.",
+}
+ai.AddDocumentsToVector(ctx, docs...)
+
+// Ask questions - semantically retrieves relevant context
+response, _ := ai.Ask(ctx, "What is your refund policy?")
+fmt.Println(response)
+
+// See what was retrieved
+retrieved := ai.GetLastRetrievedDocs()
+for _, doc := range retrieved {
+    fmt.Printf("Score: %.3f | %s\n", doc.Score, doc.Content)
+}
+```
+
+### 11. Advanced Vector RAG with Metadata
+
+```go
+// Add documents with rich metadata
+vectorDocs := []*agent.VectorDocument{
+    {
+        Content: "Python is great for data science and machine learning.",
+        Metadata: map[string]interface{}{
+            "category":   "programming",
+            "language":   "Python",
+            "difficulty": "beginner",
+            "tags":       []string{"data-science", "ml"},
+        },
+    },
+    {
+        Content: "Go is excellent for building high-performance backend services.",
+        Metadata: map[string]interface{}{
+            "category":   "programming",
+            "language":   "Go",
+            "difficulty": "intermediate",
+            "tags":       []string{"backend", "concurrency"},
+        },
+    },
+}
+
+ai.AddVectorDocuments(ctx, vectorDocs...)
+
+// Query with custom config
+ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithVectorRAG(embedding, store, "docs").
+    WithRAGConfig(&agent.RAGConfig{
+        TopK:          5,     // Retrieve top 5
+        MinScore:      0.7,   // Only high-confidence results
+        IncludeScores: true,  // Show relevance scores
+    })
+
+response, _ := ai.Ask(ctx, "Tell me about backend programming")
+
+// Access retrieved metadata
+docs := ai.GetLastRetrievedDocs()
+for _, doc := range docs {
+    fmt.Printf("Language: %s, Difficulty: %s\n",
+        doc.Metadata["language"],
+        doc.Metadata["difficulty"])
+}
+```
+
+### 12. Switch Vector Databases - ChromaDB vs Qdrant
+
+```go
+// Development: Use ChromaDB (easy setup)
+chromaStore, _ := agent.NewChromaStore("http://localhost:8000")
+aiDev := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithVectorRAG(embedding, chromaStore, "docs")
+
+// Production: Use Qdrant (high performance)
+qdrantStore, _ := agent.NewQdrantStore("http://localhost:6333")
+qdrantStore.WithAPIKey("your-api-key") // Optional
+aiProd := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithVectorRAG(embedding, qdrantStore, "docs")
+
+// Both use the same API - seamless switching!
+```
+
 ## 📖 Builder API Methods
 
 ### Core Methods
@@ -299,6 +410,32 @@ Supported models: `gpt-4o`, `gpt-4o-mini`, `gpt-4-turbo`, `gpt-4-vision-preview`
 - `IsMaxRetriesError(err)` - Check if retries exhausted
 - `IsToolExecutionError(err)` - Check for tool errors
 
+### Vector RAG (v0.5.0 🆕)
+
+- `WithVectorRAG(embedding, store, collection)` - Enable vector-based RAG
+- `AddDocumentsToVector(ctx, docs...)` - Add string documents to vector store
+- `AddVectorDocuments(ctx, vectorDocs...)` - Add documents with metadata
+- `GetLastRetrievedDocs()` - Get retrieved documents with scores
+
+### Embedding Providers (v0.5.0 🆕)
+
+- `NewOllamaEmbedding(baseURL, model)` - Free local embeddings (Ollama)
+- `NewOpenAIEmbedding(apiKey, model, dimension)` - OpenAI embeddings
+- `Generate(ctx, texts)` - Generate embeddings for texts
+- `GenerateQuery(ctx, query)` - Generate embedding for search query
+
+### Vector Stores (v0.5.0 🆕)
+
+- `NewChromaStore(baseURL)` - Create ChromaDB client
+- `NewQdrantStore(baseURL)` - Create Qdrant client
+- `CreateCollection(ctx, name, config)` - Create collection with config
+- `Add(ctx, collection, documents)` - Add documents with auto-embedding
+- `Search(ctx, request)` - Vector similarity search
+- `SearchByText(ctx, request)` - Text-based semantic search
+- `Delete(ctx, collection, ids)` - Delete documents by IDs
+- `Count(ctx, collection)` - Get document count
+- `Clear(ctx, collection)` - Remove all documents
+
 ## 🏗️ Project Structure
 
 ```plaintext
@@ -325,13 +462,13 @@ go-deep-agent/
 └── go.mod
 ```
 
-## � Quality Metrics
+## 📊 Quality Metrics
 
-- ✅ **76 Tests** passing across all features
-- ✅ **50.9% Coverage** with comprehensive test cases
-- ✅ **8 Example Files** with 34+ working examples
+- ✅ **414 Tests** passing across all features
+- ✅ **65%+ Coverage** with comprehensive test cases
+- ✅ **14 Example Files** with 61+ working examples
 - ✅ **Zero External Dependencies** (except openai-go)
-- ✅ **Production Tested** with real OpenAI and Ollama APIs
+- ✅ **Production Tested** with real OpenAI, Ollama, ChromaDB, Qdrant
 
 ## 🛠️ Setup & Usage
 
@@ -354,11 +491,29 @@ curl -fsSL https://ollama.com/install.sh | sh
 # Pull a model
 ollama pull qwen2.5:3b
 
+# Pull embedding model (for vector RAG)
+ollama pull nomic-embed-text
+
 # Run Ollama server
 ollama serve
 
 # Run Ollama examples
 go run examples/ollama_example.go
+```
+
+### Vector Database Setup (v0.5.0 🆕)
+
+```bash
+# ChromaDB (easiest for development)
+docker run -p 8000:8000 chromadb/chroma
+
+# OR Qdrant (production-ready)
+docker run -p 6333:6333 qdrant/qdrant
+
+# Run vector RAG examples
+go run examples/vector_rag_example.go
+go run examples/chroma_example.go
+go run examples/qdrant_example.go
 ```
 
 ## 🏃 Running Examples
@@ -384,6 +539,12 @@ go run examples/builder_errors.go
 
 # Ollama examples (requires Ollama running)
 go run examples/ollama_example.go
+
+# Vector RAG examples (v0.5.0 🆕)
+go run examples/embedding_example.go      # Embedding basics
+go run examples/chroma_example.go         # ChromaDB integration
+go run examples/qdrant_example.go         # Qdrant integration
+go run examples/vector_rag_example.go     # Complete RAG workflow
 
 # Quick demo with all features
 go run main.go
@@ -508,10 +669,11 @@ MIT License - see [LICENSE](LICENSE) for details
 - **[README.md](README.md)** - Main documentation (you are here)
 - **[COMPARISON.md](docs/COMPARISON.md)** - 🆚 Why go-deep-agent vs openai-go (with code examples)
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and migration guides
-- **[examples/](examples/)** - 8 example files with 41+ working examples
+- **[RAG_VECTOR_DATABASES.md](docs/RAG_VECTOR_DATABASES.md)** - 🆕 Complete Vector RAG guide (v0.5.0)
+- **[examples/](examples/)** - 14 example files with 61+ working examples
 - **[agent/README.md](agent/README.md)** - Detailed API documentation
-- **[TODO.md](TODO.md)** - Roadmap and implementation progress (11/12 phases complete)
-- **[PHASE_10_SUMMARY.md](docs/PHASE_10_SUMMARY.md)** - Testing & Quality achievements
+- **[TODO.md](TODO.md)** - Roadmap and implementation progress
+- **[ROADMAP.md](ROADMAP.md)** - v0.5.0 Advanced RAG implementation plan
 
 ## 🔗 Links
 
