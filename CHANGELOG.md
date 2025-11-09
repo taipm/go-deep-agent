@@ -7,6 +7,89 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2025-11-09 🆕 Built-in Tools
+
+### 🛠️ Three Production-Ready Built-in Tools
+
+This release adds **three essential built-in tools** for common agent operations: file system access, HTTP requests, and date/time manipulation.
+
+### ✨ Added - Built-in Tools
+
+- **📁 FileSystemTool** - File and directory operations
+  - `NewFileSystemTool()` - Create filesystem tool with 7 operations
+  - Operations: `read_file`, `write_file`, `append_file`, `delete_file`
+  - Operations: `list_directory`, `file_exists`, `create_directory`
+  - Security: Path traversal prevention with `sanitizePath()`
+  - Auto-creates parent directories for write operations
+  - Full error handling and validation
+  - **~200 LOC agent/tools/filesystem.go**
+  - **10 unit tests covering all operations + security**
+
+- **🌐 HTTPRequestTool** - HTTP API client
+  - `NewHTTPRequestTool()` - Create HTTP client tool
+  - Methods: GET, POST, PUT, DELETE
+  - Features: Custom headers, request body, timeout control
+  - Response parsing: JSON auto-formatting, text truncation
+  - Default 30s timeout, configurable via `timeout_seconds`
+  - User-Agent: `go-deep-agent/0.5.3`
+  - **~180 LOC agent/tools/http.go**
+  - **13 unit tests with httptest mock server**
+
+- **📅 DateTimeTool** - Date and time operations
+  - `NewDateTimeTool()` - Create datetime tool with 7 operations
+  - Operations: `current_time`, `format_date`, `parse_date`
+  - Operations: `add_duration`, `date_diff`, `convert_timezone`, `day_of_week`
+  - Timezone support: UTC, America/New_York, Asia/Tokyo, etc.
+  - Multiple formats: RFC3339, RFC1123, Unix, custom Go formats
+  - Duration support: hours (24h), minutes (30m), days (7d)
+  - **~300 LOC agent/tools/datetime.go**
+  - **17 unit tests covering all operations + edge cases**
+
+### 📦 Package Structure
+
+- **New package**: `agent/tools` - Built-in tools namespace
+- **Base file**: `tools.go` - Common utilities and documentation
+- **Version**: Tools package v1.0.0
+- **Total LOC**: ~700 lines of production code
+- **Total Tests**: 40+ unit tests, 100% pass rate
+
+### 📝 Examples
+
+- **builtin_tools_demo.go** - Complete demo of all 3 tools
+  - Example 1: FileSystem operations
+  - Example 2: HTTP API calls
+  - Example 3: DateTime calculations
+  - Example 4: Combined tools in real-world scenario
+
+### 🔧 Usage
+
+```go
+import "github.com/taipm/go-deep-agent/agent/tools"
+
+// Create built-in tools
+fsTool := tools.NewFileSystemTool()
+httpTool := tools.NewHTTPRequestTool()
+dtTool := tools.NewDateTimeTool()
+
+// Use with agent
+agent.NewOpenAI("gpt-4o", apiKey).
+    WithTools(fsTool, httpTool, dtTool).
+    WithAutoExecute(true).
+    Ask(ctx, "Read config.json, fetch https://api.example.com, and check today's date")
+```
+
+### 🔒 Security
+
+- FileSystemTool: Path traversal prevention (blocks `..` in paths)
+- HTTPRequestTool: Timeout protection, URL validation
+- All tools: Input validation and error handling
+
+### ✅ Testing
+
+- **Filesystem**: 10 tests (write, read, append, delete, list, exists, mkdir, security)
+- **HTTP**: 13 tests (GET, POST, headers, timeout, validation, mock server)
+- **DateTime**: 17 tests (all operations, timezones, formats, parsing, edge cases)
+
 ## [0.5.2] - 2025-01-15 🆕 Logging & Observability
 
 ### 📊 Production-Ready Logging System

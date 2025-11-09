@@ -25,7 +25,8 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 - 🗄️ **Vector Databases** - ChromaDB & Qdrant integration for semantic search (v0.5.0 🆕)
 - 🧠 **Vector RAG** - Semantic retrieval with auto-embedding and priority system (v0.5.0 🆕)
 - 📊 **Logging & Observability** - Zero-overhead logging with slog support (v0.5.2 🆕)
-- ✅ **Well Tested** - 420+ tests, 65%+ coverage, 69+ working examples
+- 🛠️ **Built-in Tools** - FileSystem, HTTP, DateTime tools ready to use (v0.5.3 🆕)
+- ✅ **Well Tested** - 460+ tests, 65%+ coverage, 70+ working examples
 
 ## 📦 Installation
 
@@ -278,7 +279,45 @@ builder := agent.NewOpenAI("gpt-4o-mini", apiKey)
 
 📖 **[Complete Logging Guide](docs/LOGGING_GUIDE.md)** - Custom loggers, slog integration, production best practices
 
-### 10. History Management
+### 10. Built-in Tools (v0.5.3 🆕)
+
+Three production-ready tools for common operations: file system, HTTP requests, and date/time.
+
+```go
+import "github.com/taipm/go-deep-agent/agent/tools"
+
+// Create built-in tools
+fsTool := tools.NewFileSystemTool()      // File operations
+httpTool := tools.NewHTTPRequestTool()   // HTTP client
+dtTool := tools.NewDateTimeTool()        // Date/time calculations
+
+// Use with agent
+ai := agent.NewOpenAI("gpt-4o", apiKey).
+    WithTools(fsTool, httpTool, dtTool).
+    WithAutoExecute(true)
+
+// Agent can now use tools automatically
+response, _ := ai.Ask(ctx, "Read config.json, get current time in Tokyo, and fetch https://api.github.com/users/github")
+```
+
+**FileSystemTool** - 7 operations:
+- `read_file`, `write_file`, `append_file`, `delete_file`
+- `list_directory`, `file_exists`, `create_directory`
+- Security: Path traversal prevention
+
+**HTTPRequestTool** - Full HTTP client:
+- Methods: GET, POST, PUT, DELETE
+- Features: Headers, timeout, JSON parsing
+- Default 30s timeout
+
+**DateTimeTool** - 7 operations:
+- `current_time`, `format_date`, `parse_date`
+- `add_duration`, `date_diff`, `convert_timezone`, `day_of_week`
+- Timezones: UTC, America/New_York, Asia/Tokyo, etc.
+
+📖 **[View builtin_tools_demo.go](examples/builtin_tools_demo.go)** - Complete examples
+
+### 11. History Management
 
 ```go
 builder := agent.NewOpenAI("gpt-4o-mini", apiKey).WithMemory()
@@ -299,7 +338,7 @@ savedHistory := builder.GetHistory()
 builder.SetHistory(savedHistory)
 ```
 
-### 11. Multimodal - Vision (GPT-4 Vision)
+### 12. Multimodal - Vision (GPT-4 Vision)
 
 ```go
 // Analyze image from URL
@@ -325,7 +364,7 @@ builder.WithImage("https://example.com/photo.jpg").
 builder.Ask(ctx, "What colors are prominent?") // Remembers the image
 ```
 
-### 12. Vector RAG - Semantic Search (v0.5.0 🆕)
+### 13. Vector RAG - Semantic Search (v0.5.0 🆕)
 
 ```go
 // Setup vector database and embeddings
@@ -370,7 +409,7 @@ for _, doc := range retrieved {
 }
 ```
 
-### 13. Advanced Vector RAG with Metadata
+### 14. Advanced Vector RAG with Metadata
 
 ```go
 // Add documents with rich metadata
