@@ -209,20 +209,36 @@ func ChunkDocument(text string, chunkSize, overlap int) []string {
 
 // retrieveRelevantDocs retrieves the most relevant documents for a query
 func (b *Builder) retrieveRelevantDocs(ctx context.Context, query string) ([]Document, error) {
+	logger := b.getLogger()
+	logger.Debug(ctx, "RAG retrieval started", F("query_length", len(query)))
+
 	// If vector store is configured, use vector search
 	if b.vectorStore != nil && b.embeddingProvider != nil {
+		logger.Debug(ctx, "Using vector store for retrieval", 
+			F("provider", fmt.Sprintf("%T", b.embeddingProvider)),
+			F("store", fmt.Sprintf("%T", b.vectorStore)))
 		return b.retrieveFromVector(ctx, query)
 	}
 
 	// If custom retriever is set, use it
 	if b.ragRetriever != nil {
-		return b.ragRetriever(query)
+		logger.Debug(ctx, "Using custom retriever")
+		docs, err := b.ragRetriever(query)
+		if err != nil {
+			logger.Error(ctx, "Custom retriever failed", F("error", err.Error()))
+			return nil, err
+		}
+		logger.Debug(ctx, "Custom retriever completed", F("doc_count", len(docs)))
+		return docs, nil
 	}
 
 	// If no documents, return empty
 	if len(b.ragDocuments) == 0 {
+		logger.Debug(ctx, "No RAG documents available")
 		return []Document{}, nil
 	}
+
+	logger.Debug(ctx, "Using TF-IDF fallback retrieval", F("total_docs", len(b.ragDocuments)))
 
 	config := b.ragConfig
 	if config == nil {
@@ -247,6 +263,11 @@ func (b *Builder) retrieveRelevantDocs(ctx context.Context, query string) ([]Doc
 		}
 	}
 
+	logger.Debug(ctx, "Documents chunked", 
+		F("total_chunks", len(allChunks)),
+		F("chunk_size", config.ChunkSize),
+		F("chunk_overlap", config.ChunkOverlap))
+
 	// Calculate relevance scores using simple similarity
 	for i := range allChunks {
 		allChunks[i].Score = calculateSimilarity(query, allChunks[i].Content)
@@ -264,6 +285,11 @@ func (b *Builder) retrieveRelevantDocs(ctx context.Context, query string) ([]Doc
 			results = append(results, allChunks[i])
 		}
 	}
+
+	logger.Info(ctx, "RAG retrieval completed", 
+		F("results", len(results)),
+		F("top_k", config.TopK),
+		F("min_score", config.MinScore))
 
 	return results, nil
 }
@@ -442,8 +468,15 @@ func (b *Builder) AddVectorDocuments(ctx context.Context, documents ...*VectorDo
 
 // retrieveFromVector performs semantic search using vector database
 func (b *Builder) retrieveFromVector(ctx context.Context, query string) ([]Document, error) {
+	logger := b.getLogger()
+	logger.Debug(ctx, "Vector search started", 
+		F("collection", b.vectorCollection),
+		F("query_length", len(query)))
+
 	if b.vectorStore == nil || b.embeddingProvider == nil {
-		return nil, fmt.Errorf("vector store and embedding provider must be configured")
+		err := fmt.Errorf("vector store and embedding provider must be configured")
+		logger.Error(ctx, "Vector search configuration missing", F("error", err.Error()))
+		return nil, err
 	}
 
 	config := b.ragConfig
@@ -461,10 +494,19 @@ func (b *Builder) retrieveFromVector(ctx context.Context, query string) ([]Docum
 		IncludeMetadata: true,
 	}
 
+	logger.Debug(ctx, "Executing vector search", 
+		F("top_k", config.TopK),
+		F("min_score", config.MinScore))
+
 	results, err := b.vectorStore.SearchByText(ctx, searchReq)
 	if err != nil {
+		logger.Error(ctx, "Vector search failed", F("error", err.Error()))
 		return nil, fmt.Errorf("vector search failed: %w", err)
 	}
+
+	logger.Info(ctx, "Vector search completed", 
+		F("results", len(results)),
+		F("collection", b.vectorCollection))
 
 	// Convert SearchResults to Documents
 	docs := make([]Document, len(results))

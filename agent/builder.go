@@ -624,48 +624,79 @@ func (b *Builder) WithResponseFormat(format *openai.ChatCompletionNewParamsRespo
 //	response := builder.Ask(ctx, "What is the capital of France?")
 //	fmt.Println(response) // "Paris is the capital of France."
 func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
+	start := time.Now()
+	logger := b.getLogger()
+
+	logger.Debug(ctx, "Ask request started",
+		F("model", b.model),
+		F("message_length", len(message)),
+		F("has_cache", b.cacheEnabled),
+		F("has_tools", len(b.tools) > 0),
+		F("has_rag", b.ragEnabled))
+
 	// Check for multimodal errors
 	if b.lastError != nil {
 		err := b.lastError
 		b.lastError = nil // Clear error
+		logger.Error(ctx, "Multimodal error detected", F("error", err.Error()))
 		return "", err
 	}
 
 	// Ensure client is initialized
 	if err := b.ensureClient(); err != nil {
+		logger.Error(ctx, "Failed to initialize client", F("error", err.Error()))
 		return "", fmt.Errorf("failed to initialize client: %w", err)
 	}
 
 	// Check cache first if enabled
 	if b.cacheEnabled && b.cache != nil {
+		cacheStart := time.Now()
 		temp := 0.0
 		if b.temperature != nil {
 			temp = *b.temperature
 		}
 		cacheKey := GenerateCacheKey(b.model, message, temp, b.systemPrompt)
 		if cached, found, err := b.cache.Get(ctx, cacheKey); err == nil && found {
+			cacheDuration := time.Since(cacheStart)
+			logger.Info(ctx, "Cache hit",
+				F("cache_key", cacheKey),
+				F("duration_ms", cacheDuration.Milliseconds()))
 			return cached, nil
+		} else {
+			cacheDuration := time.Since(cacheStart)
+			logger.Debug(ctx, "Cache miss",
+				F("cache_key", cacheKey),
+				F("duration_ms", cacheDuration.Milliseconds()))
 		}
 	}
 
 	// If auto-execute is enabled and we have tools, use tool execution loop
 	if b.autoExecute && len(b.tools) > 0 {
+		logger.Debug(ctx, "Using tool execution loop", F("tool_count", len(b.tools)))
 		return b.askWithToolExecution(ctx, message)
 	}
 
 	// RAG: Retrieve and inject relevant context if enabled
 	if b.ragEnabled {
+		ragStart := time.Now()
 		docs, err := b.retrieveRelevantDocs(ctx, message)
 		if err != nil {
+			logger.Error(ctx, "RAG retrieval failed", F("error", err.Error()))
 			return "", fmt.Errorf("RAG retrieval failed: %w", err)
 		}
 
 		b.lastRetrievedDocs = docs
+		ragDuration := time.Since(ragStart)
 
 		if len(docs) > 0 {
+			logger.Debug(ctx, "RAG documents retrieved", 
+				F("doc_count", len(docs)),
+				F("duration_ms", ragDuration.Milliseconds()))
 			// Inject context into the message
 			ragContext := b.buildRAGContext(docs)
 			message = fmt.Sprintf("Context:\n%s\n\nQuestion: %s", ragContext, message)
+		} else {
+			logger.Debug(ctx, "No RAG documents found", F("duration_ms", ragDuration.Milliseconds()))
 		}
 	}
 
@@ -676,10 +707,16 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 	b.pendingImages = nil
 
 	// Execute request
+	requestStart := time.Now()
 	completion, err := b.executeSyncRaw(ctx, messages)
 	if err != nil {
+		requestDuration := time.Since(requestStart)
+		logger.Error(ctx, "Request failed", 
+			F("error", err.Error()),
+			F("duration_ms", requestDuration.Milliseconds()))
 		return "", err
 	}
+	requestDuration := time.Since(requestStart)
 
 	result := completion.Choices[0].Message.Content
 
@@ -695,6 +732,7 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 			ttl = 5 * time.Minute // Default TTL
 		}
 		_ = b.cache.Set(ctx, cacheKey, result, ttl)
+		logger.Debug(ctx, "Response cached", F("cache_key", cacheKey), F("ttl_seconds", ttl.Seconds()))
 	}
 
 	// Track token usage
@@ -703,6 +741,15 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 		CompletionTokens: int(completion.Usage.CompletionTokens),
 		TotalTokens:      int(completion.Usage.TotalTokens),
 	}
+
+	totalDuration := time.Since(start)
+	logger.Info(ctx, "Ask request completed", 
+		F("duration_ms", totalDuration.Milliseconds()),
+		F("request_ms", requestDuration.Milliseconds()),
+		F("prompt_tokens", b.lastUsage.PromptTokens),
+		F("completion_tokens", b.lastUsage.CompletionTokens),
+		F("total_tokens", b.lastUsage.TotalTokens),
+		F("response_length", len(result)))
 
 	// Auto-memory: store this conversation turn
 	if b.autoMemory {
@@ -715,6 +762,9 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 
 // askWithToolExecution handles the tool execution loop.
 func (b *Builder) askWithToolExecution(ctx context.Context, message string) (string, error) {
+	logger := b.getLogger()
+	logger.Debug(ctx, "Tool execution loop started", F("max_rounds", b.maxToolRounds))
+
 	// Build messages array (includes multimodal content if images added)
 	messages := b.buildMessages(message)
 
@@ -723,16 +773,22 @@ func (b *Builder) askWithToolExecution(ctx context.Context, message string) (str
 
 	// Tool execution loop
 	for round := 0; round < b.maxToolRounds; round++ {
+		logger.Debug(ctx, "Tool execution round", F("round", round+1))
+
 		// Build params with tools
 		params := b.buildParams(messages)
 
 		// Execute request
 		completion, err := b.client.Chat.Completions.New(ctx, params)
 		if err != nil {
+			logger.Error(ctx, "Chat completion failed in tool loop", 
+				F("round", round+1),
+				F("error", err.Error()))
 			return "", fmt.Errorf("chat completion failed: %w", err)
 		}
 
 		if len(completion.Choices) == 0 {
+			logger.Error(ctx, "No response choices returned", F("round", round+1))
 			return "", fmt.Errorf("no response choices returned")
 		}
 
@@ -742,6 +798,9 @@ func (b *Builder) askWithToolExecution(ctx context.Context, message string) (str
 		if len(choice.Message.ToolCalls) == 0 {
 			// No tool calls, return the final response
 			result := choice.Message.Content
+			logger.Info(ctx, "Tool execution completed", 
+				F("rounds", round+1),
+				F("response_length", len(result)))
 
 			// Auto-memory: store conversation
 			if b.autoMemory {
@@ -751,6 +810,10 @@ func (b *Builder) askWithToolExecution(ctx context.Context, message string) (str
 
 			return result, nil
 		}
+
+		logger.Debug(ctx, "Tool calls received", 
+			F("round", round+1),
+			F("tool_call_count", len(choice.Message.ToolCalls)))
 
 		// Execute tool calls
 		// Convert tool calls to param format
@@ -768,6 +831,7 @@ func (b *Builder) askWithToolExecution(ctx context.Context, message string) (str
 		})
 
 		for _, toolCall := range choice.Message.ToolCalls {
+			toolStart := time.Now()
 			// Find the tool handler
 			var handler func(string) (string, error)
 			toolName := toolCall.Function.Name
@@ -780,20 +844,37 @@ func (b *Builder) askWithToolExecution(ctx context.Context, message string) (str
 			}
 
 			if handler == nil {
+				logger.Error(ctx, "No handler found for tool", F("tool_name", toolName))
 				return "", fmt.Errorf("no handler found for tool: %s", toolName)
 			}
 
+			logger.Debug(ctx, "Executing tool", 
+				F("tool_name", toolName),
+				F("args_length", len(toolCall.Function.Arguments)))
+
 			// Execute the tool
 			result, err := handler(toolCall.Function.Arguments)
+			toolDuration := time.Since(toolStart)
+			
 			if err != nil {
+				logger.Error(ctx, "Tool execution failed", 
+					F("tool_name", toolName),
+					F("error", err.Error()),
+					F("duration_ms", toolDuration.Milliseconds()))
 				return "", fmt.Errorf("tool execution failed: %w", err)
 			}
+
+			logger.Debug(ctx, "Tool execution succeeded", 
+				F("tool_name", toolName),
+				F("result_length", len(result)),
+				F("duration_ms", toolDuration.Milliseconds()))
 
 			// Add tool result using the helper function
 			messages = append(messages, openai.ToolMessage(result, toolCall.ID))
 		}
 	}
 
+	logger.Warn(ctx, "Max tool rounds exceeded", F("max_rounds", b.maxToolRounds))
 	return "", fmt.Errorf("max tool rounds (%d) exceeded", b.maxToolRounds)
 } // AskMultiple sends a message and returns multiple completion choices.
 // Use WithMultipleChoices(n) to set the number of choices.
@@ -845,15 +926,24 @@ func (b *Builder) AskMultiple(ctx context.Context, message string) ([]string, er
 //	    fmt.Print(content)
 //	}).Stream(ctx, "Tell me a story")
 func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
+	start := time.Now()
+	logger := b.getLogger()
+	
+	logger.Debug(ctx, "Stream request started", 
+		F("model", b.model),
+		F("message_length", len(message)))
+
 	// Check for multimodal errors
 	if b.lastError != nil {
 		err := b.lastError
 		b.lastError = nil // Clear error
+		logger.Error(ctx, "Multimodal error detected in stream", F("error", err.Error()))
 		return "", err
 	}
 
 	// Ensure client is initialized
 	if err := b.ensureClient(); err != nil {
+		logger.Error(ctx, "Failed to initialize client for stream", F("error", err.Error()))
 		return "", fmt.Errorf("failed to initialize client: %w", err)
 	}
 
@@ -867,19 +957,23 @@ func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
 	params := b.buildParams(messages)
 
 	// Create streaming request
+	logger.Debug(ctx, "Starting stream")
 	stream := b.client.Chat.Completions.NewStreaming(ctx, params)
 
 	// Use ChatCompletionAccumulator for full feature support
 	acc := openai.ChatCompletionAccumulator{}
 	var fullContent string
+	chunkCount := 0
 
 	for stream.Next() {
 		chunk := stream.Current()
 		acc.AddChunk(chunk)
+		chunkCount++
 
 		// Check if content just finished
 		if content, ok := acc.JustFinishedContent(); ok {
 			fullContent = content
+			logger.Debug(ctx, "Stream content finished", F("content_length", len(content)))
 			if b.onStream != nil {
 				b.onStream(content)
 			}
@@ -887,6 +981,7 @@ func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
 
 		// Check if a tool call just finished
 		if toolCall, ok := acc.JustFinishedToolCall(); ok {
+			logger.Debug(ctx, "Stream tool call finished", F("tool_index", toolCall.Index))
 			if b.onToolCall != nil {
 				b.onToolCall(toolCall)
 			}
@@ -894,6 +989,7 @@ func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
 
 		// Check if refusal just finished
 		if refusal, ok := acc.JustFinishedRefusal(); ok {
+			logger.Warn(ctx, "Stream refusal received", F("refusal", refusal))
 			if b.onRefusal != nil {
 				b.onRefusal(refusal)
 			}
@@ -906,8 +1002,19 @@ func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
 	}
 
 	if err := stream.Err(); err != nil {
+		duration := time.Since(start)
+		logger.Error(ctx, "Stream error", 
+			F("error", err.Error()),
+			F("chunks_received", chunkCount),
+			F("duration_ms", duration.Milliseconds()))
 		return "", fmt.Errorf("stream error: %w", err)
 	}
+
+	duration := time.Since(start)
+	logger.Info(ctx, "Stream completed", 
+		F("duration_ms", duration.Milliseconds()),
+		F("chunks", chunkCount),
+		F("response_length", len(fullContent)))
 
 	// Auto-memory: store conversation
 	if b.autoMemory && fullContent != "" {
@@ -1065,8 +1172,11 @@ func (b *Builder) executeSyncRaw(ctx context.Context, messages []openai.ChatComp
 
 // executeWithRetry wraps an operation with retry logic and timeout handling
 func (b *Builder) executeWithRetry(ctx context.Context, operation func(context.Context) error) error {
+	logger := b.getLogger()
+	
 	// Apply timeout if configured
 	if b.timeout > 0 {
+		logger.Debug(ctx, "Applying timeout", F("timeout_seconds", b.timeout.Seconds()))
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, b.timeout)
 		defer cancel()
@@ -1076,19 +1186,29 @@ func (b *Builder) executeWithRetry(ctx context.Context, operation func(context.C
 	if b.maxRetries == 0 {
 		err := operation(ctx)
 		if err != nil && ctx.Err() == context.DeadlineExceeded {
+			logger.Error(ctx, "Operation timed out", F("timeout", b.timeout.Seconds()))
 			return WrapTimeout(err)
 		}
 		return err
 	}
 
+	logger.Debug(ctx, "Retry enabled", F("max_retries", b.maxRetries))
+
 	// Execute with retries
 	var lastErr error
 	for attempt := 0; attempt <= b.maxRetries; attempt++ {
+		if attempt > 0 {
+			logger.Debug(ctx, "Retry attempt", F("attempt", attempt+1), F("max", b.maxRetries+1))
+		}
+
 		// Execute operation
 		err := operation(ctx)
 
 		// Success
 		if err == nil {
+			if attempt > 0 {
+				logger.Info(ctx, "Retry succeeded", F("attempt", attempt+1))
+			}
 			return nil
 		}
 
@@ -1096,27 +1216,41 @@ func (b *Builder) executeWithRetry(ctx context.Context, operation func(context.C
 
 		// Check if error is timeout
 		if ctx.Err() == context.DeadlineExceeded {
+			logger.Error(ctx, "Operation timed out during retry", 
+				F("attempt", attempt+1),
+				F("timeout", b.timeout.Seconds()))
 			return WrapTimeout(err)
 		}
 
 		// Check if error is retryable
 		if !b.isRetryable(err) {
+			logger.Debug(ctx, "Error is not retryable", 
+				F("attempt", attempt+1),
+				F("error", err.Error()))
 			return err
 		}
 
 		// Last attempt failed
 		if attempt == b.maxRetries {
+			logger.Warn(ctx, "Max retries reached", 
+				F("attempts", attempt+1),
+				F("error", err.Error()))
 			break
 		}
 
 		// Calculate delay
 		delay := b.calculateRetryDelay(attempt)
+		logger.Debug(ctx, "Waiting before retry", 
+			F("attempt", attempt+1),
+			F("delay_seconds", delay.Seconds()),
+			F("error", err.Error()))
 
 		// Wait before retry
 		select {
 		case <-time.After(delay):
 			// Continue to next attempt
 		case <-ctx.Done():
+			logger.Error(ctx, "Context cancelled during retry wait", F("attempt", attempt+1))
 			return WrapTimeout(ctx.Err())
 		}
 	}
@@ -1301,9 +1435,21 @@ func (b *Builder) EnableCache() *Builder {
 //	    stats.Hits, stats.Misses,
 //	    float64(stats.Hits)/(float64(stats.Hits+stats.Misses))*100)
 func (b *Builder) GetCacheStats() CacheStats {
+	logger := b.getLogger()
 	if b.cache != nil {
-		return b.cache.Stats()
+		stats := b.cache.Stats()
+		hitRate := 0.0
+		if stats.Hits+stats.Misses > 0 {
+			hitRate = float64(stats.Hits) / float64(stats.Hits+stats.Misses)
+		}
+		logger.Debug(context.Background(), "Cache stats retrieved", 
+			F("hits", stats.Hits),
+			F("misses", stats.Misses),
+			F("size", stats.Size),
+			F("hit_rate", hitRate))
+		return stats
 	}
+	logger.Debug(context.Background(), "No cache configured")
 	return CacheStats{}
 }
 
@@ -1318,9 +1464,18 @@ func (b *Builder) GetCacheStats() CacheStats {
 //
 //	builder.ClearCache(ctx) // Clear all cached responses
 func (b *Builder) ClearCache(ctx context.Context) error {
+	logger := b.getLogger()
 	if b.cache != nil {
-		return b.cache.Clear(ctx)
+		logger.Info(ctx, "Clearing cache")
+		err := b.cache.Clear(ctx)
+		if err != nil {
+			logger.Error(ctx, "Failed to clear cache", F("error", err.Error()))
+			return err
+		}
+		logger.Info(ctx, "Cache cleared successfully")
+		return nil
 	}
+	logger.Debug(ctx, "No cache to clear")
 	return nil
 }
 
