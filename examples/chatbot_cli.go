@@ -44,7 +44,7 @@ func main() {
 
 	// Configure chatbot
 	chatbot = chatbot.
-		WithSystem("You are a helpful, friendly assistant. Keep responses concise and clear.").
+		WithSystem("You are a helpful, friendly assistant. You have excellent memory and always remember what the user tells you in the conversation. Keep responses concise and clear.").
 		WithTemperature(0.7).
 		WithTimeout(30 * time.Second)
 
@@ -62,7 +62,7 @@ func main() {
 
 	fmt.Println("\n" + strings.Repeat("─", 60))
 	fmt.Println("🤖 Chatbot ready! Type your message and press Enter.")
-	fmt.Println("💡 Commands: /help, /clear, /stats, /exit")
+	fmt.Println("💡 Commands: /help, /history, /clear, /stats, /exit")
 	fmt.Println(strings.Repeat("─", 60) + "\n")
 
 	// Main chat loop
@@ -134,7 +134,7 @@ func selectModel() (string, string) {
 	fmt.Println("1. OpenAI (GPT-4o-mini) - Fast, efficient")
 	fmt.Println("2. OpenAI (GPT-4o) - Most capable")
 	fmt.Println("3. OpenAI (GPT-4-turbo) - Advanced reasoning")
-	fmt.Println("4. Ollama (qwen2.5:1.5b) - Local, private, fast")
+	fmt.Println("4. Ollama (qwen3:1.7b) - Local, private, fast")
 	fmt.Println("5. Ollama (llama3.2) - Local, private")
 	fmt.Print("\nYour choice (1-5): ")
 
@@ -150,12 +150,12 @@ func selectModel() (string, string) {
 	case "3":
 		return "gpt-4-turbo", "openai"
 	case "4":
-		return "qwen2.5:1.5b", "ollama"
+		return "qwen3:1.7b", "ollama"
 	case "5":
 		return "llama3.2", "ollama"
 	default:
-		fmt.Println("\nInvalid choice, using default: Ollama (qwen2.5:1.5b)")
-		return "qwen2.5:1.5b", "ollama"
+		fmt.Println("\nInvalid choice, using default: Ollama (qwen3:1.7b)")
+		return "qwen3:1.7b", "ollama"
 	}
 }
 
@@ -175,10 +175,32 @@ func handleCommand(cmd string, chatbot *agent.Builder) bool {
 	switch cmd {
 	case "/help":
 		fmt.Println("\n📚 Available Commands:")
-		fmt.Println("  /help   - Show this help message")
-		fmt.Println("  /clear  - Clear cache")
-		fmt.Println("  /stats  - Show cache statistics")
-		fmt.Println("  /exit   - Exit the chatbot\n")
+		fmt.Println("  /help     - Show this help message")
+		fmt.Println("  /history  - Show conversation history")
+		fmt.Println("  /clear    - Clear cache")
+		fmt.Println("  /stats    - Show cache statistics")
+		fmt.Println("  /exit     - Exit the chatbot\n")
+		return false
+
+	case "/history":
+		history := chatbot.GetHistory()
+		fmt.Printf("\n📜 Conversation History (%d messages):\n", len(history))
+		if len(history) == 0 {
+			fmt.Println("  (empty)\n")
+		} else {
+			for i, msg := range history {
+				role := "User"
+				if msg.Role == "assistant" {
+					role = "AI"
+				}
+				content := msg.Content
+				if len(content) > 100 {
+					content = content[:100] + "..."
+				}
+				fmt.Printf("  %d. [%s] %s\n", i+1, role, content)
+			}
+			fmt.Println()
+		}
 		return false
 
 	case "/clear":
