@@ -50,5 +50,3 @@ func logWarn(ctx context.Context, msg string, fields map[string]interface{}) {
 func logError(ctx context.Context, msg string, fields map[string]interface{}) {
 	globalLogFunc("ERROR", msg, fields)
 }
-
-

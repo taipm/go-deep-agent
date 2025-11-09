@@ -137,8 +137,8 @@ func makeHTTPRequest(method, url, headersJSON, body string, timeout time.Duratio
 			req.Header.Set(key, value)
 		}
 		logDebug(ctx, "Custom headers set", map[string]interface{}{
-			"tool":          "http_request",
-			"header_count":  len(headers),
+			"tool":         "http_request",
+			"header_count": len(headers),
 		})
 	}
 
@@ -163,11 +163,11 @@ func makeHTTPRequest(method, url, headersJSON, body string, timeout time.Duratio
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logError(ctx, "Failed to read response body", map[string]interface{}{
-			"tool":     "http_request",
-			"method":   method,
-			"url":      url,
-			"status":   resp.StatusCode,
-			"error":    err.Error(),
+			"tool":   "http_request",
+			"method": method,
+			"url":    url,
+			"status": resp.StatusCode,
+			"error":  err.Error(),
 		})
 		return "", fmt.Errorf("failed to read response: %w", err)
 	}

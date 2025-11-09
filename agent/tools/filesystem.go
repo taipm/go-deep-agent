@@ -126,7 +126,7 @@ func sanitizePath(path string) (string, error) {
 // readFile reads the contents of a file
 func readFile(path string) (string, error) {
 	ctx := getContext()
-	
+
 	logInfo(ctx, "Reading file", map[string]interface{}{
 		"tool": "filesystem",
 		"path": path,
@@ -154,7 +154,7 @@ func readFile(path string) (string, error) {
 // writeFile writes content to a file (overwrites if exists)
 func writeFile(path string, content string) (string, error) {
 	ctx := getContext()
-	
+
 	logInfo(ctx, "Writing file", map[string]interface{}{
 		"tool":  "filesystem",
 		"path":  path,
@@ -193,7 +193,7 @@ func writeFile(path string, content string) (string, error) {
 // appendFile appends content to a file
 func appendFile(path string, content string) (string, error) {
 	ctx := getContext()
-	
+
 	logInfo(ctx, "Appending to file", map[string]interface{}{
 		"tool":  "filesystem",
 		"path":  path,
@@ -234,7 +234,7 @@ func appendFile(path string, content string) (string, error) {
 // deleteFile deletes a file
 func deleteFile(path string) (string, error) {
 	ctx := getContext()
-	
+
 	logWarn(ctx, "Deleting file", map[string]interface{}{
 		"tool": "filesystem",
 		"path": path,

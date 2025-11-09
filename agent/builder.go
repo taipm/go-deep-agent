@@ -10,13 +10,13 @@ import (
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/shared"
 	"github.com/openai/openai-go/v3/shared/constant"
+	"github.com/taipm/go-deep-agent/agent/memory"
 )
 
 // Link to tools.SetLogFunc using go:linkname to avoid import cycle
 //
 //go:linkname toolsSetLogFunc github.com/taipm/go-deep-agent/agent/tools.SetLogFunc
 func toolsSetLogFunc(fn func(level, msg string, fields map[string]interface{}))
-
 
 // Builder provides a fluent API for building and executing LLM requests.
 // It supports method chaining for a natural, readable API.
@@ -99,6 +99,10 @@ type Builder struct {
 	// Logging
 	logger Logger // Logger for observability (default: NoopLogger)
 
+	// Memory (Hierarchical memory system)
+	memory        *memory.Memory // Hierarchical memory system (default: enabled)
+	memoryEnabled bool           // Whether memory system is enabled
+
 	// OpenAI client (lazy initialized)
 	client *openai.Client
 
@@ -115,10 +119,12 @@ type Builder struct {
 //	    WithAPIKey(apiKey)
 func New(provider Provider, model string) *Builder {
 	return &Builder{
-		provider:   provider,
-		model:      model,
-		autoMemory: false, // Opt-in for auto-memory
-		messages:   []Message{},
+		provider:      provider,
+		model:         model,
+		autoMemory:    false, // Opt-in for auto-memory
+		messages:      []Message{},
+		memory:        memory.New(), // Auto-enable hierarchical memory
+		memoryEnabled: true,
 	}
 }
 
@@ -130,11 +136,13 @@ func New(provider Provider, model string) *Builder {
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey)
 func NewOpenAI(model, apiKey string) *Builder {
 	return &Builder{
-		provider:   ProviderOpenAI,
-		model:      model,
-		apiKey:     apiKey,
-		autoMemory: false,
-		messages:   []Message{},
+		provider:      ProviderOpenAI,
+		model:         model,
+		apiKey:        apiKey,
+		autoMemory:    false,
+		messages:      []Message{},
+		memory:        memory.New(),
+		memoryEnabled: true,
 	}
 }
 
@@ -146,11 +154,13 @@ func NewOpenAI(model, apiKey string) *Builder {
 //	builder := agent.NewOllama("qwen2.5:7b")
 func NewOllama(model string) *Builder {
 	return &Builder{
-		provider:   ProviderOllama,
-		model:      model,
-		baseURL:    "http://localhost:11434/v1",
-		autoMemory: false,
-		messages:   []Message{},
+		provider:      ProviderOllama,
+		model:         model,
+		baseURL:       "http://localhost:11434/v1",
+		autoMemory:    false,
+		messages:      []Message{},
+		memory:        memory.New(),
+		memoryEnabled: true,
 	}
 }
 
@@ -203,6 +213,44 @@ func (b *Builder) WithSystem(prompt string) *Builder {
 func (b *Builder) WithMemory() *Builder {
 	b.autoMemory = true
 	return b
+}
+
+// WithHierarchicalMemory enables hierarchical memory system with custom configuration.
+// By default, memory is already enabled with default config.
+//
+// Example:
+//
+//	config := memory.DefaultMemoryConfig()
+//	config.WorkingCapacity = 200
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithHierarchicalMemory(config)
+func (b *Builder) WithHierarchicalMemory(config memory.MemoryConfig) *Builder {
+	b.memory = memory.NewWithConfig(config)
+	b.memoryEnabled = true
+	return b
+}
+
+// DisableMemory disables the hierarchical memory system.
+//
+// Example:
+//
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    DisableMemory() // Use simple FIFO like v0.5.6
+func (b *Builder) DisableMemory() *Builder {
+	b.memoryEnabled = false
+	return b
+}
+
+// GetMemory returns the current memory system instance.
+// Useful for advanced memory operations or inspection.
+//
+// Example:
+//
+//	mem := builder.GetMemory()
+//	stats := mem.Stats(ctx)
+//	fmt.Printf("Total messages: %d\n", stats.TotalMessages)
+func (b *Builder) GetMemory() *memory.Memory {
+	return b.memory
 }
 
 // WithMessages sets the conversation history directly.
@@ -758,7 +806,46 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 		F("total_tokens", b.lastUsage.TotalTokens),
 		F("response_length", len(result)))
 
-	// Auto-memory: store this conversation turn
+	// Hierarchical memory: store messages in memory system
+	if b.memoryEnabled && b.memory != nil {
+		memStart := time.Now()
+
+		// Store user message
+		userMsg := memory.Message{
+			Role:      "user",
+			Content:   message,
+			Timestamp: time.Now(),
+			Metadata: map[string]interface{}{
+				"model":      b.model,
+				"has_images": len(b.pendingImages) > 0,
+				"has_rag":    b.ragEnabled,
+			},
+		}
+		if err := b.memory.Add(ctx, userMsg); err != nil {
+			logger.Warn(ctx, "Failed to add user message to memory", F("error", err.Error()))
+		}
+
+		// Store assistant response
+		assistantMsg := memory.Message{
+			Role:      "assistant",
+			Content:   result,
+			Timestamp: time.Now(),
+			Metadata: map[string]interface{}{
+				"prompt_tokens":     b.lastUsage.PromptTokens,
+				"completion_tokens": b.lastUsage.CompletionTokens,
+				"total_tokens":      b.lastUsage.TotalTokens,
+			},
+		}
+		if err := b.memory.Add(ctx, assistantMsg); err != nil {
+			logger.Warn(ctx, "Failed to add assistant message to memory", F("error", err.Error()))
+		}
+
+		memDuration := time.Since(memStart)
+		logger.Debug(ctx, "Messages stored in memory",
+			F("duration_ms", memDuration.Milliseconds()))
+	}
+
+	// Auto-memory: store this conversation turn (legacy FIFO)
 	if b.autoMemory {
 		b.addMessage(User(message))
 		b.addMessage(Assistant(result))
@@ -808,6 +895,33 @@ func (b *Builder) askWithToolExecution(ctx context.Context, message string) (str
 			logger.Info(ctx, "Tool execution completed",
 				F("rounds", round+1),
 				F("response_length", len(result)))
+
+			// Hierarchical memory: store messages in memory system
+			if b.memoryEnabled && b.memory != nil {
+				// Store user message
+				userMsg := memory.Message{
+					Role:      "user",
+					Content:   message,
+					Timestamp: time.Now(),
+					Metadata: map[string]interface{}{
+						"tool_execution": true,
+						"rounds":         round + 1,
+					},
+				}
+				_ = b.memory.Add(ctx, userMsg)
+
+				// Store assistant response
+				assistantMsg := memory.Message{
+					Role:      "assistant",
+					Content:   result,
+					Timestamp: time.Now(),
+					Metadata: map[string]interface{}{
+						"tool_execution": true,
+						"rounds":         round + 1,
+					},
+				}
+				_ = b.memory.Add(ctx, assistantMsg)
+			}
 
 			// Auto-memory: store conversation
 			if b.autoMemory {
@@ -1023,7 +1137,33 @@ func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
 		F("chunks", chunkCount),
 		F("response_length", len(fullContent)))
 
-	// Auto-memory: store conversation
+	// Hierarchical memory: store messages in memory system
+	if b.memoryEnabled && b.memory != nil && fullContent != "" {
+		// Store user message
+		userMsg := memory.Message{
+			Role:      "user",
+			Content:   message,
+			Timestamp: time.Now(),
+			Metadata: map[string]interface{}{
+				"streaming": true,
+			},
+		}
+		_ = b.memory.Add(ctx, userMsg)
+
+		// Store assistant response
+		assistantMsg := memory.Message{
+			Role:      "assistant",
+			Content:   fullContent,
+			Timestamp: time.Now(),
+			Metadata: map[string]interface{}{
+				"streaming": true,
+				"chunks":    chunkCount,
+			},
+		}
+		_ = b.memory.Add(ctx, assistantMsg)
+	}
+
+	// Auto-memory: store conversation (legacy FIFO)
 	if b.autoMemory && fullContent != "" {
 		b.addMessage(User(message))
 		b.addMessage(Assistant(fullContent))
