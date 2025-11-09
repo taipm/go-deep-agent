@@ -1173,3 +1173,150 @@ func (b *Builder) addMessage(message Message) {
 		b.messages = b.messages[excess:]
 	}
 }
+
+// WithCache sets a custom cache implementation for response caching.
+//
+// Example:
+//
+//	cache := agent.NewMemoryCache(1000, 5*time.Minute)
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithCache(cache)
+func (b *Builder) WithCache(cache Cache) *Builder {
+	b.cache = cache
+	b.cacheEnabled = true
+	return b
+}
+
+// WithMemoryCache enables in-memory caching with LRU eviction.
+//
+// Parameters:
+//   - maxSize: Maximum number of cached responses (default: 1000)
+//   - defaultTTL: Default time-to-live for cache entries (default: 5 minutes)
+//
+// Example:
+//
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithMemoryCache(500, 10*time.Minute)
+func (b *Builder) WithMemoryCache(maxSize int, defaultTTL time.Duration) *Builder {
+	b.cache = NewMemoryCache(maxSize, defaultTTL)
+	b.cacheEnabled = true
+	return b
+}
+
+// WithRedisCache enables Redis-based caching with simple configuration.
+//
+// Parameters:
+//   - addr: Redis server address (e.g., "localhost:6379")
+//   - password: Redis password (use "" if no password)
+//   - db: Redis database number (0-15)
+//
+// Example:
+//
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithRedisCache("localhost:6379", "", 0)
+func (b *Builder) WithRedisCache(addr, password string, db int) *Builder {
+	cache, err := NewRedisCache(addr, password, db, 5*time.Minute)
+	if err != nil {
+		// Log error but don't fail - fall back to no caching
+		return b
+	}
+	b.cache = cache
+	b.cacheEnabled = true
+	return b
+}
+
+// WithRedisCacheOptions enables Redis-based caching with advanced configuration.
+//
+// Example:
+//
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithRedisCacheOptions(&agent.RedisCacheOptions{
+//	        Addrs:      []string{"localhost:6379"},
+//	        Password:   "",
+//	        DB:         0,
+//	        PoolSize:   10,
+//	        KeyPrefix:  "my-app",
+//	        DefaultTTL: 10 * time.Minute,
+//	    })
+func (b *Builder) WithRedisCacheOptions(opts *RedisCacheOptions) *Builder {
+	cache, err := NewRedisCacheWithOptions(opts)
+	if err != nil {
+		// Log error but don't fail - fall back to no caching
+		return b
+	}
+	b.cache = cache
+	b.cacheEnabled = true
+	return b
+}
+
+// WithCacheTTL sets the TTL for the next cached response.
+// If not set, the cache's default TTL is used.
+//
+// Example:
+//
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithMemoryCache(1000, 5*time.Minute).
+//	    WithCacheTTL(1*time.Hour)
+func (b *Builder) WithCacheTTL(ttl time.Duration) *Builder {
+	b.cacheTTL = ttl
+	return b
+}
+
+// DisableCache disables caching for this builder.
+//
+// Example:
+//
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithMemoryCache(1000, 5*time.Minute).
+//	    DisableCache() // Temporarily disable
+func (b *Builder) DisableCache() *Builder {
+	b.cacheEnabled = false
+	return b
+}
+
+// EnableCache enables caching for this builder (if cache is set).
+//
+// Example:
+//
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithMemoryCache(1000, 5*time.Minute).
+//	    DisableCache().
+//	    EnableCache() // Re-enable
+func (b *Builder) EnableCache() *Builder {
+	if b.cache != nil {
+		b.cacheEnabled = true
+	}
+	return b
+}
+
+// GetCacheStats returns cache statistics if caching is enabled.
+//
+// Example:
+//
+//	stats := builder.GetCacheStats()
+//	fmt.Printf("Hits: %d, Misses: %d, Hit Rate: %.2f%%\n",
+//	    stats.Hits, stats.Misses,
+//	    float64(stats.Hits)/(float64(stats.Hits+stats.Misses))*100)
+func (b *Builder) GetCacheStats() CacheStats {
+	if b.cache != nil {
+		return b.cache.Stats()
+	}
+	return CacheStats{}
+}
+
+// ClearCache clears all cached responses.
+//
+// Example:
+//
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithMemoryCache(1000, 5*time.Minute)
+//
+//	// ... use builder ...
+//
+//	builder.ClearCache(ctx) // Clear all cached responses
+func (b *Builder) ClearCache(ctx context.Context) error {
+	if b.cache != nil {
+		return b.cache.Clear(ctx)
+	}
+	return nil
+}
