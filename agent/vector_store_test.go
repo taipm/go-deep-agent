@@ -10,8 +10,8 @@ import (
 func TestVectorDocumentCreation(t *testing.T) {
 	now := time.Now()
 	doc := &VectorDocument{
-		ID:      "test-1",
-		Content: "This is a test document",
+		ID:        "test-1",
+		Content:   "This is a test document",
 		Embedding: []float32{0.1, 0.2, 0.3},
 		Metadata: map[string]interface{}{
 			"source": "test",
@@ -170,7 +170,7 @@ func TestSearchResult(t *testing.T) {
 
 // TestVectorStoreError tests error handling
 func TestVectorStoreError(t *testing.T) {
-	err := NewVectorStoreError("Search", "test-collection", 
+	err := NewVectorStoreError("Search", "test-collection",
 		&HTTPError{StatusCode: 404, Message: "Collection not found"})
 
 	if err == nil {
@@ -225,7 +225,7 @@ func NewMockVectorStore() *MockVectorStore {
 
 func (m *MockVectorStore) CreateCollection(ctx context.Context, name string, config *CollectionConfig) error {
 	if _, exists := m.collections[name]; exists {
-		return NewVectorStoreError("CreateCollection", name, 
+		return NewVectorStoreError("CreateCollection", name,
 			&HTTPError{StatusCode: 409, Message: "Collection already exists"})
 	}
 	m.collections[name] = make([]*VectorDocument, 0)
@@ -234,7 +234,7 @@ func (m *MockVectorStore) CreateCollection(ctx context.Context, name string, con
 
 func (m *MockVectorStore) DeleteCollection(ctx context.Context, name string) error {
 	if _, exists := m.collections[name]; !exists {
-		return NewVectorStoreError("DeleteCollection", name, 
+		return NewVectorStoreError("DeleteCollection", name,
 			&HTTPError{StatusCode: 404, Message: "Collection not found"})
 	}
 	delete(m.collections, name)
@@ -257,7 +257,7 @@ func (m *MockVectorStore) CollectionExists(ctx context.Context, name string) (bo
 func (m *MockVectorStore) Add(ctx context.Context, collection string, docs []*VectorDocument) ([]string, error) {
 	_, exists := m.collections[collection]
 	if !exists {
-		return nil, NewVectorStoreError("Add", collection, 
+		return nil, NewVectorStoreError("Add", collection,
 			&HTTPError{StatusCode: 404, Message: "Collection not found"})
 	}
 
@@ -276,7 +276,7 @@ func (m *MockVectorStore) Add(ctx context.Context, collection string, docs []*Ve
 func (m *MockVectorStore) Delete(ctx context.Context, collection string, ids []string) error {
 	coll, exists := m.collections[collection]
 	if !exists {
-		return NewVectorStoreError("Delete", collection, 
+		return NewVectorStoreError("Delete", collection,
 			&HTTPError{StatusCode: 404, Message: "Collection not found"})
 	}
 
@@ -302,7 +302,7 @@ func (m *MockVectorStore) Delete(ctx context.Context, collection string, ids []s
 func (m *MockVectorStore) Get(ctx context.Context, collection string, ids []string) ([]*VectorDocument, error) {
 	coll, exists := m.collections[collection]
 	if !exists {
-		return nil, NewVectorStoreError("Get", collection, 
+		return nil, NewVectorStoreError("Get", collection,
 			&HTTPError{StatusCode: 404, Message: "Collection not found"})
 	}
 
@@ -327,7 +327,7 @@ func (m *MockVectorStore) Update(ctx context.Context, collection string, docs []
 func (m *MockVectorStore) Search(ctx context.Context, req *SearchRequest) ([]*SearchResult, error) {
 	coll, exists := m.collections[req.Collection]
 	if !exists {
-		return nil, NewVectorStoreError("Search", req.Collection, 
+		return nil, NewVectorStoreError("Search", req.Collection,
 			&HTTPError{StatusCode: 404, Message: "Collection not found"})
 	}
 
@@ -373,7 +373,7 @@ func (m *MockVectorStore) SearchByText(ctx context.Context, req *TextSearchReque
 func (m *MockVectorStore) Count(ctx context.Context, collection string) (int64, error) {
 	coll, exists := m.collections[collection]
 	if !exists {
-		return 0, NewVectorStoreError("Count", collection, 
+		return 0, NewVectorStoreError("Count", collection,
 			&HTTPError{StatusCode: 404, Message: "Collection not found"})
 	}
 	return int64(len(coll)), nil
@@ -381,7 +381,7 @@ func (m *MockVectorStore) Count(ctx context.Context, collection string) (int64, 
 
 func (m *MockVectorStore) Clear(ctx context.Context, collection string) error {
 	if _, exists := m.collections[collection]; !exists {
-		return NewVectorStoreError("Clear", collection, 
+		return NewVectorStoreError("Clear", collection,
 			&HTTPError{StatusCode: 404, Message: "Collection not found"})
 	}
 	m.collections[collection] = make([]*VectorDocument, 0)

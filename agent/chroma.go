@@ -67,10 +67,10 @@ type chromaAddRequest struct {
 
 // chromaQueryRequest represents the request structure for querying
 type chromaQueryRequest struct {
-	QueryEmbeddings [][]float32              `json:"query_embeddings"`
-	NResults        int                      `json:"n_results"`
-	Where           map[string]interface{}   `json:"where,omitempty"`
-	Include         []string                 `json:"include,omitempty"`
+	QueryEmbeddings [][]float32            `json:"query_embeddings"`
+	NResults        int                    `json:"n_results"`
+	Where           map[string]interface{} `json:"where,omitempty"`
+	Include         []string               `json:"include,omitempty"`
 }
 
 // chromaQueryResponse represents the response from a query
@@ -85,7 +85,7 @@ type chromaQueryResponse struct {
 // CreateCollection creates a new ChromaDB collection
 func (c *ChromaStore) CreateCollection(ctx context.Context, name string, config *CollectionConfig) error {
 	metadata := make(map[string]interface{})
-	
+
 	if config != nil {
 		if config.Description != "" {
 			metadata["description"] = config.Description
@@ -183,12 +183,12 @@ func (c *ChromaStore) Add(ctx context.Context, collection string, docs []*Vector
 		// Generate embedding if not provided
 		if doc.Embedding == nil {
 			if c.embedding == nil {
-				return nil, NewVectorStoreError("Add", collection, 
+				return nil, NewVectorStoreError("Add", collection,
 					fmt.Errorf("no embedding provided and no embedding provider configured"))
 			}
 			emb, err := c.embedding.Embed(ctx, doc.Content)
 			if err != nil {
-				return nil, NewVectorStoreError("Add", collection, 
+				return nil, NewVectorStoreError("Add", collection,
 					fmt.Errorf("failed to generate embedding: %w", err))
 			}
 			doc.Embedding = emb
@@ -271,7 +271,7 @@ func (c *ChromaStore) Get(ctx context.Context, collection string, ids []string) 
 		}
 		if i < len(result.Metadatas) {
 			doc.Metadata = result.Metadatas[i]
-			
+
 			// Parse timestamps
 			if createdAt, ok := doc.Metadata["created_at"].(string); ok {
 				if t, err := time.Parse(time.RFC3339, createdAt); err == nil {
@@ -381,14 +381,14 @@ func (c *ChromaStore) Search(ctx context.Context, req *SearchRequest) ([]*Search
 // SearchByText generates embedding for text and performs search
 func (c *ChromaStore) SearchByText(ctx context.Context, req *TextSearchRequest) ([]*SearchResult, error) {
 	if c.embedding == nil {
-		return nil, NewVectorStoreError("SearchByText", req.Collection, 
+		return nil, NewVectorStoreError("SearchByText", req.Collection,
 			fmt.Errorf("no embedding provider configured"))
 	}
 
 	// Generate embedding for query text
 	queryEmb, err := c.embedding.Embed(ctx, req.Query)
 	if err != nil {
-		return nil, NewVectorStoreError("SearchByText", req.Collection, 
+		return nil, NewVectorStoreError("SearchByText", req.Collection,
 			fmt.Errorf("failed to generate query embedding: %w", err))
 	}
 

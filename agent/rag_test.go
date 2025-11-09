@@ -219,6 +219,7 @@ func TestTokenize(t *testing.T) {
 }
 
 func TestRetrieveRelevantDocs(t *testing.T) {
+	ctx := context.Background()
 	docs := []string{
 		"Go is a programming language designed for building reliable and efficient software.",
 		"Python is widely used for data science and machine learning applications.",
@@ -231,7 +232,7 @@ func TestRetrieveRelevantDocs(t *testing.T) {
 		WithRAGTopK(2)
 
 	// Retrieve docs relevant to "Go programming"
-	retrieved, err := agent.retrieveRelevantDocs("Go programming language")
+	retrieved, err := agent.retrieveRelevantDocs(ctx, "Go programming language")
 
 	if err != nil {
 		t.Fatalf("Failed to retrieve docs: %v", err)
@@ -314,7 +315,8 @@ func TestWithRAGRetriever(t *testing.T) {
 	}
 
 	// Test retrieval
-	docs, err := agent.retrieveRelevantDocs("test query")
+	ctx := context.Background()
+	docs, err := agent.retrieveRelevantDocs(ctx, "test query")
 	if err != nil {
 		t.Fatalf("Retrieval failed: %v", err)
 	}
@@ -374,6 +376,7 @@ func TestGetLastRetrievedDocs(t *testing.T) {
 }
 
 func TestRAGWithMinScore(t *testing.T) {
+	ctx := context.Background()
 	docs := []string{
 		"Go programming language is great",
 		"Python is also good",
@@ -385,7 +388,7 @@ func TestRAGWithMinScore(t *testing.T) {
 
 	agent.ragConfig.MinScore = 0.3 // Set minimum relevance threshold
 
-	retrieved, err := agent.retrieveRelevantDocs("Go programming")
+	retrieved, err := agent.retrieveRelevantDocs(ctx, "Go programming")
 	if err != nil {
 		t.Fatalf("Retrieval failed: %v", err)
 	}

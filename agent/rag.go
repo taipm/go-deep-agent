@@ -214,7 +214,7 @@ func (b *Builder) retrieveRelevantDocs(ctx context.Context, query string) ([]Doc
 
 	// If vector store is configured, use vector search
 	if b.vectorStore != nil && b.embeddingProvider != nil {
-		logger.Debug(ctx, "Using vector store for retrieval", 
+		logger.Debug(ctx, "Using vector store for retrieval",
 			F("provider", fmt.Sprintf("%T", b.embeddingProvider)),
 			F("store", fmt.Sprintf("%T", b.vectorStore)))
 		return b.retrieveFromVector(ctx, query)
@@ -263,7 +263,7 @@ func (b *Builder) retrieveRelevantDocs(ctx context.Context, query string) ([]Doc
 		}
 	}
 
-	logger.Debug(ctx, "Documents chunked", 
+	logger.Debug(ctx, "Documents chunked",
 		F("total_chunks", len(allChunks)),
 		F("chunk_size", config.ChunkSize),
 		F("chunk_overlap", config.ChunkOverlap))
@@ -286,7 +286,7 @@ func (b *Builder) retrieveRelevantDocs(ctx context.Context, query string) ([]Doc
 		}
 	}
 
-	logger.Info(ctx, "RAG retrieval completed", 
+	logger.Info(ctx, "RAG retrieval completed",
 		F("results", len(results)),
 		F("top_k", config.TopK),
 		F("min_score", config.MinScore))
@@ -469,7 +469,7 @@ func (b *Builder) AddVectorDocuments(ctx context.Context, documents ...*VectorDo
 // retrieveFromVector performs semantic search using vector database
 func (b *Builder) retrieveFromVector(ctx context.Context, query string) ([]Document, error) {
 	logger := b.getLogger()
-	logger.Debug(ctx, "Vector search started", 
+	logger.Debug(ctx, "Vector search started",
 		F("collection", b.vectorCollection),
 		F("query_length", len(query)))
 
@@ -494,7 +494,7 @@ func (b *Builder) retrieveFromVector(ctx context.Context, query string) ([]Docum
 		IncludeMetadata: true,
 	}
 
-	logger.Debug(ctx, "Executing vector search", 
+	logger.Debug(ctx, "Executing vector search",
 		F("top_k", config.TopK),
 		F("min_score", config.MinScore))
 
@@ -504,7 +504,7 @@ func (b *Builder) retrieveFromVector(ctx context.Context, query string) ([]Docum
 		return nil, fmt.Errorf("vector search failed: %w", err)
 	}
 
-	logger.Info(ctx, "Vector search completed", 
+	logger.Info(ctx, "Vector search completed",
 		F("results", len(results)),
 		F("collection", b.vectorCollection))
 

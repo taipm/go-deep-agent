@@ -205,8 +205,8 @@ func main() {
 
 	for _, result := range results {
 		fmt.Printf("  %d. [Score: %.4f] %s\n", result.Rank, result.Score, result.Document.ID)
-		fmt.Printf("     Category: %v, Level: %v\n", 
-			result.Document.Metadata["category"], 
+		fmt.Printf("     Category: %v, Level: %v\n",
+			result.Document.Metadata["category"],
 			result.Document.Metadata["level"])
 		fmt.Println()
 	}

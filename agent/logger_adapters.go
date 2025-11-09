@@ -11,13 +11,13 @@ import (
 // Example:
 //
 //	import "log/slog"
-//	
+//
 //	// Create slog logger with JSON handler
 //	handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 //	    Level: slog.LevelDebug,
 //	})
 //	slogLogger := slog.New(handler)
-//	
+//
 //	// Use with builder
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithLogger(agent.NewSlogAdapter(slogLogger))
