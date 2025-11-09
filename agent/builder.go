@@ -89,6 +89,9 @@ type Builder struct {
 	cacheEnabled bool          // Whether caching is enabled
 	cacheTTL     time.Duration // Cache TTL for next request
 
+	// Logging
+	logger Logger // Logger for observability (default: NoopLogger)
+
 	// OpenAI client (lazy initialized)
 	client *openai.Client
 
@@ -1319,4 +1322,89 @@ func (b *Builder) ClearCache(ctx context.Context) error {
 		return b.cache.Clear(ctx)
 	}
 	return nil
+}
+
+// ===== Logging Methods =====
+
+// WithLogger sets a custom logger for observability and debugging.
+// By default, a NoopLogger is used (no logging overhead).
+//
+// The logger can be any implementation of the Logger interface, making it
+// compatible with popular logging libraries (slog, zap, logrus, etc.)
+//
+// Example with custom logger:
+//
+//	type MyLogger struct{}
+//	func (l *MyLogger) Debug(ctx context.Context, msg string, fields ...Field) { ... }
+//	func (l *MyLogger) Info(ctx context.Context, msg string, fields ...Field) { ... }
+//	func (l *MyLogger) Warn(ctx context.Context, msg string, fields ...Field) { ... }
+//	func (l *MyLogger) Error(ctx context.Context, msg string, fields ...Field) { ... }
+//
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithLogger(&MyLogger{})
+//
+// Example with slog (Go 1.21+):
+//
+//	import "log/slog"
+//	logger := slog.Default()
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithLogger(agent.NewSlogAdapter(logger))
+func (b *Builder) WithLogger(logger Logger) *Builder {
+	b.logger = logger
+	return b
+}
+
+// WithDebugLogging enables debug-level logging using the standard library logger.
+// This is useful for development and troubleshooting.
+//
+// Debug logging includes:
+//   - Request details (model, message length, cache status)
+//   - Cache hits/misses with keys
+//   - Tool execution details
+//   - RAG retrieval information
+//   - Retry attempts and delays
+//
+// Example:
+//
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithDebugLogging()
+//
+//	// Output example:
+//	// [2025-01-15 10:30:45.123] DEBUG: Starting request | model=gpt-4o-mini message_length=50
+//	// [2025-01-15 10:30:45.124] DEBUG: Cache miss | cache_key=abc123
+//	// [2025-01-15 10:30:46.456] INFO: Request completed | duration_ms=1332 tokens_prompt=12
+func (b *Builder) WithDebugLogging() *Builder {
+	b.logger = NewStdLogger(LogLevelDebug)
+	return b
+}
+
+// WithInfoLogging enables info-level logging using the standard library logger.
+// This is recommended for production use.
+//
+// Info logging includes:
+//   - Request completion with duration and token usage
+//   - Cache hits (but not detailed cache misses)
+//   - Tool execution results
+//   - Warnings and errors
+//
+// Example:
+//
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithInfoLogging()
+//
+//	// Output example:
+//	// [2025-01-15 10:30:46.456] INFO: Request completed | duration_ms=1332 tokens_prompt=12 tokens_completion=45
+//	// [2025-01-15 10:30:47.789] INFO: Cache hit | cache_key=abc123
+func (b *Builder) WithInfoLogging() *Builder {
+	b.logger = NewStdLogger(LogLevelInfo)
+	return b
+}
+
+// getLogger returns the configured logger or NoopLogger if none is set.
+// This ensures zero overhead when logging is not enabled.
+func (b *Builder) getLogger() Logger {
+	if b.logger == nil {
+		return &NoopLogger{}
+	}
+	return b.logger
 }
