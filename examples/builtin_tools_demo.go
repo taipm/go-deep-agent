@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	fmt.Println("=== Built-in Tools Demo (v0.5.3) ===\n")
+	fmt.Println("=== Built-in Tools Demo (v0.5.4) ===\n")
 
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
@@ -22,6 +22,7 @@ func main() {
 	// exampleFileSystemTool(apiKey)
 	// exampleHTTPRequestTool(apiKey)
 	// exampleDateTimeTool(apiKey)
+	// exampleMathTool(apiKey)
 	exampleCombinedTools(apiKey)
 }
 
@@ -109,4 +110,33 @@ func exampleCombinedTools(apiKey string) {
 	}
 	fmt.Printf("Response: %s\n\n", response)
 	os.Remove("api.json")
+}
+
+func exampleMathTool(apiKey string) {
+	fmt.Println("--- Example: Math Tool ---")
+	ctx := context.Background()
+
+	mathTool := tools.NewMathTool()
+	ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
+		WithTool(mathTool).
+		WithAutoExecute(true)
+
+	queries := []string{
+		"Evaluate: 2 * (3 + 4) + sqrt(16)",
+		"Calculate the mean of numbers: 10, 20, 30, 40, 50",
+		"Solve equation: x+15=42",
+		"Convert 100 km to meters",
+		"Generate a random integer between 1 and 100",
+	}
+
+	for _, query := range queries {
+		fmt.Printf("\nQuery: %s\n", query)
+		response, err := ai.Ask(ctx, query)
+		if err != nil {
+			log.Printf("Error: %v", err)
+			continue
+		}
+		fmt.Printf("Response: %s\n", response)
+	}
+	fmt.Println()
 }

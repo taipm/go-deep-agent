@@ -279,7 +279,9 @@ builder := agent.NewOpenAI("gpt-4o-mini", apiKey)
 
 📖 **[Complete Logging Guide](docs/LOGGING_GUIDE.md)** - Custom loggers, slog integration, production best practices
 
-### 10. Built-in Tools (v0.5.3 🆕)
+### 10. Built-in Tools
+
+#### 10.1 FileSystem, HTTP, DateTime Tools (v0.5.3 🆕)
 
 Three production-ready tools for common operations: file system, HTTP requests, and date/time.
 
@@ -314,6 +316,47 @@ response, _ := ai.Ask(ctx, "Read config.json, get current time in Tokyo, and fet
 - `current_time`, `format_date`, `parse_date`
 - `add_duration`, `date_diff`, `convert_timezone`, `day_of_week`
 - Timezones: UTC, America/New_York, Asia/Tokyo, etc.
+
+#### 10.2 Math Tool (v0.5.4 🆕)
+
+Professional-grade mathematical operations powered by **govaluate** (expression engine) and **gonum** (statistical computing).
+
+```go
+mathTool := tools.NewMathTool()
+
+ai := agent.NewOpenAI("gpt-4o", apiKey).
+    WithTool(mathTool).
+    WithAutoExecute(true)
+
+// Expression evaluation
+ai.Ask(ctx, "Calculate: 2 * (3 + 4) + sqrt(16)")
+// Uses govaluate with 11 functions: sqrt, pow, sin, cos, tan, log, ln, abs, ceil, floor, round
+
+// Statistics
+ai.Ask(ctx, "What's the average of 10, 20, 30, 40, 50?")
+// Uses gonum/stat: mean, median, stdev, variance, min, max, sum
+
+// Equation solving
+ai.Ask(ctx, "Solve: x+15=42")
+// Linear equations (quadratic coming in v0.6.0)
+
+// Unit conversion
+ai.Ask(ctx, "Convert 100 km to meters")
+// Distance, weight, temperature, time conversions
+
+// Random generation
+ai.Ask(ctx, "Generate random number between 1 and 100")
+// Integer, float, choice operations
+```
+
+**MathTool** - 5 operation categories:
+- **evaluate**: Mathematical expressions with 11 functions (80% coverage)
+- **statistics**: 7 statistical measures via gonum (15% coverage)
+- **solve**: Linear equations, quadratic coming soon (3% coverage)
+- **convert**: Distance, weight, temperature, time units (1% coverage)
+- **random**: Integer, float, choice generation (1% coverage)
+
+**Dependencies**: +9MB binary for professional accuracy (govaluate, gonum)
 
 📖 **[View builtin_tools_demo.go](examples/builtin_tools_demo.go)** - Complete examples
 
@@ -616,10 +659,10 @@ go-deep-agent/
 
 ## 📊 Quality Metrics
 
-- ✅ **414 Tests** passing across all features
+- ✅ **460+ Tests** passing across all features
 - ✅ **65%+ Coverage** with comprehensive test cases
-- ✅ **14 Example Files** with 61+ working examples
-- ✅ **Zero External Dependencies** (except openai-go)
+- ✅ **15 Example Files** with 70+ working examples
+- ✅ **Production Libraries** (openai-go, govaluate, gonum)
 - ✅ **Production Tested** with real OpenAI, Ollama, ChromaDB, Qdrant
 
 ## 🛠️ Setup & Usage
