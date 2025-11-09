@@ -1,15 +1,304 @@
 # go-deep-agent Development Roadmap
 
-## Current Status: v0.3.0 ✅
+## Current Status: v0.4.0 ✅
 
-**Released**: November 7, 2025  
-**Features**: Multimodal, Tool Calling, Memory, Streaming, Builder API  
-**Test Coverage**: 65.8% (242 tests)  
-**Documentation**: Complete with Wiki
+**Released**: November 9, 2025  
+**Features**: Batch Processing, RAG Support, Response Caching, Multimodal, Tool Calling, Memory, Streaming  
+**Test Coverage**: 65%+ (320+ tests)  
+**Examples**: 44+ working examples  
+**Documentation**: Complete with comprehensive guides
+
+### v0.4.0 Highlights
+
+✅ **Batch Processing API** (commit 3a0ca34)
+- Concurrent request processing (5-100 workers)
+- Progress tracking with callbacks
+- Token usage statistics
+- Automatic retry logic
+- 18 tests, 8 examples
+
+✅ **RAG Support - Core** (commit ab952af)
+- Document chunking with sentence boundaries
+- TF-IDF similarity scoring
+- TopK retrieval with MinScore filtering
+- Custom retriever functions
+- Document metadata tracking
+- 24 tests, 6 examples
+
+✅ **Response Caching** (commit dc9b167)
+- In-memory LRU cache with TTL
+- Cache statistics (hits, misses, evictions)
+- Transparent integration with Ask()
+- ~100x speedup for repeated queries
+- 21 tests, 5 examples
 
 ---
 
-## v0.4.0 - Advanced Features (Target: 2-3 weeks)
+## v0.5.0 - Advanced Integrations (Target: December 2025)
+
+### Priority 1: Advanced RAG - Vector Database Integration (Weeks 1-4)
+
+**Goal**: Production-scale semantic search with 3+ vector databases
+
+**Detailed Plan**: See [docs/ADVANCED_RAG_PLAN.md](docs/ADVANCED_RAG_PLAN.md)
+
+#### Sprint 1 (Week 1-2): Foundation
+- [ ] Design `EmbeddingProvider` interface
+- [ ] Implement `OpenAIEmbedding` (text-embedding-3-small/large)
+- [ ] Implement `OllamaEmbedding` (nomic-embed-text)
+- [ ] Design `VectorStore` interface
+- [ ] Unit tests for embedding providers (15+ tests)
+
+**Deliverables**:
+- `agent/embedding.go` (~300 LOC)
+- `agent/vectorstore.go` (~200 LOC)
+- `agent/embedding_test.go`
+
+#### Sprint 2 (Week 3): Chroma Integration
+- [ ] Implement `ChromaStore` (local, easy setup)
+- [ ] CRUD operations (Add, Search, Delete, Update)
+- [ ] Integration tests with Docker
+- [ ] Example: `examples/rag_vector_chroma.go`
+
+**Deliverables**:
+- `agent/vectorstore_chroma.go` (~400 LOC)
+- `agent/vectorstore_chroma_test.go` (20+ tests)
+- Working example with Chroma
+
+**Dependencies**:
+```go
+github.com/amikos-tech/chroma-go v0.1.0
+```
+
+#### Sprint 3 (Week 4): Qdrant Integration
+- [ ] Implement `QdrantStore` (production-ready)
+- [ ] Hybrid search support (keyword + semantic)
+- [ ] Performance optimization
+- [ ] Integration tests with Docker
+- [ ] Example: `examples/rag_vector_qdrant.go`
+
+**Deliverables**:
+- `agent/vectorstore_qdrant.go` (~400 LOC)
+- `agent/vectorstore_qdrant_test.go` (20+ tests)
+- Hybrid search example
+
+**Dependencies**:
+```go
+github.com/qdrant/go-client v1.7.0
+```
+
+#### Sprint 4 (Week 5): Advanced Features
+- [ ] Implement hybrid search (TF-IDF + embeddings)
+- [ ] Add reranking logic (cross-encoder)
+- [ ] Embedding caching
+- [ ] Documentation: `docs/RAG_VECTOR_DATABASES.md`
+- [ ] Performance benchmarks
+
+**API Design**:
+```go
+// Vector-based RAG
+builder.WithVectorRAG(
+    agent.NewOpenAIEmbedding("text-embedding-3-small", apiKey),
+    agent.NewChromaStore("http://localhost:8000"),
+)
+
+// Hybrid RAG (keyword + semantic)
+builder.WithHybridRAG(
+    agent.NewOpenAIEmbedding("text-embedding-3-small", apiKey),
+    agent.NewQdrantStore("localhost:6333"),
+    &agent.HybridRAGConfig{
+        SemanticWeight: 0.7,
+        KeywordWeight:  0.3,
+        RerankTopK:     10,
+    },
+)
+```
+
+**Success Metrics**:
+- ✅ Support 3+ vector databases (Chroma, Qdrant, Weaviate)
+- ✅ Semantic search with cosine similarity
+- ✅ Hybrid search (keyword + vector)
+- ✅ 80+ tests, all passing
+- ✅ 5+ working examples
+- ✅ Vector search <50ms for 10K docs (Chroma)
+- ✅ Vector search <20ms for 100K docs (Qdrant)
+
+---
+
+### Priority 2: Redis Cache Backend (Weeks 5-6)
+
+**Goal**: Distributed, persistent response caching for production
+
+**Detailed Plan**: See [docs/REDIS_CACHE_PLAN.md](docs/REDIS_CACHE_PLAN.md)
+
+#### Sprint 1 (Week 5): Foundation
+- [ ] Design `RedisCache` struct
+- [ ] Implement basic Get/Set/Delete
+- [ ] Connection pooling
+- [ ] Unit tests with miniredis (15+ tests)
+
+**Deliverables**:
+- `agent/cache_redis.go` (~400 LOC)
+- `agent/cache_redis_test.go`
+
+**Dependencies**:
+```go
+github.com/redis/go-redis/v9 v9.3.0
+github.com/alicebob/miniredis/v2 v2.31.0 // Testing
+```
+
+#### Sprint 2 (Week 6): Production Features
+- [ ] Redis Cluster support
+- [ ] Redis Sentinel support
+- [ ] Batch operations (MGet/MSet)
+- [ ] Pattern-based deletion
+- [ ] Health checks and auto-reconnect
+- [ ] Integration tests with Docker
+- [ ] Examples: `examples/cache_redis.go`
+
+**API Design**:
+```go
+// Simple Redis cache
+builder.WithRedisCache("localhost:6379", "", 0)
+
+// Redis with options
+builder.WithRedisCacheOptions(&agent.RedisCacheOptions{
+    Addrs:      []string{"localhost:6379"},
+    Password:   "",
+    DB:         0,
+    PoolSize:   10,
+    KeyPrefix:  "go-deep-agent:",
+    DefaultTTL: 10 * time.Minute,
+})
+
+// Redis Cluster
+builder.WithRedisCacheOptions(&agent.RedisCacheOptions{
+    Addrs: []string{
+        "redis-1:6379",
+        "redis-2:6379",
+        "redis-3:6379",
+    },
+})
+```
+
+**Success Metrics**:
+- ✅ Full Cache interface implementation
+- ✅ Support standalone, cluster, sentinel Redis
+- ✅ 30+ tests, all passing
+- ✅ Get <5ms, Set <10ms (local Redis)
+- ✅ Batch: 100 items in <50ms
+- ✅ Auto-reconnect on failure
+- ✅ Graceful fallback to MemoryCache
+
+---
+
+### Priority 3: Audio Support (Weeks 7-8)
+
+**API Design**:
+```go
+// Whisper - Speech to Text
+text, err := agent.NewOpenAI("whisper-1", apiKey).
+    TranscribeAudio("audio.mp3")
+
+// With options
+text, err := agent.NewOpenAI("whisper-1", apiKey).
+    WithLanguage("en").
+    WithPrompt("Technical discussion about Go").
+    TranscribeAudio("audio.mp3")
+
+// TTS - Text to Speech
+audio, err := agent.NewOpenAI("tts-1", apiKey).
+    WithVoice("alloy").
+    WithSpeed(1.2).
+    TextToSpeech("Hello world")
+```
+
+**Implementation**:
+- [ ] New file: `agent/audio.go` (~300 LOC)
+- [ ] New file: `agent/audio_test.go` (20+ tests)
+- [ ] Methods:
+  - `TranscribeAudio(file string) (string, error)`
+  - `TranscribeAudioFromBytes(data []byte) (string, error)`
+  - `TextToSpeech(text string) ([]byte, error)`
+  - `WithVoice(voice string) *Builder`
+  - `WithSpeed(speed float64) *Builder`
+  - `WithLanguage(lang string) *Builder`
+
+---
+
+## v0.6.0 - Multi-Provider & Advanced Features (Target: January 2026)
+
+### 1. Multi-Provider Support
+
+**Supported Providers**:
+- OpenAI (existing)
+- Anthropic Claude
+- Google Gemini
+- Cohere
+- Azure OpenAI
+- Local LLMs (Ollama expanded)
+
+**Unified API Design**:
+```go
+// OpenAI (existing)
+agent := agent.NewOpenAI("gpt-4o-mini", apiKey)
+
+// Anthropic Claude
+agent := agent.NewAnthropic("claude-3-sonnet", apiKey)
+
+// Google Gemini
+agent := agent.NewGemini("gemini-pro", apiKey)
+
+// All use same builder API
+response, err := agent.
+    WithTemperature(0.7).
+    WithMemory().
+    Ask(ctx, "Hello")
+```
+
+**Implementation**:
+- [ ] Refactor: `agent/interface.go` - Common LLM interface
+- [ ] New: `agent/anthropic.go` (~400 LOC)
+- [ ] New: `agent/gemini.go` (~400 LOC)
+- [ ] New: `agent/cohere.go` (~400 LOC)
+- [ ] Provider-specific tests (20+ per provider)
+
+### 2. Advanced Error Handling
+
+**Circuit Breaker**:
+```go
+agent := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithCircuitBreaker(5, 1*time.Minute)
+```
+
+**Rate Limiter**:
+```go
+agent := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithRateLimit(10, 1*time.Minute)
+```
+
+**Fallback Provider**:
+```go
+primary := agent.NewOpenAI("gpt-4o-mini", apiKey1)
+fallback := agent.NewAnthropic("claude-3-haiku", apiKey2)
+
+response, err := primary.
+    WithFallback(fallback).
+    Ask(ctx, "Query")
+```
+
+### 3. Advanced RAG Features (Phase 2)
+
+- [ ] Weaviate integration (GraphQL, multi-modal)
+- [ ] Pinecone integration (serverless, managed)
+- [ ] Semantic reranking with cross-encoders
+- [ ] Multi-query RAG
+- [ ] Contextual compression
+- [ ] Parent-child chunking
+
+---
+
+## v1.0.0 - Enterprise Ready (Target: March 2026)
 
 ### Priority 1: Foundation & Quality
 
