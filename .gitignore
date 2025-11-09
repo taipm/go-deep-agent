@@ -33,3 +33,12 @@ go.work.sum
 # .idea/
 # .vscode/
 mynotes.txt
+
+# Compiled binaries
+cache_redis_example
+chroma_example
+embedding_example
+examples/chatbot_cli
+logger_example
+qdrant_example
+vector_rag_example
