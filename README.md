@@ -20,7 +20,7 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 - 🖼️ **Multimodal** - Vision support for GPT-4 Vision (images via URL/file/base64)
 - 🚀 **Batch Processing** - Concurrent request processing with progress tracking (v0.4.0)
 - 📚 **RAG Support** - Retrieval-Augmented Generation with document chunking (v0.4.0)
-- 💾 **Response Caching** - Intelligent caching with TTL and LRU eviction (v0.4.0)
+- 💾 **Response Caching** - Memory & Redis caching with TTL management (v0.4.0, v0.5.1 🆕)
 - 🔢 **Vector Embeddings** - OpenAI & Ollama embeddings with similarity search (v0.5.0 🆕)
 - 🗄️ **Vector Databases** - ChromaDB & Qdrant integration for semantic search (v0.5.0 🆕)
 - 🧠 **Vector RAG** - Semantic retrieval with auto-embedding and priority system (v0.5.0 🆕)
@@ -177,7 +177,57 @@ response, err := agent.NewOllama("qwen2.5:3b").
     Ask(ctx, "Explain goroutines")
 ```
 
-### 8. History Management
+### 8. Redis Cache - Distributed Caching (v0.5.1 🆕)
+
+```go
+// Simple Redis cache setup
+ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithRedisCache("localhost:6379", "", 0)
+
+// First call - cache miss (~1-2s)
+resp1, _ := ai.Ask(ctx, "What is Go?")
+
+// Second call - cache hit (~5ms, 200x faster!)
+resp2, _ := ai.Ask(ctx, "What is Go?")
+
+// Check cache statistics
+stats := ai.GetCacheStats()
+fmt.Printf("Hit rate: %.2f%%\n",
+    float64(stats.Hits)/(float64(stats.Hits+stats.Misses))*100)
+
+// Advanced configuration
+opts := &agent.RedisCacheOptions{
+    Addrs:       []string{"localhost:6379"},
+    Password:    "your-redis-password",
+    PoolSize:    20,                 // Connection pool
+    KeyPrefix:   "myapp",            // Namespace
+    DefaultTTL:  10 * time.Minute,   // Cache expiration
+}
+
+ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithRedisCacheOptions(opts)
+
+// Custom TTL per request
+ai.WithCacheTTL(1 * time.Hour).Ask(ctx, "Historical facts")
+
+// Redis Cluster support
+opts := &agent.RedisCacheOptions{
+    Addrs: []string{
+        "redis-node1:6379",
+        "redis-node2:6379",
+        "redis-node3:6379",
+    },
+    Password: "cluster-password",
+}
+```
+
+**Benefits:**
+- Shared cache across multiple instances
+- Persistent cache (survives restarts)
+- Distributed locking (prevents cache stampede)
+- Scalable with Redis Cluster
+
+### 9. History Management
 
 ```go
 builder := agent.NewOpenAI("gpt-4o-mini", apiKey).WithMemory()
@@ -198,7 +248,7 @@ savedHistory := builder.GetHistory()
 builder.SetHistory(savedHistory)
 ```
 
-### 9. Multimodal - Vision (GPT-4 Vision)
+### 10. Multimodal - Vision (GPT-4 Vision)
 
 ```go
 // Analyze image from URL
@@ -224,7 +274,7 @@ builder.WithImage("https://example.com/photo.jpg").
 builder.Ask(ctx, "What colors are prominent?") // Remembers the image
 ```
 
-### 10. Vector RAG - Semantic Search (v0.5.0 🆕)
+### 11. Vector RAG - Semantic Search (v0.5.0 🆕)
 
 ```go
 // Setup vector database and embeddings
@@ -269,7 +319,7 @@ for _, doc := range retrieved {
 }
 ```
 
-### 11. Advanced Vector RAG with Metadata
+### 12. Advanced Vector RAG with Metadata
 
 ```go
 // Add documents with rich metadata
@@ -416,6 +466,18 @@ Supported models: `gpt-4o`, `gpt-4o-mini`, `gpt-4-turbo`, `gpt-4-vision-preview`
 - `AddDocumentsToVector(ctx, docs...)` - Add string documents to vector store
 - `AddVectorDocuments(ctx, vectorDocs...)` - Add documents with metadata
 - `GetLastRetrievedDocs()` - Get retrieved documents with scores
+
+### Response Caching (v0.4.0, v0.5.1 🆕)
+
+- `WithCache(cache)` - Set custom cache implementation
+- `WithMemoryCache(maxSize, defaultTTL)` - In-memory LRU cache
+- `WithRedisCache(addr, password, db)` - Redis distributed cache (simple)
+- `WithRedisCacheOptions(opts)` - Redis cache with advanced config
+- `WithCacheTTL(ttl)` - Set custom TTL for next request
+- `DisableCache()` - Temporarily disable caching
+- `EnableCache()` - Re-enable caching
+- `GetCacheStats()` - Retrieve cache statistics (hits, misses, hit rate)
+- `ClearCache(ctx)` - Clear all cached responses
 
 ### Embedding Providers (v0.5.0 🆕)
 

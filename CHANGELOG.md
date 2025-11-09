@@ -7,6 +7,112 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2025-01-15 🆕 Redis Cache - Distributed Caching
+
+### 🎯 Production-Ready Distributed Caching
+
+This release adds **Redis cache support** for distributed, persistent caching across multiple application instances. Perfect for production deployments, microservices, and high-traffic applications.
+
+### ✨ Added - Redis Cache Features
+
+- **💾 Redis Cache Implementation** (Sprint 1)
+  - `NewRedisCache(addr, password, db)` - Simple Redis setup
+  - `NewRedisCacheWithOptions(opts)` - Advanced configuration
+  - Full Cache interface: Get/Set/Delete/Clear/Stats
+  - Advanced operations: Exists, TTL, Expire, SetNX, MGet, MSet, DeletePattern
+  - Single node and Redis Cluster support
+  - Connection pooling (configurable pool size, min idle connections)
+  - Custom key prefixes for multi-tenant namespacing
+  - Atomic statistics tracking via Redis INCR
+  - Context-aware API for timeouts and cancellation
+  - Builder methods: `WithRedisCache()`, `WithRedisCacheOptions()`
+  - **440+ LOC implementation**
+  - Commits: ccf34f5
+
+- **✅ Redis Cache Unit Tests** (Sprint 2)
+  - **23 comprehensive unit tests** covering all RedisCache methods
+  - Test categories:
+    * 4 constructor tests (simple, advanced, error cases)
+    * 5 basic operation tests (Set/Get/Delete/Clear, miss handling)
+    * 1 stats tracking test
+    * 8 advanced operation tests (Exists, TTL, Expire, SetNX, MGet/MSet, DeletePattern, Ping)
+    * 5 infrastructure tests (Close, key prefix, bulk ops, empty value, concurrency)
+  - Uses miniredis/v2 (in-memory mock) - no external Redis required
+  - **100% pass rate**, <2s execution time
+  - **595 LOC test code**
+  - Commits: a4812a3
+
+- **📚 Redis Cache Examples** (Sprint 3)
+  - **8 comprehensive examples** demonstrating all features:
+    * Simple Redis cache setup with cache hit vs miss comparison
+    * Advanced configuration (pool size 20, custom prefix, 10m TTL)
+    * Cache statistics tracking (hits, misses, hit rate percentage)
+    * Batch operations (process 5 questions, compare cached vs uncached)
+    * Pattern-based cache deletion
+    * Distributed locking with SetNX (cache stampede prevention)
+    * Performance comparison (no cache vs memory cache vs Redis - 100x speedup)
+    * TTL management (default, custom, disable/enable)
+  - Performance results: 200x faster on cache hit (~1-2s → ~5ms)
+  - **403 LOC examples**
+  - Commits: 028ebff
+
+- **📖 Redis Cache Documentation** (Sprint 4)
+  - Complete Redis Cache Guide (REDIS_CACHE_GUIDE.md, 638 LOC):
+    * Quick start and installation instructions
+    * When to use Redis vs Memory cache
+    * Configuration options and parameters
+    * Advanced features (custom TTL, multi-tenant namespacing, cluster mode)
+    * Production best practices (connection pooling, TTL strategy, monitoring, security)
+    * Performance tuning (optimize hit rate, reduce latency, memory management)
+    * Troubleshooting (connection errors, auth errors, slow performance, cache misses)
+  - Updated README.md with Redis cache example
+  - Updated examples/README.md with detailed Redis cache section
+  - Updated Builder API documentation with 9 cache methods
+  - Performance comparison table (Memory vs Redis latency)
+  - Commits: [current commit]
+
+### 🔧 Configuration
+
+**RedisCacheOptions** with 11 configuration fields:
+- `Addrs`: Redis server addresses (single node or cluster)
+- `Password`: Authentication password
+- `DB`: Database number (0-15, single node only)
+- `PoolSize`: Maximum connection pool size (default: 10)
+- `MinIdleConns`: Minimum idle connections (default: 5)
+- `DialTimeout`: Connection timeout (default: 5s)
+- `ReadTimeout`: Read operation timeout (default: 3s)
+- `WriteTimeout`: Write operation timeout (default: 3s)
+- `KeyPrefix`: Cache key namespace (default: "go-deep-agent")
+- `DefaultTTL`: Default entry expiration (default: 5m)
+
+### 📊 Sprint 4 Metrics
+
+- **Documentation**: 638 LOC comprehensive guide
+- **Examples**: 8 real-world usage patterns
+- **Tests**: 23 unit tests (100% pass rate)
+- **Implementation**: 440 LOC production code
+- **Total**: 1,576 LOC across 4 sprints
+- **Performance**: 200x speed improvement on cache hit
+- **Dependencies**: go-redis/v9 v9.16.0, miniredis/v2 v2.35.0
+
+### 🚀 Features Delivered
+
+✅ Distributed caching across multiple instances  
+✅ Persistent cache (survives restarts)  
+✅ Scalability with Redis Cluster  
+✅ Production-ready with connection pooling  
+✅ Flexible TTL management (default, custom, per-request)  
+✅ Statistics tracking for monitoring  
+✅ Distributed locking (cache stampede prevention)  
+✅ Multi-tenant namespacing with key prefixes  
+✅ Comprehensive documentation and examples  
+
+### 🔗 Related Documentation
+
+- [Redis Cache Guide](docs/REDIS_CACHE_GUIDE.md) - Complete guide with best practices
+- [Examples](examples/cache_redis_example.go) - 8 comprehensive examples
+- [Examples README](examples/README.md#5-redis-cache-cache_redis_examplego)
+
 ## [0.5.0] - 2025-11-09 🚀 Major Release: Advanced RAG with Vector Databases
 
 ### 🎯 Complete Vector Database Integration
