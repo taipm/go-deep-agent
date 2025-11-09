@@ -18,7 +18,10 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 - 🎛️ **Advanced Controls** - Temperature, top-p, tokens, penalties, seed
 - 🧪 **Production Ready** - Timeouts, retries, comprehensive error handling
 - 🖼️ **Multimodal** - Vision support for GPT-4 Vision (images via URL/file/base64)
-- ✅ **Well Tested** - 242 tests, 62.6% coverage, 41+ working examples
+- 🚀 **Batch Processing** - Concurrent request processing with progress tracking (v0.4.0)
+- 📚 **RAG Support** - Retrieval-Augmented Generation with document chunking (v0.4.0)
+- 💾 **Response Caching** - Intelligent caching with TTL and LRU eviction (v0.4.0)
+- ✅ **Well Tested** - 320+ tests, 65%+ coverage, 44+ working examples
 
 ## 📦 Installation
 

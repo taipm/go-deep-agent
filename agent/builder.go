@@ -79,6 +79,11 @@ type Builder struct {
 	ragConfig         *RAGConfig   // RAG configuration
 	lastRetrievedDocs []Document   // Last retrieved documents
 
+	// Caching
+	cache        Cache         // Cache implementation
+	cacheEnabled bool          // Whether caching is enabled
+	cacheTTL     time.Duration // Cache TTL for next request
+
 	// OpenAI client (lazy initialized)
 	client *openai.Client
 
@@ -623,6 +628,18 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 		return "", fmt.Errorf("failed to initialize client: %w", err)
 	}
 
+	// Check cache first if enabled
+	if b.cacheEnabled && b.cache != nil {
+		temp := 0.0
+		if b.temperature != nil {
+			temp = *b.temperature
+		}
+		cacheKey := GenerateCacheKey(b.model, message, temp, b.systemPrompt)
+		if cached, found, err := b.cache.Get(ctx, cacheKey); err == nil && found {
+			return cached, nil
+		}
+	}
+
 	// If auto-execute is enabled and we have tools, use tool execution loop
 	if b.autoExecute && len(b.tools) > 0 {
 		return b.askWithToolExecution(ctx, message)
@@ -657,6 +674,20 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 	}
 
 	result := completion.Choices[0].Message.Content
+
+	// Store in cache if enabled
+	if b.cacheEnabled && b.cache != nil {
+		temp := 0.0
+		if b.temperature != nil {
+			temp = *b.temperature
+		}
+		cacheKey := GenerateCacheKey(b.model, message, temp, b.systemPrompt)
+		ttl := b.cacheTTL
+		if ttl <= 0 {
+			ttl = 5 * time.Minute // Default TTL
+		}
+		_ = b.cache.Set(ctx, cacheKey, result, ttl)
+	}
 
 	// Track token usage
 	b.lastUsage = TokenUsage{
