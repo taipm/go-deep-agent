@@ -26,6 +26,7 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 - 🧠 **Vector RAG** - Semantic retrieval with auto-embedding and priority system (v0.5.0 🆕)
 - 📊 **Logging & Observability** - Zero-overhead logging with slog support (v0.5.2 🆕)
 - 🛠️ **Built-in Tools** - FileSystem, HTTP, DateTime, Math tools (v0.5.5 🆕 convenient loading)
+- 🔍 **Tools Logging** - Comprehensive logging for built-in tools with security auditing (v0.5.6 🆕)
 - ✅ **Well Tested** - 460+ tests, 65%+ coverage, 70+ working examples
 
 ## 📦 Installation

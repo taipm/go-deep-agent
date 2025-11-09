@@ -4,12 +4,19 @@ import (
 	"context"
 	"fmt"
 	"time"
+	_ "unsafe" // For go:linkname
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/shared"
 	"github.com/openai/openai-go/v3/shared/constant"
 )
+
+// Link to tools.SetLogFunc using go:linkname to avoid import cycle
+//
+//go:linkname toolsSetLogFunc github.com/taipm/go-deep-agent/agent/tools.SetLogFunc
+func toolsSetLogFunc(fn func(level, msg string, fields map[string]interface{}))
+
 
 // Builder provides a fluent API for building and executing LLM requests.
 // It supports method chaining for a natural, readable API.
@@ -1506,6 +1513,7 @@ func (b *Builder) ClearCache(ctx context.Context) error {
 //	    WithLogger(agent.NewSlogAdapter(logger))
 func (b *Builder) WithLogger(logger Logger) *Builder {
 	b.logger = logger
+	b.injectLoggerToTools() // Propagate logger to built-in tools
 	return b
 }
 
@@ -1530,6 +1538,7 @@ func (b *Builder) WithLogger(logger Logger) *Builder {
 //	// [2025-01-15 10:30:46.456] INFO: Request completed | duration_ms=1332 tokens_prompt=12
 func (b *Builder) WithDebugLogging() *Builder {
 	b.logger = NewStdLogger(LogLevelDebug)
+	b.injectLoggerToTools() // Propagate logger to built-in tools
 	return b
 }
 
@@ -1552,6 +1561,7 @@ func (b *Builder) WithDebugLogging() *Builder {
 //	// [2025-01-15 10:30:47.789] INFO: Cache hit | cache_key=abc123
 func (b *Builder) WithInfoLogging() *Builder {
 	b.logger = NewStdLogger(LogLevelInfo)
+	b.injectLoggerToTools() // Propagate logger to built-in tools
 	return b
 }
 
@@ -1562,4 +1572,33 @@ func (b *Builder) getLogger() Logger {
 		return &NoopLogger{}
 	}
 	return b.logger
+}
+
+// injectLoggerToTools propagates the Builder's logger to the tools package
+// using a callback function via go:linkname to avoid import cycles.
+func (b *Builder) injectLoggerToTools() {
+	logger := b.getLogger()
+
+	// Inject callback function to tools package via go:linkname
+	toolsSetLogFunc(func(level, msg string, fields map[string]interface{}) {
+		ctx := context.Background() // Tools don't have context, use background
+
+		// Convert map[string]interface{} to []Field
+		logFields := make([]Field, 0, len(fields))
+		for k, v := range fields {
+			logFields = append(logFields, F(k, v))
+		}
+
+		// Route to appropriate log level
+		switch level {
+		case "DEBUG":
+			logger.Debug(ctx, msg, logFields...)
+		case "INFO":
+			logger.Info(ctx, msg, logFields...)
+		case "WARN":
+			logger.Warn(ctx, msg, logFields...)
+		case "ERROR":
+			logger.Error(ctx, msg, logFields...)
+		}
+	})
 }

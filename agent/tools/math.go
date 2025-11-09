@@ -94,7 +94,19 @@ func mathHandler(args string) (string, error) {
 
 // evaluate evaluates mathematical expressions using govaluate
 func evaluate(expression string) (string, error) {
+	ctx := getContext()
+
+	logDebug(ctx, "Evaluating math expression", map[string]interface{}{
+		"tool":       "math",
+		"operation":  "evaluate",
+		"expression": expression,
+	})
+
 	if expression == "" {
+		logWarn(ctx, "Empty expression provided", map[string]interface{}{
+			"tool":      "math",
+			"operation": "evaluate",
+		})
 		return "", fmt.Errorf("%w: expression is required", ErrInvalidInput)
 	}
 
@@ -136,12 +148,24 @@ func evaluate(expression string) (string, error) {
 	})
 
 	if err != nil {
+		logError(ctx, "Invalid math expression", map[string]interface{}{
+			"tool":       "math",
+			"operation":  "evaluate",
+			"expression": expression,
+			"error":      err.Error(),
+		})
 		return "", fmt.Errorf("%w: invalid expression: %v", ErrInvalidInput, err)
 	}
 
 	// Evaluate expression
 	result, err := expr.Evaluate(nil)
 	if err != nil {
+		logError(ctx, "Math evaluation failed", map[string]interface{}{
+			"tool":       "math",
+			"operation":  "evaluate",
+			"expression": expression,
+			"error":      err.Error(),
+		})
 		return "", fmt.Errorf("%w: evaluation failed: %v", ErrOperationFailed, err)
 	}
 
@@ -153,8 +177,21 @@ func evaluate(expression string) (string, error) {
 	case int:
 		resultFloat = float64(v)
 	default:
+		logError(ctx, "Unexpected result type from evaluation", map[string]interface{}{
+			"tool":        "math",
+			"operation":   "evaluate",
+			"expression":  expression,
+			"result_type": fmt.Sprintf("%T", result),
+		})
 		return "", fmt.Errorf("%w: unexpected result type", ErrOperationFailed)
 	}
+
+	logDebug(ctx, "Math expression evaluated successfully", map[string]interface{}{
+		"tool":       "math",
+		"operation":  "evaluate",
+		"expression": expression,
+		"result":     resultFloat,
+	})
 
 	return fmt.Sprintf("%.6f", resultFloat), nil
 }

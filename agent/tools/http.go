@@ -86,6 +86,16 @@ func isValidHTTPMethod(method string) bool {
 
 // makeHTTPRequest performs the actual HTTP request
 func makeHTTPRequest(method, url, headersJSON, body string, timeout time.Duration) (string, error) {
+	ctx := getContext()
+
+	logInfo(ctx, "Making HTTP request", map[string]interface{}{
+		"tool":         "http_request",
+		"method":       method,
+		"url":          url,
+		"timeout_secs": timeout.Seconds(),
+		"has_body":     body != "",
+	})
+
 	// Create HTTP client with timeout
 	client := &http.Client{
 		Timeout: timeout,
@@ -100,6 +110,12 @@ func makeHTTPRequest(method, url, headersJSON, body string, timeout time.Duratio
 	// Create request
 	req, err := http.NewRequest(method, url, bodyReader)
 	if err != nil {
+		logError(ctx, "Failed to create HTTP request", map[string]interface{}{
+			"tool":   "http_request",
+			"method": method,
+			"url":    url,
+			"error":  err.Error(),
+		})
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
@@ -110,17 +126,33 @@ func makeHTTPRequest(method, url, headersJSON, body string, timeout time.Duratio
 	if headersJSON != "" {
 		var headers map[string]string
 		if err := json.Unmarshal([]byte(headersJSON), &headers); err != nil {
+			logError(ctx, "Invalid headers JSON", map[string]interface{}{
+				"tool":         "http_request",
+				"headers_json": headersJSON,
+				"error":        err.Error(),
+			})
 			return "", fmt.Errorf("invalid headers JSON: %w", err)
 		}
 		for key, value := range headers {
 			req.Header.Set(key, value)
 		}
+		logDebug(ctx, "Custom headers set", map[string]interface{}{
+			"tool":          "http_request",
+			"header_count":  len(headers),
+		})
 	}
 
 	// Execute request
 	startTime := time.Now()
 	resp, err := client.Do(req)
 	if err != nil {
+		logError(ctx, "HTTP request failed", map[string]interface{}{
+			"tool":     "http_request",
+			"method":   method,
+			"url":      url,
+			"error":    err.Error(),
+			"duration": time.Since(startTime).Milliseconds(),
+		})
 		return "", fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
@@ -130,7 +162,43 @@ func makeHTTPRequest(method, url, headersJSON, body string, timeout time.Duratio
 	// Read response body
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
+		logError(ctx, "Failed to read response body", map[string]interface{}{
+			"tool":     "http_request",
+			"method":   method,
+			"url":      url,
+			"status":   resp.StatusCode,
+			"error":    err.Error(),
+		})
 		return "", fmt.Errorf("failed to read response: %w", err)
+	}
+
+	// Log response details
+	logLevel := "INFO"
+	if resp.StatusCode >= 500 {
+		logLevel = "ERROR"
+	} else if resp.StatusCode >= 400 {
+		logLevel = "WARN"
+	} else if duration > 5*time.Second {
+		logLevel = "WARN" // Slow request warning
+	}
+
+	logFields := map[string]interface{}{
+		"tool":          "http_request",
+		"method":        method,
+		"url":           url,
+		"status":        resp.StatusCode,
+		"duration_ms":   duration.Milliseconds(),
+		"response_size": len(respBody),
+		"content_type":  resp.Header.Get("Content-Type"),
+	}
+
+	switch logLevel {
+	case "ERROR":
+		logError(ctx, "HTTP request completed with server error", logFields)
+	case "WARN":
+		logWarn(ctx, "HTTP request completed with warning", logFields)
+	default:
+		logInfo(ctx, "HTTP request completed successfully", logFields)
 	}
 
 	// Build response

@@ -78,7 +78,12 @@ func fileSystemHandler(args string) (string, error) {
 
 // sanitizePath prevents path traversal attacks and validates the path
 func sanitizePath(path string) (string, error) {
+	ctx := getContext() // Get context for logging
+
 	if path == "" {
+		logWarn(ctx, "Empty path rejected", map[string]interface{}{
+			"tool": "filesystem",
+		})
 		return "", fmt.Errorf("path cannot be empty")
 	}
 
@@ -87,6 +92,12 @@ func sanitizePath(path string) (string, error) {
 
 	// Check for path traversal attempts
 	if strings.Contains(cleanPath, "..") {
+		logWarn(ctx, "Path traversal attempt blocked", map[string]interface{}{
+			"tool":           "filesystem",
+			"original_path":  path,
+			"sanitized_path": cleanPath,
+			"reason":         "contains '..'",
+		})
 		return "", ErrSecurityViolation
 	}
 
@@ -94,61 +105,154 @@ func sanitizePath(path string) (string, error) {
 	if !filepath.IsAbs(cleanPath) {
 		cwd, err := os.Getwd()
 		if err != nil {
+			logError(ctx, "Failed to get working directory", map[string]interface{}{
+				"tool":  "filesystem",
+				"error": err.Error(),
+			})
 			return "", fmt.Errorf("failed to get working directory: %w", err)
 		}
 		cleanPath = filepath.Join(cwd, cleanPath)
 	}
+
+	logDebug(ctx, "Path sanitized", map[string]interface{}{
+		"tool":           "filesystem",
+		"original_path":  path,
+		"sanitized_path": cleanPath,
+	})
 
 	return cleanPath, nil
 }
 
 // readFile reads the contents of a file
 func readFile(path string) (string, error) {
+	ctx := getContext()
+	
+	logInfo(ctx, "Reading file", map[string]interface{}{
+		"tool": "filesystem",
+		"path": path,
+	})
+
 	data, err := os.ReadFile(path)
 	if err != nil {
+		logError(ctx, "Failed to read file", map[string]interface{}{
+			"tool":  "filesystem",
+			"path":  path,
+			"error": err.Error(),
+		})
 		return "", fmt.Errorf("failed to read file: %w", err)
 	}
+
+	logInfo(ctx, "File read successful", map[string]interface{}{
+		"tool":  "filesystem",
+		"path":  path,
+		"bytes": len(data),
+	})
 
 	return fmt.Sprintf("File content (%d bytes):\n%s", len(data), string(data)), nil
 }
 
 // writeFile writes content to a file (overwrites if exists)
 func writeFile(path string, content string) (string, error) {
+	ctx := getContext()
+	
+	logInfo(ctx, "Writing file", map[string]interface{}{
+		"tool":  "filesystem",
+		"path":  path,
+		"bytes": len(content),
+	})
+
 	// Create parent directories if needed
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
+		logError(ctx, "Failed to create directory", map[string]interface{}{
+			"tool":  "filesystem",
+			"path":  dir,
+			"error": err.Error(),
+		})
 		return "", fmt.Errorf("failed to create directory: %w", err)
 	}
 
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		logError(ctx, "Failed to write file", map[string]interface{}{
+			"tool":  "filesystem",
+			"path":  path,
+			"error": err.Error(),
+		})
 		return "", fmt.Errorf("failed to write file: %w", err)
 	}
+
+	logInfo(ctx, "File written successfully", map[string]interface{}{
+		"tool":  "filesystem",
+		"path":  path,
+		"bytes": len(content),
+	})
 
 	return fmt.Sprintf("Successfully wrote %d bytes to %s", len(content), path), nil
 }
 
 // appendFile appends content to a file
 func appendFile(path string, content string) (string, error) {
+	ctx := getContext()
+	
+	logInfo(ctx, "Appending to file", map[string]interface{}{
+		"tool":  "filesystem",
+		"path":  path,
+		"bytes": len(content),
+	})
+
 	// Create file if it doesn't exist
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
+		logError(ctx, "Failed to open file", map[string]interface{}{
+			"tool":  "filesystem",
+			"path":  path,
+			"error": err.Error(),
+		})
 		return "", fmt.Errorf("failed to open file: %w", err)
 	}
 	defer f.Close()
 
 	n, err := f.WriteString(content)
 	if err != nil {
+		logError(ctx, "Failed to append to file", map[string]interface{}{
+			"tool":  "filesystem",
+			"path":  path,
+			"error": err.Error(),
+		})
 		return "", fmt.Errorf("failed to append to file: %w", err)
 	}
+
+	logInfo(ctx, "File append successful", map[string]interface{}{
+		"tool":  "filesystem",
+		"path":  path,
+		"bytes": n,
+	})
 
 	return fmt.Sprintf("Successfully appended %d bytes to %s", n, path), nil
 }
 
 // deleteFile deletes a file
 func deleteFile(path string) (string, error) {
+	ctx := getContext()
+	
+	logWarn(ctx, "Deleting file", map[string]interface{}{
+		"tool": "filesystem",
+		"path": path,
+	})
+
 	if err := os.Remove(path); err != nil {
+		logError(ctx, "Failed to delete file", map[string]interface{}{
+			"tool":  "filesystem",
+			"path":  path,
+			"error": err.Error(),
+		})
 		return "", fmt.Errorf("failed to delete file: %w", err)
 	}
+
+	logWarn(ctx, "File deleted successfully", map[string]interface{}{
+		"tool": "filesystem",
+		"path": path,
+	})
 
 	return fmt.Sprintf("Successfully deleted %s", path), nil
 }
