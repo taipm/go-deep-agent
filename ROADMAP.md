@@ -36,65 +36,66 @@
 
 ## v0.5.0 - Advanced Integrations (Target: December 2025)
 
-### Priority 1: Advanced RAG - Vector Database Integration (Weeks 1-4)
+### Priority 1: Advanced RAG - Vector Database Integration (Weeks 1-4) ✅
 
 **Goal**: Production-scale semantic search with 3+ vector databases
 
 **Detailed Plan**: See [docs/ADVANCED_RAG_PLAN.md](docs/ADVANCED_RAG_PLAN.md)
 
-#### Sprint 1 (Week 1-2): Foundation
-- [ ] Design `EmbeddingProvider` interface
-- [ ] Implement `OpenAIEmbedding` (text-embedding-3-small/large)
-- [ ] Implement `OllamaEmbedding` (nomic-embed-text)
-- [ ] Design `VectorStore` interface
-- [ ] Unit tests for embedding providers (15+ tests)
+#### Sprint 1 (Week 1-2): Foundation ✅
+- ✅ Design `EmbeddingProvider` interface
+- ✅ Implement `OpenAIEmbedding` (text-embedding-3-small/large)
+- ✅ Implement `OllamaEmbedding` (nomic-embed-text)
+- ✅ Design `VectorStore` interface
+- ✅ Unit tests for embedding providers (44 tests)
 
-**Deliverables**:
-- `agent/embedding.go` (~300 LOC)
-- `agent/vectorstore.go` (~200 LOC)
-- `agent/embedding_test.go`
+**Deliverables** (commit 5d066b1, 8edc308):
+- `agent/embedding.go` (165 LOC)
+- `agent/embedding_openai.go` (175 LOC)
+- `agent/embedding_ollama.go` (195 LOC)
+- `agent/embedding_test.go` (600+ LOC, 44 tests)
+- `examples/embedding_example.go` (400+ LOC, 8 examples)
 
-#### Sprint 2 (Week 3): Chroma Integration
-- [ ] Implement `ChromaStore` (local, easy setup)
-- [ ] CRUD operations (Add, Search, Delete, Update)
-- [ ] Integration tests with Docker
-- [ ] Example: `examples/rag_vector_chroma.go`
+#### Sprint 2 (Week 2-3): Chroma Integration ✅
+- ✅ Design `VectorStore` interface (13 operations)
+- ✅ Implement `ChromaStore` (HTTP REST API)
+- ✅ CRUD operations (Add, Search, Delete, Update, Count, Clear)
+- ✅ Comprehensive tests with httptest
+- ✅ Example: `examples/chroma_example.go`
 
-**Deliverables**:
-- `agent/vectorstore_chroma.go` (~400 LOC)
-- `agent/vectorstore_chroma_test.go` (20+ tests)
-- Working example with Chroma
+**Deliverables** (commit a3f79b9, e7be744):
+- `agent/vector_store.go` (250 LOC) - Interface & types
+- `agent/chroma.go` (500 LOC) - ChromaDB implementation
+- `agent/vector_store_test.go` (570 LOC, 17 tests)
+- `examples/chroma_example.go` (311 LOC, 12 examples)
 
-**Dependencies**:
-```go
-github.com/amikos-tech/chroma-go v0.1.0
-```
+**No external dependencies** - Pure HTTP REST API
 
-#### Sprint 3 (Week 4): Qdrant Integration
-- [ ] Implement `QdrantStore` (production-ready)
-- [ ] Hybrid search support (keyword + semantic)
-- [ ] Performance optimization
-- [ ] Integration tests with Docker
-- [ ] Example: `examples/rag_vector_qdrant.go`
+#### Sprint 3 (Week 3-4): Qdrant Integration ✅
+- ✅ Implement `QdrantStore` (REST API client)
+- ✅ Advanced filtering (must/should/must_not)
+- ✅ Score threshold search
+- ✅ API key authentication
+- ✅ Comprehensive tests with httptest
+- ✅ Example: `examples/qdrant_example.go`
 
-**Deliverables**:
-- `agent/vectorstore_qdrant.go` (~400 LOC)
-- `agent/vectorstore_qdrant_test.go` (20+ tests)
-- Hybrid search example
+**Deliverables** (commit 3378c97):
+- `agent/qdrant.go` (600+ LOC) - Full Qdrant REST API
+- `agent/qdrant_test.go` (780+ LOC, 23 tests)
+- `examples/qdrant_example.go` (400+ LOC, 13 examples)
 
-**Dependencies**:
-```go
-github.com/qdrant/go-client v1.7.0
-```
+**No external dependencies** - Pure HTTP REST API
 
-#### Sprint 4 (Week 5): Advanced Features
+#### Sprint 4 (Week 5-6): Advanced Features & Integration 🚧
+- [ ] Integrate VectorStore with existing RAG system
 - [ ] Implement hybrid search (TF-IDF + embeddings)
 - [ ] Add reranking logic (cross-encoder)
 - [ ] Embedding caching
+- [ ] Weaviate integration (3rd vector DB)
 - [ ] Documentation: `docs/RAG_VECTOR_DATABASES.md`
 - [ ] Performance benchmarks
 
-**API Design**:
+**Planned API Design**:
 ```go
 // Vector-based RAG
 builder.WithVectorRAG(
@@ -114,14 +115,14 @@ builder.WithHybridRAG(
 )
 ```
 
-**Success Metrics**:
-- ✅ Support 3+ vector databases (Chroma, Qdrant, Weaviate)
+**Success Metrics (Progress)**:
+- ✅ Support 2 vector databases (Chroma, Qdrant) - 66% complete (target 3)
 - ✅ Semantic search with cosine similarity
-- ✅ Hybrid search (keyword + vector)
-- ✅ 80+ tests, all passing
-- ✅ 5+ working examples
-- ✅ Vector search <50ms for 10K docs (Chroma)
-- ✅ Vector search <20ms for 100K docs (Qdrant)
+- ✅ Advanced filtering (metadata, score threshold)
+- ✅ 84 vector store tests (44 embedding + 17 Chroma + 23 Qdrant)
+- ✅ 33 working examples (8 embedding + 12 Chroma + 13 Qdrant)
+- [ ] Hybrid search (keyword + vector) - pending Sprint 4
+- [ ] Vector search benchmarks - pending Sprint 4
 
 ---
 
