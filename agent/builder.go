@@ -253,6 +253,84 @@ func (b *Builder) GetMemory() *memory.Memory {
 	return b.memory
 }
 
+// WithEpisodicMemory enables episodic memory with specified threshold.
+// Messages with importance >= threshold will be stored in episodic memory.
+//
+// Example:
+//
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithEpisodicMemory(0.7) // Store messages with importance >= 0.7
+func (b *Builder) WithEpisodicMemory(threshold float64) *Builder {
+	if b.memory == nil {
+		b.memory = memory.New()
+	}
+	config := b.memory.GetConfig()
+	config.EpisodicEnabled = true
+	config.EpisodicThreshold = threshold
+	config.ImportanceScoring = true
+	_ = b.memory.SetConfig(config) // Error only occurs if memory is nil, which we check above
+	b.memoryEnabled = true
+	return b
+}
+
+// WithImportanceWeights sets custom importance calculation weights.
+// This allows fine-tuning which types of messages are considered important.
+//
+// Example:
+//
+//	weights := memory.DefaultImportanceWeights()
+//	weights.ExplicitRemember = 2.0  // Double weight for "remember this"
+//	weights.PersonalInfo = 1.5      // Higher weight for personal info
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithImportanceWeights(weights)
+func (b *Builder) WithImportanceWeights(weights memory.ImportanceWeights) *Builder {
+	if b.memory == nil {
+		b.memory = memory.New()
+	}
+	config := b.memory.GetConfig()
+	config.ImportanceWeights = weights
+	config.ImportanceScoring = true
+	_ = b.memory.SetConfig(config)
+	b.memoryEnabled = true
+	return b
+}
+
+// WithWorkingMemorySize sets the working memory capacity.
+// Working memory holds the most recent messages in a FIFO buffer.
+//
+// Example:
+//
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithWorkingMemorySize(20) // Keep last 20 messages in working memory
+func (b *Builder) WithWorkingMemorySize(size int) *Builder {
+	if b.memory == nil {
+		b.memory = memory.New()
+	}
+	config := b.memory.GetConfig()
+	config.WorkingCapacity = size
+	_ = b.memory.SetConfig(config)
+	b.memoryEnabled = true
+	return b
+}
+
+// WithSemanticMemory enables semantic memory for fact storage.
+// Semantic memory stores and retrieves factual information by category.
+//
+// Example:
+//
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithSemanticMemory()
+func (b *Builder) WithSemanticMemory() *Builder {
+	if b.memory == nil {
+		b.memory = memory.New()
+	}
+	config := b.memory.GetConfig()
+	config.SemanticEnabled = true
+	_ = b.memory.SetConfig(config)
+	b.memoryEnabled = true
+	return b
+}
+
 // WithMessages sets the conversation history directly.
 // Useful for continuing a previous conversation or providing few-shot examples.
 //
