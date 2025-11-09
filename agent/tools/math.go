@@ -34,10 +34,9 @@ import (
 //	    WithAutoExecute().
 //	    Ask(ctx, "Calculate: 2 * (3 + 4) + sqrt(16)")
 func NewMathTool() *agent.Tool {
-	return agent.NewTool("math", "Perform mathematical operations: expression evaluation, statistics, equation solving, unit conversion, random generation").
+	tool := agent.NewTool("math", "Perform mathematical operations: expression evaluation, statistics, equation solving, unit conversion, random generation").
 		AddParameter("operation", "string", "Operation: evaluate, statistics, solve, convert, random", true).
 		AddParameter("expression", "string", "Math expression for evaluate (e.g., '2 * (3 + 4)', 'sin(3.14/2) + sqrt(16)')", false).
-		AddParameter("numbers", "array", "Array of numbers for statistics", false).
 		AddParameter("stat_type", "string", "Statistics type: mean, median, stdev, variance, min, max, sum", false).
 		AddParameter("equation", "string", "Equation to solve (e.g., 'x+5=10', 'x-3=7')", false).
 		AddParameter("value", "number", "Value to convert", false).
@@ -46,8 +45,14 @@ func NewMathTool() *agent.Tool {
 		AddParameter("random_type", "string", "Random type: integer, float, choice", false).
 		AddParameter("min", "number", "Min value for random integer/float", false).
 		AddParameter("max", "number", "Max value for random integer/float", false).
-		AddParameter("choices", "array", "List of choices for random choice", false).
 		WithHandler(mathHandler)
+
+	// Manually add array parameters with proper items schema
+	props := tool.Parameters["properties"].(map[string]interface{})
+	props["numbers"] = agent.ArrayParam("Array of numbers for statistics", "number")
+	props["choices"] = agent.ArrayParam("List of choices for random choice", "string")
+
+	return tool
 }
 
 // mathHandler executes mathematical operations

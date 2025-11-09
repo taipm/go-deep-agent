@@ -7,6 +7,105 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5] - 2025-11-09 🚀 Convenient Safe Tools Loading
+
+### 🎯 Philosophy: Auto-load Safe, Opt-in Dangerous
+
+This release introduces **convenient helpers** for loading built-in tools, based on the principle:
+- **DateTime and Math** tools are SAFE (no file access, no network calls) → Easy to load via `WithDefaults()`
+- **FileSystem and HTTP** tools are POWERFUL but RISKY → Remain opt-in for security
+
+### ✨ Added - Convenient Tool Loading
+
+- **`tools.WithDefaults(builder)`** - Automatically load DateTime + Math tools
+  - **Safe by design**: No file system access, no network calls
+  - **No side effects**: Read-only time operations and pure mathematical computations
+  - **Core capabilities**: Enhance agent from the ground up
+  - **User-friendly**: One-liner to get started with tools
+  - **Example**: 
+    ```go
+    ai := tools.WithDefaults(agent.NewOpenAI("gpt-4o-mini", apiKey)).
+        WithAutoExecute(true)
+    ```
+
+- **`tools.WithAll(builder)`** - Load all 4 built-in tools (use with caution)
+  - FileSystem, HTTP, DateTime, Math
+  - **Security warning**: Includes file and network access
+  - **Use case**: Full-featured AI agents with proper security context
+  - **Example**:
+    ```go
+    ai := tools.WithAll(agent.NewOpenAI("gpt-4o-mini", apiKey)).
+        WithAutoExecute(true)
+    ```
+
+### 🐛 Fixed - Math Tool Schema
+
+- **Fixed array parameter schema** in MathTool
+  - OpenAI API requires `items` property for array parameters
+  - `numbers` array now properly defined with `items: {type: "number"}`
+  - `choices` array now properly defined with `items: {type: "string"}`
+  - **Impact**: Math tool now works correctly with OpenAI API (was returning 400 errors)
+
+### 🎨 Design Rationale
+
+**Why DateTime and Math should be auto-loadable?**
+
+1. **Safety**: No dangerous operations
+   - DateTime: Only reads system time, no writes
+   - Math: Pure computations, no I/O
+   
+2. **Ubiquity**: Nearly every AI agent needs these
+   - Time context is essential for conversations
+   - Math is fundamental for problem-solving
+   
+3. **Zero Risk**: Cannot be used maliciously
+   - No file system modification
+   - No network requests
+   - No data persistence
+
+**Why FileSystem and HTTP remain opt-in?**
+
+1. **Security**: Powerful but risky
+   - FileSystem: Can read/write sensitive files
+   - HTTP: Can make external requests, leak data
+   
+2. **Explicit Consent**: User should know agent has these capabilities
+   - Principle of least privilege
+   - Clear security boundaries
+
+### 📚 Usage Patterns
+
+```go
+// Pattern 1: Safe defaults (RECOMMENDED for most use cases)
+ai := tools.WithDefaults(agent.NewOpenAI("gpt-4o-mini", apiKey)).
+    WithAutoExecute(true)
+// → Agent has DateTime + Math tools
+
+// Pattern 2: All tools (use when needed, understand risks)
+ai := tools.WithAll(agent.NewOpenAI("gpt-4o-mini", apiKey)).
+    WithAutoExecute(true)
+// → Agent has all 4 built-in tools
+
+// Pattern 3: Manual selection (full control)
+ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithTools(tools.NewDateTimeTool(), tools.NewFileSystemTool()).
+    WithAutoExecute(true)
+// → Agent has exactly what you specify
+
+// Pattern 4: Pure chatbot (no tools)
+ai := agent.NewOpenAI("gpt-4o-mini", apiKey)
+// → Just conversation, no tools
+```
+
+### 🔧 Technical Details
+
+- **Implementation**: Helper functions in `agent/tools/tools.go`
+- **No Breaking Changes**: 100% backward compatible
+- **Import Cycle Avoidance**: Clean architecture with no circular dependencies
+- **Test Coverage**: All patterns tested and verified
+
+---
+
 ## [0.5.4] - 2025-11-09 🧮 Math Tool with Professional Libraries
 
 ### 🔬 Production-Grade Mathematical Operations

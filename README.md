@@ -25,7 +25,7 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 - 🗄️ **Vector Databases** - ChromaDB & Qdrant integration for semantic search (v0.5.0 🆕)
 - 🧠 **Vector RAG** - Semantic retrieval with auto-embedding and priority system (v0.5.0 🆕)
 - 📊 **Logging & Observability** - Zero-overhead logging with slog support (v0.5.2 🆕)
-- 🛠️ **Built-in Tools** - FileSystem, HTTP, DateTime tools ready to use (v0.5.3 🆕)
+- 🛠️ **Built-in Tools** - FileSystem, HTTP, DateTime, Math tools (v0.5.5 🆕 convenient loading)
 - ✅ **Well Tested** - 460+ tests, 65%+ coverage, 70+ working examples
 
 ## 📦 Installation
@@ -279,86 +279,150 @@ builder := agent.NewOpenAI("gpt-4o-mini", apiKey)
 
 📖 **[Complete Logging Guide](docs/LOGGING_GUIDE.md)** - Custom loggers, slog integration, production best practices
 
-### 10. Built-in Tools
+### 10. Built-in Tools (v0.5.5 🆕 Convenient Loading)
 
-#### 10.1 FileSystem, HTTP, DateTime Tools (v0.5.3 🆕)
+go-deep-agent provides 4 production-ready built-in tools. **v0.5.5** introduces convenient helpers for easy loading:
 
-Three production-ready tools for common operations: file system, HTTP requests, and date/time.
+#### Quick Start - Safe Tools by Default
 
 ```go
-import "github.com/taipm/go-deep-agent/agent/tools"
+import (
+    "github.com/taipm/go-deep-agent/agent"
+    "github.com/taipm/go-deep-agent/agent/tools"
+)
 
-// Create built-in tools
-fsTool := tools.NewFileSystemTool()      // File operations
-httpTool := tools.NewHTTPRequestTool()   // HTTP client
-dtTool := tools.NewDateTimeTool()        // Date/time calculations
-
-// Use with agent
-ai := agent.NewOpenAI("gpt-4o", apiKey).
-    WithTools(fsTool, httpTool, dtTool).
+// Option 1: Load safe tools (DateTime + Math) - RECOMMENDED ⭐
+ai := tools.WithDefaults(agent.NewOpenAI("gpt-4o", apiKey)).
     WithAutoExecute(true)
 
-// Agent can now use tools automatically
-response, _ := ai.Ask(ctx, "Read config.json, get current time in Tokyo, and fetch https://api.github.com/users/github")
+// Option 2: Load all tools (includes file & network access) - Use with caution
+ai := tools.WithAll(agent.NewOpenAI("gpt-4o", apiKey)).
+    WithAutoExecute(true)
+
+// Option 3: Manual selection (full control)
+ai := agent.NewOpenAI("gpt-4o", apiKey).
+    WithTools(tools.NewDateTimeTool(), tools.NewMathTool()).
+    WithAutoExecute(true)
 ```
 
-**FileSystemTool** - 7 operations:
-- `read_file`, `write_file`, `append_file`, `delete_file`
-- `list_directory`, `file_exists`, `create_directory`
-- Security: Path traversal prevention
+**Why `WithDefaults()`?** (v0.5.5)
+- ✅ **Safe**: DateTime and Math have no file/network access
+- ✅ **No side effects**: Read-only time, pure math computations
+- ✅ **Core capabilities**: Nearly every AI agent needs time context and math
+- ✅ **One-liner**: Get started quickly with sensible defaults
 
-**HTTPRequestTool** - Full HTTP client:
-- Methods: GET, POST, PUT, DELETE
-- Features: Headers, timeout, JSON parsing
-- Default 30s timeout
+**Why FileSystem/HTTP remain opt-in?**
+- ⚠️ **Powerful but risky**: Can read/write files, make external requests
+- ⚠️ **Explicit consent**: User should know agent has these capabilities
+- ⚠️ **Principle of least privilege**: Only grant what's needed
 
-**DateTimeTool** - 7 operations:
-- `current_time`, `format_date`, `parse_date`
-- `add_duration`, `date_diff`, `convert_timezone`, `day_of_week`
-- Timezones: UTC, America/New_York, Asia/Tokyo, etc.
+#### 10.1 FileSystem Tool (Opt-in for security)
 
-#### 10.2 Math Tool (v0.5.4 🆕)
+#### 10.1 FileSystem Tool (Opt-in for security)
 
-Professional-grade mathematical operations powered by **govaluate** (expression engine) and **gonum** (statistical computing).
+File operations with path traversal prevention.
 
 ```go
+fsTool := tools.NewFileSystemTool()
+
+ai := agent.NewOpenAI("gpt-4o", apiKey).
+    WithTool(fsTool).  // Explicitly add for security awareness
+    WithAutoExecute(true)
+
+response, _ := ai.Ask(ctx, "Read config.json and list all JSON files in current directory")
+```
+
+**Operations** (7 total):
+- `read_file`, `write_file`, `append_file`, `delete_file`
+- `list_directory`, `file_exists`, `create_directory`
+- **Security**: Path traversal prevention (`../` blocked)
+
+#### 10.2 HTTP Tool (Opt-in for security)
+
+Full HTTP client for API requests.
+
+```go
+httpTool := tools.NewHTTPRequestTool()
+
+ai := agent.NewOpenAI("gpt-4o", apiKey).
+    WithTool(httpTool).  // Explicitly add for security awareness
+    WithAutoExecute(true)
+
+response, _ := ai.Ask(ctx, "Fetch https://api.github.com/users/github and summarize")
+```
+
+**Features**:
+- Methods: GET, POST, PUT, DELETE
+- Custom headers, timeout (default 30s)
+- JSON parsing
+
+#### 10.3 DateTime Tool (Safe - auto-loadable via WithDefaults)
+
+Date/time operations with timezone support.
+
+```go
+// Auto-loaded with WithDefaults(), or manually:
+dtTool := tools.NewDateTimeTool()
+
+ai := agent.NewOpenAI("gpt-4o", apiKey).
+    WithTool(dtTool).
+    WithAutoExecute(true)
+
+response, _ := ai.Ask(ctx, "What day of the week is Christmas 2025 in Tokyo timezone?")
+```
+
+**Operations** (7 total):
+- `current_time`, `format_date`, `parse_date`
+- `add_duration`, `date_diff`, `convert_timezone`, `day_of_week`
+- **Timezones**: UTC, America/New_York, Asia/Tokyo, etc.
+- **Safe**: Read-only, no side effects
+
+#### 10.4 Math Tool (Safe - auto-loadable via WithDefaults)
+
+Professional-grade math powered by **govaluate** + **gonum**.
+
+#### 10.4 Math Tool (Safe - auto-loadable via WithDefaults)
+
+Professional-grade math powered by **govaluate** + **gonum**.
+
+```go
+// Auto-loaded with WithDefaults(), or manually:
 mathTool := tools.NewMathTool()
 
 ai := agent.NewOpenAI("gpt-4o", apiKey).
     WithTool(mathTool).
     WithAutoExecute(true)
 
-// Expression evaluation
+// Expression evaluation (11 functions)
 ai.Ask(ctx, "Calculate: 2 * (3 + 4) + sqrt(16)")
-// Uses govaluate with 11 functions: sqrt, pow, sin, cos, tan, log, ln, abs, ceil, floor, round
+// Functions: sqrt, pow, sin, cos, tan, log, ln, abs, ceil, floor, round
 
-// Statistics
+// Statistics (gonum/stat)
 ai.Ask(ctx, "What's the average of 10, 20, 30, 40, 50?")
-// Uses gonum/stat: mean, median, stdev, variance, min, max, sum
+// Measures: mean, median, stdev, variance, min, max, sum
 
 // Equation solving
 ai.Ask(ctx, "Solve: x+15=42")
-// Linear equations (quadratic coming in v0.6.0)
 
 // Unit conversion
 ai.Ask(ctx, "Convert 100 km to meters")
-// Distance, weight, temperature, time conversions
 
 // Random generation
-ai.Ask(ctx, "Generate random number between 1 and 100")
-// Integer, float, choice operations
+ai.Ask(ctx, "Pick a random number from 1 to 100")
 ```
 
-**MathTool** - 5 operation categories:
-- **evaluate**: Mathematical expressions with 11 functions (80% coverage)
-- **statistics**: 7 statistical measures via gonum (15% coverage)
-- **solve**: Linear equations, quadratic coming soon (3% coverage)
-- **convert**: Distance, weight, temperature, time units (1% coverage)
-- **random**: Integer, float, choice generation (1% coverage)
+**Operations** (5 categories):
+- **evaluate**: Expressions with 11 functions (govaluate engine)
+- **statistics**: 7 measures (gonum library)
+- **solve**: Linear equations (quadratic coming v0.6.0)
+- **convert**: Distance, weight, temperature, time
+- **random**: Integer, float, choice
 
-**Dependencies**: +9MB binary for professional accuracy (govaluate, gonum)
+**Safe**: Pure computations, no I/O operations  
+**Dependencies**: +9MB binary for professional accuracy
 
-📖 **[View builtin_tools_demo.go](examples/builtin_tools_demo.go)** - Complete examples
+📖 **[View builtin_tools_demo.go](examples/builtin_tools_demo.go)** - Complete examples  
+📖 **[View test_with_defaults.go](examples/test_with_defaults.go)** - v0.5.5 WithDefaults() usage
 
 ### 11. History Management
 
