@@ -79,6 +79,11 @@ type Builder struct {
 	ragConfig         *RAGConfig   // RAG configuration
 	lastRetrievedDocs []Document   // Last retrieved documents
 
+	// Vector RAG
+	vectorStore       VectorStore       // Vector database for semantic search
+	embeddingProvider EmbeddingProvider // Embedding provider for vector RAG
+	vectorCollection  string            // Collection name for vector RAG
+
 	// Caching
 	cache        Cache         // Cache implementation
 	cacheEnabled bool          // Whether caching is enabled
@@ -647,7 +652,7 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 
 	// RAG: Retrieve and inject relevant context if enabled
 	if b.ragEnabled {
-		docs, err := b.retrieveRelevantDocs(message)
+		docs, err := b.retrieveRelevantDocs(ctx, message)
 		if err != nil {
 			return "", fmt.Errorf("RAG retrieval failed: %w", err)
 		}

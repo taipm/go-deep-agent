@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"regexp"
@@ -207,7 +208,12 @@ func ChunkDocument(text string, chunkSize, overlap int) []string {
 }
 
 // retrieveRelevantDocs retrieves the most relevant documents for a query
-func (b *Builder) retrieveRelevantDocs(query string) ([]Document, error) {
+func (b *Builder) retrieveRelevantDocs(ctx context.Context, query string) ([]Document, error) {
+	// If vector store is configured, use vector search
+	if b.vectorStore != nil && b.embeddingProvider != nil {
+		return b.retrieveFromVector(ctx, query)
+	}
+
 	// If custom retriever is set, use it
 	if b.ragRetriever != nil {
 		return b.ragRetriever(query)
@@ -223,7 +229,7 @@ func (b *Builder) retrieveRelevantDocs(query string) ([]Document, error) {
 		config = DefaultRAGConfig()
 	}
 
-	// Chunk all documents
+	// Chunk all documents (TF-IDF fallback)
 	var allChunks []Document
 	for _, doc := range b.ragDocuments {
 		chunks := ChunkDocument(doc.Content, config.ChunkSize, config.ChunkOverlap)
@@ -382,5 +388,101 @@ func (b *Builder) ClearRAG() *Builder {
 	b.ragRetriever = nil
 	b.ragConfig = nil
 	b.lastRetrievedDocs = nil
+	b.vectorStore = nil
+	b.embeddingProvider = nil
+	b.vectorCollection = ""
 	return b
+}
+
+// WithVectorRAG enables vector-based RAG using a vector database
+// This provides semantic search capabilities for retrieval
+func (b *Builder) WithVectorRAG(embedding EmbeddingProvider, store VectorStore, collection string) *Builder {
+	b.embeddingProvider = embedding
+	b.vectorStore = store
+	b.vectorCollection = collection
+	b.ragEnabled = true
+
+	if b.ragConfig == nil {
+		b.ragConfig = DefaultRAGConfig()
+	}
+
+	return b
+}
+
+// AddDocumentsToVector adds documents to the vector store
+// Documents are automatically embedded and stored
+func (b *Builder) AddDocumentsToVector(ctx context.Context, documents ...string) ([]string, error) {
+	if b.vectorStore == nil || b.embeddingProvider == nil {
+		return nil, fmt.Errorf("vector store and embedding provider must be configured with WithVectorRAG")
+	}
+
+	// Convert strings to VectorDocuments
+	vectorDocs := make([]*VectorDocument, len(documents))
+	for i, doc := range documents {
+		vectorDocs[i] = &VectorDocument{
+			Content: doc,
+			Metadata: map[string]interface{}{
+				"index": i,
+			},
+		}
+	}
+
+	// Add to vector store (embeddings will be auto-generated)
+	return b.vectorStore.Add(ctx, b.vectorCollection, vectorDocs)
+}
+
+// AddVectorDocuments adds VectorDocument objects to the vector store
+func (b *Builder) AddVectorDocuments(ctx context.Context, documents ...*VectorDocument) ([]string, error) {
+	if b.vectorStore == nil {
+		return nil, fmt.Errorf("vector store must be configured with WithVectorRAG")
+	}
+
+	return b.vectorStore.Add(ctx, b.vectorCollection, documents)
+}
+
+// retrieveFromVector performs semantic search using vector database
+func (b *Builder) retrieveFromVector(ctx context.Context, query string) ([]Document, error) {
+	if b.vectorStore == nil || b.embeddingProvider == nil {
+		return nil, fmt.Errorf("vector store and embedding provider must be configured")
+	}
+
+	config := b.ragConfig
+	if config == nil {
+		config = DefaultRAGConfig()
+	}
+
+	// Perform semantic search
+	searchReq := &TextSearchRequest{
+		Collection:      b.vectorCollection,
+		Query:           query,
+		TopK:            config.TopK,
+		MinScore:        float32(config.MinScore),
+		IncludeContent:  true,
+		IncludeMetadata: true,
+	}
+
+	results, err := b.vectorStore.SearchByText(ctx, searchReq)
+	if err != nil {
+		return nil, fmt.Errorf("vector search failed: %w", err)
+	}
+
+	// Convert SearchResults to Documents
+	docs := make([]Document, len(results))
+	for i, result := range results {
+		// Convert metadata map[string]interface{} to map[string]string
+		metadata := make(map[string]string)
+		if result.Document.Metadata != nil {
+			for k, v := range result.Document.Metadata {
+				metadata[k] = fmt.Sprintf("%v", v)
+			}
+		}
+
+		docs[i] = Document{
+			Content:  result.Document.Content,
+			Metadata: metadata,
+			Score:    float64(result.Score),
+		}
+	}
+
+	return docs, nil
 }
