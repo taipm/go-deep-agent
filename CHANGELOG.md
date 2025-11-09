@@ -7,6 +7,117 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2025-01-15 🆕 Logging & Observability
+
+### 📊 Production-Ready Logging System
+
+This release adds **comprehensive logging and observability** with zero-overhead design, slog integration, and production-ready monitoring capabilities.
+
+### ✨ Added - Logging Features
+
+- **📝 Logger Interface & Core** (Sprint 1 - Commit 4ae4481)
+  - `Logger` interface with 4 methods: Debug, Info, Warn, Error
+  - `LogLevel` enum with 5 levels: None, Error, Warn, Info, Debug
+  - `Field` struct for structured logging with `F(key, value)` helper
+  - `NoopLogger` - Zero-overhead default (literally zero cost)
+  - `StdLogger` - Standard library logger with NewStdLogger(level)
+  - Builder methods: `WithLogger()`, `WithDebugLogging()`, `WithInfoLogging()`
+  - `getLogger()` private helper for safe access
+  - **173 LOC logger.go + 78 LOC builder additions**
+  - **16 tests + 3 benchmarks, 100% pass rate**
+  - Context-aware API, backward compatible, zero dependencies
+
+- **🔍 Logging Integration** (Sprint 2 - Commit 06bccd1)
+  - Ask() lifecycle logging:
+    * Request start (model, message length, features)
+    * Cache hit/miss with duration and cache keys
+    * Tool execution loop with round tracking
+    * RAG retrieval with document count and timing
+    * Request completion with duration, tokens, response metrics
+  - Stream() lifecycle logging:
+    * Stream start, chunk count, tool calls, refusals
+    * Stream completion with full metrics
+  - Tool execution logging:
+    * Tool rounds, individual tool calls, args, results, duration
+    * Max rounds exceeded warnings
+  - Retry logic logging:
+    * Retry attempts, delays, error classification
+    * Timeout tracking, context cancellation
+  - RAG retrieval logging:
+    * Vector search vs TF-IDF fallback detection
+    * Document chunking metrics, search results
+  - Cache operations logging:
+    * Stats retrieval (hits, misses, size, hit rate)
+    * Cache clear operations
+  - **~190 LOC logging additions**
+  - **5 integration tests (logging_integration_test.go)**
+  - All existing tests pass (70+ tests)
+
+- **🔌 Slog Adapter** (Sprint 3 - Commit 0aea10f)
+  - `SlogAdapter` for Go 1.21+ structured logging
+  - `NewSlogAdapter(logger)` constructor
+  - Full slog.Logger compatibility (TextHandler, JSONHandler, custom handlers)
+  - Context-aware methods (DebugContext, InfoContext, WarnContext, ErrorContext)
+  - Structured field conversion (Field → slog.Attr)
+  - Thread-safe concurrent logging
+  - **64 LOC production code**
+  - **15 comprehensive tests (380 LOC)**:
+    * Creation, all log levels, JSON handler
+    * Multiple fields, level filtering, context propagation
+    * Builder integration, field types, concurrent logging
+    * Edge cases (empty message, large fields)
+  - **100% pass rate**
+
+- **📚 Examples & Documentation** (Sprint 4)
+  - **examples/logger_example.go** (8 examples):
+    * Debug logging for development
+    * Info logging for production
+    * Custom logger implementation
+    * Slog with TextHandler
+    * Slog with JSONHandler (production)
+    * Streaming with logging
+    * No logging (default zero overhead)
+    * RAG with debug logging
+  - **docs/LOGGING_GUIDE.md** (comprehensive guide):
+    * Quick start, log levels, built-in loggers
+    * Custom logger implementation examples
+    * Slog integration (Text & JSON handlers)
+    * Production best practices
+    * What gets logged at each level
+    * Performance considerations & benchmarks
+    * Troubleshooting guide
+  - Updated README.md with logging section
+  - Updated CHANGELOG.md
+
+### 📊 Sprint Summary
+
+**Sprint 1**: Logger interface + core loggers (649 LOC)  
+**Sprint 2**: Integration into all operations (367 LOC)  
+**Sprint 3**: Slog adapter + comprehensive tests (444 LOC)  
+**Sprint 4**: Examples + documentation  
+
+**Total**: ~1,460 LOC (production + tests + docs)  
+**Tests**: 36 tests (logger + integration + slog), 100% pass  
+**Quality**: Zero regressions, production-ready  
+
+### 🎯 Key Features
+
+- ✅ Zero overhead when disabled (NoopLogger default)
+- ✅ Structured logging with fields
+- ✅ Context-aware API
+- ✅ Go 1.21+ slog support
+- ✅ Interface-based (compatible with any logger)
+- ✅ Thread-safe concurrent logging
+- ✅ Production-ready JSON output
+- ✅ Comprehensive observability
+
+### 📖 Documentation
+
+- **[LOGGING_GUIDE.md](docs/LOGGING_GUIDE.md)** - Complete logging guide
+- **[examples/logger_example.go](examples/logger_example.go)** - 8 working examples
+
+---
+
 ## [0.5.1] - 2025-01-15 🆕 Redis Cache - Distributed Caching
 
 ### 🎯 Production-Ready Distributed Caching

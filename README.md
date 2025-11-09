@@ -24,7 +24,8 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 - 🔢 **Vector Embeddings** - OpenAI & Ollama embeddings with similarity search (v0.5.0 🆕)
 - 🗄️ **Vector Databases** - ChromaDB & Qdrant integration for semantic search (v0.5.0 🆕)
 - 🧠 **Vector RAG** - Semantic retrieval with auto-embedding and priority system (v0.5.0 🆕)
-- ✅ **Well Tested** - 414+ tests, 65%+ coverage, 61+ working examples
+- 📊 **Logging & Observability** - Zero-overhead logging with slog support (v0.5.2 🆕)
+- ✅ **Well Tested** - 420+ tests, 65%+ coverage, 69+ working examples
 
 ## 📦 Installation
 
@@ -222,12 +223,62 @@ opts := &agent.RedisCacheOptions{
 ```
 
 **Benefits:**
+
 - Shared cache across multiple instances
 - Persistent cache (survives restarts)
 - Distributed locking (prevents cache stampede)
 - Scalable with Redis Cluster
 
-### 9. History Management
+### 9. Logging & Observability (v0.5.2 🆕)
+
+```go
+// Debug logging for development
+builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithDebugLogging() // Detailed logs with timing, cache, tools, RAG
+
+response, err := builder.Ask(ctx, "Hello!")
+// Output:
+// [2024-01-15 10:30:45] DEBUG: Ask request started | model=gpt-4o-mini
+// [2024-01-15 10:30:45] DEBUG: Cache miss | duration_ms=2
+// [2024-01-15 10:30:46] INFO: Ask completed | duration_ms=890 tokens=23
+
+// Info logging for production
+builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithInfoLogging() // Important events only
+
+// Slog integration (Go 1.21+)
+handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+    Level: slog.LevelInfo,
+})
+logger := slog.New(handler)
+
+builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithLogger(agent.NewSlogAdapter(logger))
+// Output: {"time":"...","level":"INFO","msg":"Ask completed","duration_ms":890}
+
+// Custom logger (Zap, Logrus, etc.)
+type MyLogger struct { /* implement Logger interface */ }
+builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithLogger(&MyLogger{})
+
+// No logging (default - zero overhead)
+builder := agent.NewOpenAI("gpt-4o-mini", apiKey)
+// NoopLogger - literally zero cost
+```
+
+**What gets logged:**
+
+- Request lifecycle (start, duration, completion)
+- Token usage (prompt, completion, total)
+- Cache operations (hit/miss, duration)
+- Tool execution (rounds, tool calls, results)
+- RAG retrieval (docs retrieved, method)
+- Retry attempts (delays, errors)
+- Errors with context
+
+📖 **[Complete Logging Guide](docs/LOGGING_GUIDE.md)** - Custom loggers, slog integration, production best practices
+
+### 10. History Management
 
 ```go
 builder := agent.NewOpenAI("gpt-4o-mini", apiKey).WithMemory()
@@ -248,7 +299,7 @@ savedHistory := builder.GetHistory()
 builder.SetHistory(savedHistory)
 ```
 
-### 10. Multimodal - Vision (GPT-4 Vision)
+### 11. Multimodal - Vision (GPT-4 Vision)
 
 ```go
 // Analyze image from URL
@@ -274,7 +325,7 @@ builder.WithImage("https://example.com/photo.jpg").
 builder.Ask(ctx, "What colors are prominent?") // Remembers the image
 ```
 
-### 11. Vector RAG - Semantic Search (v0.5.0 🆕)
+### 12. Vector RAG - Semantic Search (v0.5.0 🆕)
 
 ```go
 // Setup vector database and embeddings
@@ -319,7 +370,7 @@ for _, doc := range retrieved {
 }
 ```
 
-### 12. Advanced Vector RAG with Metadata
+### 13. Advanced Vector RAG with Metadata
 
 ```go
 // Add documents with rich metadata
@@ -366,7 +417,7 @@ for _, doc := range docs {
 }
 ```
 
-### 12. Switch Vector Databases - ChromaDB vs Qdrant
+### 14. Switch Vector Databases - ChromaDB vs Qdrant
 
 ```go
 // Development: Use ChromaDB (easy setup)
@@ -732,7 +783,8 @@ MIT License - see [LICENSE](LICENSE) for details
 - **[COMPARISON.md](docs/COMPARISON.md)** - 🆚 Why go-deep-agent vs openai-go (with code examples)
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and migration guides
 - **[RAG_VECTOR_DATABASES.md](docs/RAG_VECTOR_DATABASES.md)** - 🆕 Complete Vector RAG guide (v0.5.0)
-- **[examples/](examples/)** - 14 example files with 61+ working examples
+- **[LOGGING_GUIDE.md](docs/LOGGING_GUIDE.md)** - 🆕 Comprehensive logging & observability guide (v0.5.2)
+- **[examples/](examples/)** - 15 example files with 69+ working examples
 - **[agent/README.md](agent/README.md)** - Detailed API documentation
 - **[TODO.md](TODO.md)** - Roadmap and implementation progress
 - **[ROADMAP.md](ROADMAP.md)** - v0.5.0 Advanced RAG implementation plan
