@@ -18,7 +18,7 @@ An interactive command-line chatbot with conversation memory, streaming, and mul
 
 **Features demonstrated:**
 - Interactive chat loop with real-time input
-- Model selection (GPT-4o-mini, GPT-4o, GPT-4-turbo, Ollama)
+- Model selection (GPT-4o-mini, GPT-4o, GPT-4-turbo, Ollama qwen2.5:1.5b, llama3.2)
 - Streaming vs non-streaming mode
 - Conversation memory toggle
 - Built-in commands (/help, /stats, /clear, /exit)
@@ -26,8 +26,15 @@ An interactive command-line chatbot with conversation memory, streaming, and mul
 - Cache statistics monitoring
 
 ```bash
-# Set API key
+# For OpenAI models (optional if using Ollama only)
 export OPENAI_API_KEY="your-api-key-here"
+
+# For Ollama - ensure service is running
+ollama serve
+
+# Pull models (in another terminal)
+ollama pull qwen2.5:1.5b   # Fast, small (recommended)
+ollama pull llama3.2        # Alternative
 
 # Run chatbot
 go run examples/chatbot_cli.go

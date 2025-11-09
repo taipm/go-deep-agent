@@ -12,20 +12,24 @@ import (
 )
 
 func main() {
-	// Get API key from environment
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey == "" {
-		fmt.Println("❌ Error: OPENAI_API_KEY environment variable not set")
-		fmt.Println("Please set it with: export OPENAI_API_KEY='your-api-key'")
-		os.Exit(1)
-	}
-
 	// Print welcome banner
 	printBanner()
 
 	// Get user preferences
 	model, provider := selectModel()
-	useStreaming := askYesNo("Enable streaming mode? (y/n): ")
+
+	// Get API key from environment (only for OpenAI)
+	apiKey := ""
+	if provider == "openai" {
+		apiKey = os.Getenv("OPENAI_API_KEY")
+		if apiKey == "" {
+			fmt.Println("\n❌ Error: OPENAI_API_KEY environment variable not set")
+			fmt.Println("Please set it with: export OPENAI_API_KEY='your-api-key'")
+			os.Exit(1)
+		}
+	}
+
+	useStreaming := askYesNo("\nEnable streaming mode? (y/n): ")
 	useMemory := askYesNo("Enable conversation memory? (y/n): ")
 
 	// Build chatbot with selected options
@@ -130,8 +134,9 @@ func selectModel() (string, string) {
 	fmt.Println("1. OpenAI (GPT-4o-mini) - Fast, efficient")
 	fmt.Println("2. OpenAI (GPT-4o) - Most capable")
 	fmt.Println("3. OpenAI (GPT-4-turbo) - Advanced reasoning")
-	fmt.Println("4. Ollama (llama3.2) - Local, private")
-	fmt.Print("\nYour choice (1-4): ")
+	fmt.Println("4. Ollama (qwen2.5:1.5b) - Local, private, fast")
+	fmt.Println("5. Ollama (llama3.2) - Local, private")
+	fmt.Print("\nYour choice (1-5): ")
 
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
@@ -145,10 +150,12 @@ func selectModel() (string, string) {
 	case "3":
 		return "gpt-4-turbo", "openai"
 	case "4":
-		return "qwen3:1.7b", "ollama"
+		return "qwen2.5:1.5b", "ollama"
+	case "5":
+		return "llama3.2", "ollama"
 	default:
-		fmt.Println("Invalid choice, using default: gpt-4o-mini")
-		return "gpt-4o-mini", "openai"
+		fmt.Println("\nInvalid choice, using default: Ollama (qwen2.5:1.5b)")
+		return "qwen2.5:1.5b", "ollama"
 	}
 }
 

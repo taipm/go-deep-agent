@@ -9,7 +9,8 @@ A fully interactive command-line chatbot powered by go-deep-agent, featuring con
   - OpenAI GPT-4o-mini (fast, efficient)
   - OpenAI GPT-4o (most capable)
   - OpenAI GPT-4-turbo (advanced reasoning)
-  - Ollama (local, private)
+  - Ollama qwen2.5:1.5b (local, private, very fast)
+  - Ollama llama3.2 (local, private)
 - **💬 Conversation Memory** - Optional memory to remember context (max 20 messages)
 - **⚡ Streaming Mode** - Real-time response streaming with chunk-by-chunk display
 - **📊 Cache Statistics** - Monitor cache hits, misses, and performance
@@ -21,11 +22,15 @@ A fully interactive command-line chatbot powered by go-deep-agent, featuring con
 ### Prerequisites
 
 ```bash
-# For OpenAI models
+# For OpenAI models (optional if using Ollama only)
 export OPENAI_API_KEY="your-api-key-here"
 
-# For Ollama (optional, if using local models)
+# For Ollama - ensure Ollama is running
 ollama serve
+
+# Pull models (if not already available)
+ollama pull qwen2.5:1.5b    # Fast, small model (recommended)
+ollama pull llama3.2         # Alternative model
 ```
 
 ### Run
@@ -56,9 +61,10 @@ Select AI Provider:
 1. OpenAI (GPT-4o-mini) - Fast, efficient
 2. OpenAI (GPT-4o) - Most capable
 3. OpenAI (GPT-4-turbo) - Advanced reasoning
-4. Ollama (llama3.2) - Local, private
+4. Ollama (qwen2.5:1.5b) - Local, private, fast
+5. Ollama (llama3.2) - Local, private
 
-Your choice (1-4): 1
+Your choice (1-5): 4
 Enable streaming mode? (y/n): y
 Enable conversation memory? (y/n): y
 
@@ -169,7 +175,8 @@ You: /exit
 | gpt-4o-mini | OpenAI | ⚡⚡⚡ | ⭐⭐⭐ | $ | Daily tasks, quick questions |
 | gpt-4o | OpenAI | ⚡⚡ | ⭐⭐⭐⭐⭐ | $$$ | Complex reasoning, coding |
 | gpt-4-turbo | OpenAI | ⚡⚡ | ⭐⭐⭐⭐ | $$ | Balanced performance |
-| llama3.2 | Ollama | ⚡⚡⚡ | ⭐⭐⭐ | Free | Local, privacy-focused |
+| qwen2.5:1.5b | Ollama | ⚡⚡⚡⚡ | ⭐⭐⭐ | Free | Local, fast, privacy-focused |
+| llama3.2 | Ollama | ⚡⚡⚡ | ⭐⭐⭐⭐ | Free | Local, privacy-focused |
 
 ### Streaming Mode
 
@@ -266,6 +273,7 @@ chatbot = chatbot.WithTemperature(temp)
 ## 📊 Performance Tips
 
 ### Optimize for Speed
+- Use `qwen2.5:1.5b` with Ollama (fastest, local)
 - Use `gpt-4o-mini` (fastest OpenAI model)
 - Enable memory caching
 - Disable streaming for short queries
@@ -278,13 +286,18 @@ chatbot = chatbot.WithTemperature(temp)
 - Set temperature to 0.9 for creative responses
 
 ### Optimize for Cost
+- Use Ollama models (100% free, run locally)
+  - `qwen2.5:1.5b` - Very fast, good quality
+  - `llama3.2` - Better quality, slightly slower
 - Enable caching (repeated questions are free)
 - Use memory to avoid re-stating context
-- Use `gpt-4o-mini` instead of `gpt-4o` when possible
+- Use `gpt-4o-mini` instead of `gpt-4o` when using OpenAI
 
 ## 🐛 Troubleshooting
 
 ### Error: OPENAI_API_KEY not set
+**Only needed for OpenAI models.** If using Ollama, you can skip this.
+
 ```bash
 export OPENAI_API_KEY="sk-your-key-here"
 ```
@@ -294,8 +307,19 @@ export OPENAI_API_KEY="sk-your-key-here"
 # Start Ollama server
 ollama serve
 
-# In another terminal
-ollama pull llama3.2
+# In another terminal, pull the model
+ollama pull qwen2.5:1.5b   # Recommended: Fast & small
+# OR
+ollama pull llama3.2       # Alternative: Better quality
+```
+
+### Model not found (Ollama)
+```bash
+# List available models
+ollama list
+
+# Pull missing model
+ollama pull qwen2.5:1.5b
 ```
 
 ### Slow responses
