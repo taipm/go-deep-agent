@@ -689,7 +689,7 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 		ragDuration := time.Since(ragStart)
 
 		if len(docs) > 0 {
-			logger.Debug(ctx, "RAG documents retrieved", 
+			logger.Debug(ctx, "RAG documents retrieved",
 				F("doc_count", len(docs)),
 				F("duration_ms", ragDuration.Milliseconds()))
 			// Inject context into the message
@@ -711,7 +711,7 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 	completion, err := b.executeSyncRaw(ctx, messages)
 	if err != nil {
 		requestDuration := time.Since(requestStart)
-		logger.Error(ctx, "Request failed", 
+		logger.Error(ctx, "Request failed",
 			F("error", err.Error()),
 			F("duration_ms", requestDuration.Milliseconds()))
 		return "", err
@@ -743,7 +743,7 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 	}
 
 	totalDuration := time.Since(start)
-	logger.Info(ctx, "Ask request completed", 
+	logger.Info(ctx, "Ask request completed",
 		F("duration_ms", totalDuration.Milliseconds()),
 		F("request_ms", requestDuration.Milliseconds()),
 		F("prompt_tokens", b.lastUsage.PromptTokens),
@@ -781,7 +781,7 @@ func (b *Builder) askWithToolExecution(ctx context.Context, message string) (str
 		// Execute request
 		completion, err := b.client.Chat.Completions.New(ctx, params)
 		if err != nil {
-			logger.Error(ctx, "Chat completion failed in tool loop", 
+			logger.Error(ctx, "Chat completion failed in tool loop",
 				F("round", round+1),
 				F("error", err.Error()))
 			return "", fmt.Errorf("chat completion failed: %w", err)
@@ -798,7 +798,7 @@ func (b *Builder) askWithToolExecution(ctx context.Context, message string) (str
 		if len(choice.Message.ToolCalls) == 0 {
 			// No tool calls, return the final response
 			result := choice.Message.Content
-			logger.Info(ctx, "Tool execution completed", 
+			logger.Info(ctx, "Tool execution completed",
 				F("rounds", round+1),
 				F("response_length", len(result)))
 
@@ -811,7 +811,7 @@ func (b *Builder) askWithToolExecution(ctx context.Context, message string) (str
 			return result, nil
 		}
 
-		logger.Debug(ctx, "Tool calls received", 
+		logger.Debug(ctx, "Tool calls received",
 			F("round", round+1),
 			F("tool_call_count", len(choice.Message.ToolCalls)))
 
@@ -848,23 +848,23 @@ func (b *Builder) askWithToolExecution(ctx context.Context, message string) (str
 				return "", fmt.Errorf("no handler found for tool: %s", toolName)
 			}
 
-			logger.Debug(ctx, "Executing tool", 
+			logger.Debug(ctx, "Executing tool",
 				F("tool_name", toolName),
 				F("args_length", len(toolCall.Function.Arguments)))
 
 			// Execute the tool
 			result, err := handler(toolCall.Function.Arguments)
 			toolDuration := time.Since(toolStart)
-			
+
 			if err != nil {
-				logger.Error(ctx, "Tool execution failed", 
+				logger.Error(ctx, "Tool execution failed",
 					F("tool_name", toolName),
 					F("error", err.Error()),
 					F("duration_ms", toolDuration.Milliseconds()))
 				return "", fmt.Errorf("tool execution failed: %w", err)
 			}
 
-			logger.Debug(ctx, "Tool execution succeeded", 
+			logger.Debug(ctx, "Tool execution succeeded",
 				F("tool_name", toolName),
 				F("result_length", len(result)),
 				F("duration_ms", toolDuration.Milliseconds()))
@@ -928,8 +928,8 @@ func (b *Builder) AskMultiple(ctx context.Context, message string) ([]string, er
 func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
 	start := time.Now()
 	logger := b.getLogger()
-	
-	logger.Debug(ctx, "Stream request started", 
+
+	logger.Debug(ctx, "Stream request started",
 		F("model", b.model),
 		F("message_length", len(message)))
 
@@ -974,9 +974,6 @@ func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
 		if content, ok := acc.JustFinishedContent(); ok {
 			fullContent = content
 			logger.Debug(ctx, "Stream content finished", F("content_length", len(content)))
-			if b.onStream != nil {
-				b.onStream(content)
-			}
 		}
 
 		// Check if a tool call just finished
@@ -997,13 +994,16 @@ func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
 
 		// Stream delta content in real-time
 		if b.onStream != nil && len(chunk.Choices) > 0 && chunk.Choices[0].Delta.Content != "" {
-			b.onStream(chunk.Choices[0].Delta.Content)
+			deltaContent := chunk.Choices[0].Delta.Content
+			b.onStream(deltaContent)
+			// Accumulate content for memory (fallback if JustFinishedContent doesn't work)
+			fullContent += deltaContent
 		}
 	}
 
 	if err := stream.Err(); err != nil {
 		duration := time.Since(start)
-		logger.Error(ctx, "Stream error", 
+		logger.Error(ctx, "Stream error",
 			F("error", err.Error()),
 			F("chunks_received", chunkCount),
 			F("duration_ms", duration.Milliseconds()))
@@ -1011,7 +1011,7 @@ func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
 	}
 
 	duration := time.Since(start)
-	logger.Info(ctx, "Stream completed", 
+	logger.Info(ctx, "Stream completed",
 		F("duration_ms", duration.Milliseconds()),
 		F("chunks", chunkCount),
 		F("response_length", len(fullContent)))
@@ -1173,7 +1173,7 @@ func (b *Builder) executeSyncRaw(ctx context.Context, messages []openai.ChatComp
 // executeWithRetry wraps an operation with retry logic and timeout handling
 func (b *Builder) executeWithRetry(ctx context.Context, operation func(context.Context) error) error {
 	logger := b.getLogger()
-	
+
 	// Apply timeout if configured
 	if b.timeout > 0 {
 		logger.Debug(ctx, "Applying timeout", F("timeout_seconds", b.timeout.Seconds()))
@@ -1216,7 +1216,7 @@ func (b *Builder) executeWithRetry(ctx context.Context, operation func(context.C
 
 		// Check if error is timeout
 		if ctx.Err() == context.DeadlineExceeded {
-			logger.Error(ctx, "Operation timed out during retry", 
+			logger.Error(ctx, "Operation timed out during retry",
 				F("attempt", attempt+1),
 				F("timeout", b.timeout.Seconds()))
 			return WrapTimeout(err)
@@ -1224,7 +1224,7 @@ func (b *Builder) executeWithRetry(ctx context.Context, operation func(context.C
 
 		// Check if error is retryable
 		if !b.isRetryable(err) {
-			logger.Debug(ctx, "Error is not retryable", 
+			logger.Debug(ctx, "Error is not retryable",
 				F("attempt", attempt+1),
 				F("error", err.Error()))
 			return err
@@ -1232,7 +1232,7 @@ func (b *Builder) executeWithRetry(ctx context.Context, operation func(context.C
 
 		// Last attempt failed
 		if attempt == b.maxRetries {
-			logger.Warn(ctx, "Max retries reached", 
+			logger.Warn(ctx, "Max retries reached",
 				F("attempts", attempt+1),
 				F("error", err.Error()))
 			break
@@ -1240,7 +1240,7 @@ func (b *Builder) executeWithRetry(ctx context.Context, operation func(context.C
 
 		// Calculate delay
 		delay := b.calculateRetryDelay(attempt)
-		logger.Debug(ctx, "Waiting before retry", 
+		logger.Debug(ctx, "Waiting before retry",
 			F("attempt", attempt+1),
 			F("delay_seconds", delay.Seconds()),
 			F("error", err.Error()))
@@ -1442,7 +1442,7 @@ func (b *Builder) GetCacheStats() CacheStats {
 		if stats.Hits+stats.Misses > 0 {
 			hitRate = float64(stats.Hits) / float64(stats.Hits+stats.Misses)
 		}
-		logger.Debug(context.Background(), "Cache stats retrieved", 
+		logger.Debug(context.Background(), "Cache stats retrieved",
 			F("hits", stats.Hits),
 			F("misses", stats.Misses),
 			F("size", stats.Size),

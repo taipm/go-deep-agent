@@ -108,6 +108,11 @@ func main() {
 			continue
 		}
 
+		// Debug: Show response length
+		if response == "" {
+			fmt.Printf("\n⚠️  Warning: Empty response received (may affect memory)\n")
+		}
+
 		// Show response time
 		elapsed := time.Since(start)
 		fmt.Printf("\n⏱️  Response time: %.2fs\n\n", elapsed.Seconds())
