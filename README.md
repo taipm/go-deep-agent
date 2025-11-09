@@ -21,7 +21,8 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 - 🚀 **Batch Processing** - Concurrent request processing with progress tracking (v0.4.0)
 - 📚 **RAG Support** - Retrieval-Augmented Generation with document chunking (v0.4.0)
 - 💾 **Response Caching** - Intelligent caching with TTL and LRU eviction (v0.4.0)
-- ✅ **Well Tested** - 320+ tests, 65%+ coverage, 44+ working examples
+- 🔢 **Vector Embeddings** - OpenAI & Ollama embeddings with similarity search (v0.5.0 🆕)
+- ✅ **Well Tested** - 364+ tests, 65%+ coverage, 48+ working examples
 
 ## 📦 Installation
 
