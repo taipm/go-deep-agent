@@ -3,6 +3,7 @@ package memory
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 )
@@ -306,20 +307,13 @@ func (e *EpisodicMemoryImpl) Retrieve(ctx context.Context, query string, topK in
 		})
 	}
 
-	// Sort by similarity score (highest first), then by recency
-	for i := 0; i < len(scores)-1; i++ {
-		for j := i + 1; j < len(scores); j++ {
-			// Primary sort: by score
-			if scores[j].score > scores[i].score {
-				scores[i], scores[j] = scores[j], scores[i]
-			} else if scores[j].score == scores[i].score {
-				// Secondary sort: by recency (higher index = more recent)
-				if scores[j].index > scores[i].index {
-					scores[i], scores[j] = scores[j], scores[i]
-				}
-			}
+	// Sort by similarity score (highest first), then by recency using Go's built-in sort
+	sort.Slice(scores, func(i, j int) bool {
+		if scores[i].score != scores[j].score {
+			return scores[i].score > scores[j].score // Higher score first
 		}
-	}
+		return scores[i].index > scores[j].index // More recent first
+	})
 
 	// Return top K results
 	if topK > len(scores) {
