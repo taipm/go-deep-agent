@@ -610,10 +610,6 @@ func (b *Builder) OnStream(callback func(string)) *Builder {
 //	builder.OnToolCall(func(tool openai.FinishedChatCompletionToolCall) {
 //	    fmt.Printf("Tool called: %s\n", tool.Function.Name)
 //	})
-func (b *Builder) OnToolCall(callback func(openai.FinishedChatCompletionToolCall)) *Builder {
-	b.onToolCall = callback
-	return b
-}
 
 // OnRefusal sets a callback for when the model refuses to respond.
 //
@@ -638,20 +634,12 @@ func (b *Builder) OnRefusal(callback func(string)) *Builder {
 //	        return "Sunny, 25°C", nil
 //	    })
 //	builder.WithTool(tool)
-func (b *Builder) WithTool(tool *Tool) *Builder {
-	b.tools = append(b.tools, tool)
-	return b
-}
 
 // WithTools adds multiple tools at once.
 //
 // Example:
 //
 //	builder.WithTools(weatherTool, calculatorTool, searchTool)
-func (b *Builder) WithTools(tools ...*Tool) *Builder {
-	b.tools = append(b.tools, tools...)
-	return b
-}
 
 // WithAutoExecute enables automatic execution of tool calls.
 // When enabled, the builder will automatically call tool handlers and
@@ -663,13 +651,6 @@ func (b *Builder) WithTools(tools ...*Tool) *Builder {
 //	    WithAutoExecute(true).
 //	    Ask(ctx, "What's the weather in Paris?")
 //	// Automatically calls weatherTool and returns final answer
-func (b *Builder) WithAutoExecute(enable bool) *Builder {
-	b.autoExecute = enable
-	if b.maxToolRounds == 0 {
-		b.maxToolRounds = 5 // Default max rounds
-	}
-	return b
-}
 
 // WithMaxToolRounds sets the maximum number of tool execution rounds.
 // Prevents infinite loops. Default is 5.
@@ -677,10 +658,6 @@ func (b *Builder) WithAutoExecute(enable bool) *Builder {
 // Example:
 //
 //	builder.WithAutoExecute(true).WithMaxToolRounds(3)
-func (b *Builder) WithMaxToolRounds(max int) *Builder {
-	b.maxToolRounds = max
-	return b
-}
 
 // WithParallelTools enables parallel execution of independent tools.
 // Tools without dependencies run concurrently, respecting worker pool limits.
@@ -692,16 +669,6 @@ func (b *Builder) WithMaxToolRounds(max int) *Builder {
 //	    WithAutoExecute(true).
 //	    WithParallelTools(true).  // Execute tools in parallel
 //	    Ask(ctx, "Analyze this data")
-func (b *Builder) WithParallelTools(enable bool) *Builder {
-	b.enableParallel = enable
-	if b.maxWorkers == 0 {
-		b.maxWorkers = 10 // Default worker pool size
-	}
-	if b.toolTimeout == 0 {
-		b.toolTimeout = 30 * time.Second // Default timeout
-	}
-	return b
-}
 
 // WithMaxWorkers sets the maximum number of concurrent tool workers.
 // Only applies when parallel tool execution is enabled.
@@ -711,10 +678,6 @@ func (b *Builder) WithParallelTools(enable bool) *Builder {
 //
 //	builder.WithParallelTools(true).
 //	    WithMaxWorkers(5)  // Max 5 tools running concurrently
-func (b *Builder) WithMaxWorkers(max int) *Builder {
-	b.maxWorkers = max
-	return b
-}
 
 // WithToolTimeout sets the timeout for individual tool executions.
 // Only applies when parallel tool execution is enabled.
@@ -724,10 +687,6 @@ func (b *Builder) WithMaxWorkers(max int) *Builder {
 //
 //	builder.WithParallelTools(true).
 //	    WithToolTimeout(60 * time.Second)  // 60s timeout per tool
-func (b *Builder) WithToolTimeout(timeout time.Duration) *Builder {
-	b.toolTimeout = timeout
-	return b
-}
 
 // WithJSONMode enables JSON object response format.
 // This is an older method of generating JSON responses.
@@ -1115,33 +1074,3 @@ func (b *Builder) getLogger() Logger {
 
 // injectLoggerToTools propagates the Builder's logger to the tools package
 // using a callback function via go:linkname to avoid import cycles.
-func (b *Builder) injectLoggerToTools() {
-	// TODO: Fix go:linkname relocation issue in tests
-	// Temporarily disabled to allow tests to run
-	/*
-		logger := b.getLogger()
-
-		// Inject callback function to tools package via go:linkname
-		toolsSetLogFunc(func(level, msg string, fields map[string]interface{}) {
-			ctx := context.Background() // Tools don't have context, use background
-
-			// Convert map[string]interface{} to []Field
-			logFields := make([]Field, 0, len(fields))
-			for k, v := range fields {
-				logFields = append(logFields, F(k, v))
-			}
-
-			// Route to appropriate log level
-			switch level {
-			case "DEBUG":
-				logger.Debug(ctx, msg, logFields...)
-			case "INFO":
-				logger.Info(ctx, msg, logFields...)
-			case "WARN":
-				logger.Warn(ctx, msg, logFields...)
-			case "ERROR":
-				logger.Error(ctx, msg, logFields...)
-			}
-		})
-	*/
-}
