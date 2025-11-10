@@ -116,7 +116,8 @@ func TestMemoryCompress(t *testing.T) {
 	}
 
 	statsBefore := mem.Stats(ctx)
-	assert.True(t, statsBefore.WorkingSize > 5)
+	// With FIFO eviction, working size should be capped at capacity (5)
+	assert.Equal(t, 5, statsBefore.WorkingSize)
 
 	// Manual compression
 	err := mem.Compress(ctx)

@@ -37,6 +37,12 @@ func (w *WorkingMemoryImpl) Add(ctx context.Context, msg Message) error {
 		msg.Timestamp = time.Now()
 	}
 
+	// Enforce capacity limit using FIFO eviction
+	// Remove oldest messages if at capacity
+	for len(w.messages) >= w.capacity {
+		w.messages = w.messages[1:] // Remove oldest (FIFO)
+	}
+
 	w.messages = append(w.messages, msg)
 	return nil
 }

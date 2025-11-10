@@ -52,6 +52,19 @@ func NewSmartMemory(config MemoryConfig) *Memory {
 func (m *Memory) Add(ctx context.Context, msg Message) error {
 	m.mu.Lock()
 
+	// Check if compression is needed BEFORE adding
+	// This prevents working memory from exceeding capacity
+	needsCompressionBefore := m.config.AutoCompress && m.working.Size() >= m.config.WorkingCapacity
+	if needsCompressionBefore {
+		m.mu.Unlock()
+		// Compress outside lock to avoid deadlock
+		if err := m.Compress(ctx); err != nil {
+			// Don't fail, compression is optional
+			_ = err
+		}
+		m.mu.Lock()
+	}
+
 	// Always add to working memory first
 	if err := m.working.Add(ctx, msg); err != nil {
 		m.mu.Unlock()
@@ -79,17 +92,7 @@ func (m *Memory) Add(ctx context.Context, msg Message) error {
 		}
 	}
 
-	// Check if compression is needed
-	needsCompression := m.config.AutoCompress && m.working.Size() >= m.config.CompressionThreshold
 	m.mu.Unlock()
-
-	// Auto-compress if needed (outside the lock to avoid deadlock)
-	if needsCompression {
-		if err := m.Compress(ctx); err != nil {
-			// Don't fail, compression is optional
-			_ = err
-		}
-	}
 
 	return nil
 }
@@ -305,8 +308,8 @@ func (m *Memory) calculateImportance(msg Message) float64 {
 		score += weights.ExplicitRemember
 	}
 
-	// Check for personal information (names, dates, preferences)
-	if containsPersonalInfo(content) {
+	// Check for personal information using enhanced detection from utils
+	if hasPersonalInfo(content) {
 		score += weights.PersonalInfo
 	}
 

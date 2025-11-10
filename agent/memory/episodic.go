@@ -263,18 +263,72 @@ func (e *EpisodicMemoryImpl) Retrieve(ctx context.Context, query string, topK in
 		return e.retrieveFromVectorDB(ctx, query, topK)
 	}
 
-	// Fallback to in-memory search (simple recency-based)
+	// Fallback to in-memory search with simple semantic similarity
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	size := len(e.messages)
-	if topK > size {
-		topK = size
+	if len(e.messages) == 0 {
+		return []Message{}, nil
 	}
 
-	result := make([]Message, 0, topK)
-	for i := size - topK; i < size; i++ {
-		result = append(result, e.messages[i].Message)
+	// If no query, return most recent messages
+	if query == "" {
+		size := len(e.messages)
+		if topK > size {
+			topK = size
+		}
+
+		result := make([]Message, 0, topK)
+		for i := size - topK; i < size; i++ {
+			result = append(result, e.messages[i].Message)
+		}
+		return result, nil
+	}
+
+	// Calculate similarity scores for all messages using Jaccard similarity
+	type scoredMessage struct {
+		message Message
+		score   float64
+		index   int
+	}
+
+	queryWords := expandKeywords(tokenize(query))
+	scores := make([]scoredMessage, 0, len(e.messages))
+
+	for i, m := range e.messages {
+		msgWords := expandKeywords(tokenize(m.Message.Content))
+		similarity := jaccardSimilarity(queryWords, msgWords)
+
+		scores = append(scores, scoredMessage{
+			message: m.Message,
+			score:   similarity,
+			index:   i,
+		})
+	}
+
+	// Sort by similarity score (highest first), then by recency
+	for i := 0; i < len(scores)-1; i++ {
+		for j := i + 1; j < len(scores); j++ {
+			// Primary sort: by score
+			if scores[j].score > scores[i].score {
+				scores[i], scores[j] = scores[j], scores[i]
+			} else if scores[j].score == scores[i].score {
+				// Secondary sort: by recency (higher index = more recent)
+				if scores[j].index > scores[i].index {
+					scores[i], scores[j] = scores[j], scores[i]
+				}
+			}
+		}
+	}
+
+	// Return top K results
+	if topK > len(scores) {
+		topK = len(scores)
+	}
+
+	result := make([]Message, topK)
+	for i := 0; i < topK; i++ {
+		result[i] = scores[i].message
 	}
 
 	return result, nil

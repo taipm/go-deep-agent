@@ -12,11 +12,13 @@ func TestMemoryIntegration_WorkingToEpisodic(t *testing.T) {
 
 	// Create memory system with small working capacity to trigger compression
 	config := MemoryConfig{
-		WorkingCapacity:   3, // Small capacity to test compression
-		EpisodicEnabled:   true,
-		EpisodicThreshold: 0.5,
-		AutoCompress:      true,
-		ImportanceScoring: true,
+		WorkingCapacity:      3, // Small capacity to test compression
+		EpisodicEnabled:      true,
+		EpisodicThreshold:    0.5,
+		AutoCompress:         true,
+		ImportanceScoring:    true,
+		ImportanceWeights:    DefaultImportanceWeights(), // Must set weights!
+		CompressionThreshold: 3,
 	}
 
 	mem := NewWithConfig(config)
@@ -26,11 +28,11 @@ func TestMemoryIntegration_WorkingToEpisodic(t *testing.T) {
 		content    string
 		importance float64 // Expected importance
 	}{
-		{"Hello, how are you?", 0.3},                    // Low importance
+		{"Hello, how are you?", 0.3},                         // Low importance
 		{"My name is John and I'm allergic to peanuts", 0.8}, // High importance (personal info)
-		{"What's the weather like?", 0.3},               // Low importance
-		{"Remember: my birthday is March 15th", 0.9},    // High importance (explicit remember)
-		{"Thanks for your help!", 0.3},                  // Low importance
+		{"What's the weather like?", 0.3},                    // Low importance
+		{"Remember: my birthday is March 15th", 0.9},         // High importance (explicit remember)
+		{"Thanks for your help!", 0.3},                       // Low importance
 	}
 
 	for _, msg := range messages {
