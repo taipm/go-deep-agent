@@ -202,70 +202,6 @@ func (b *Builder) WithSystem(prompt string) *Builder {
 	return b
 }
 
-// WithMemory enables automatic conversation memory.
-// When enabled, all user messages and assistant responses are automatically
-// stored in the conversation history for context.
-//
-// Example:
-//
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    WithMemory()
-//	builder.Ask(ctx, "My name is Alice") // Stored in memory
-//	builder.Ask(ctx, "What's my name?")  // Model remembers: "Alice"
-
-// WithHierarchicalMemory enables hierarchical memory system with custom configuration.
-// By default, memory is already enabled with default config.
-//
-// Example:
-//
-//	config := memory.DefaultMemoryConfig()
-//	config.WorkingCapacity = 200
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    WithHierarchicalMemory(config)
-
-// DisableMemory disables the hierarchical memory system.
-//
-// Example:
-//
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    DisableMemory() // Use simple FIFO like v0.5.6
-
-// GetMemory returns the current memory system instance.
-// Useful for advanced memory operations or inspection.
-//
-// Example:
-//
-//	mem := builder.GetMemory()
-//	stats := mem.Stats(ctx)
-//	fmt.Printf("Total messages: %d\n", stats.TotalMessages)
-
-// WithEpisodicMemory enables episodic memory with specified threshold.
-// Messages with importance >= threshold will be stored in episodic memory.
-//
-// Example:
-//
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    WithEpisodicMemory(0.7) // Store messages with importance >= 0.7
-
-// WithImportanceWeights sets custom importance calculation weights.
-// This allows fine-tuning which types of messages are considered important.
-//
-// Example:
-//
-//	weights := memory.DefaultImportanceWeights()
-//	weights.ExplicitRemember = 2.0  // Double weight for "remember this"
-//	weights.PersonalInfo = 1.5      // Higher weight for personal info
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    WithImportanceWeights(weights)
-
-// WithWorkingMemorySize sets the working memory capacity.
-// Working memory holds the most recent messages in a FIFO buffer.
-//
-// Example:
-//
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    WithWorkingMemorySize(20) // Keep last 20 messages in working memory
-
 // WithSemanticMemory enables semantic memory for fact storage.
 // Semantic memory stores and retrieves factual information by category.
 //
@@ -276,82 +212,10 @@ func (b *Builder) WithSystem(prompt string) *Builder {
 
 // WithMessages sets the conversation history directly.
 // Useful for continuing a previous conversation or providing few-shot examples.
-//
-// Example:
-//
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    WithMessages([]agent.Message{
-//	        agent.User("What is 2+2?"),
-//	        agent.Assistant("4"),
-//	        agent.User("What is 3+3?"),
-//	    })
-func (b *Builder) WithMessages(messages []Message) *Builder {
-	b.messages = messages
-	return b
-}
 
-// GetHistory returns a copy of the current conversation history.
-// The system prompt is not included in the returned messages.
-//
-// Example:
-//
-//	history := builder.GetHistory()
-//	fmt.Printf("Conversation has %d messages\n", len(history))
-func (b *Builder) GetHistory() []Message {
-	// Return a copy to prevent external modification
-	history := make([]Message, len(b.messages))
-	copy(history, b.messages)
-	return history
-}
 
-// SetHistory replaces the conversation history with the provided messages.
-// This is useful for restoring a previous conversation state.
-// The system prompt is preserved.
-//
-// Example:
-//
-//	// Save conversation
-//	history := builder.GetHistory()
-//
-//	// Later, restore it
-//	builder.SetHistory(history)
-func (b *Builder) SetHistory(messages []Message) *Builder {
-	b.messages = messages
-	return b
-}
 
-// Clear resets the conversation history while preserving the system prompt.
-// This is useful for starting a fresh conversation with the same configuration.
-//
-// Example:
-//
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    WithSystem("You are a helpful assistant").
-//	    WithMemory()
-//
-//	builder.Ask(ctx, "Hello")
-//	builder.Clear() // Start fresh, but keep system prompt
-//	builder.Ask(ctx, "Hi") // Model doesn't remember "Hello"
-func (b *Builder) Clear() *Builder {
-	b.messages = []Message{}
-	return b
-}
 
-// WithMaxHistory sets the maximum number of messages to keep in history.
-// When the limit is reached, old messages are automatically removed (FIFO).
-// The system prompt is always preserved and doesn't count toward the limit.
-// Set to 0 for unlimited history (default).
-//
-// Example:
-//
-//	// Keep only the last 10 messages
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    WithMemory().
-//	    WithMaxHistory(10)
-func (b *Builder) WithMaxHistory(max int) *Builder {
-	b.maxHistory = max
-	return b
-}
 
 // WithTimeout sets the request timeout.
 // If set, all API requests will be wrapped with a context timeout.
