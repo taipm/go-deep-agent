@@ -340,7 +340,7 @@ func TestOrchestrator_WorkerPool(t *testing.T) {
 			Args: `{}`,
 			Handler: func(args string) (string, error) {
 				current := atomic.AddInt32(&concurrentCount, 1)
-				
+
 				// Track maximum concurrent executions
 				for {
 					max := atomic.LoadInt32(&maxConcurrent)
@@ -348,7 +348,7 @@ func TestOrchestrator_WorkerPool(t *testing.T) {
 						break
 					}
 				}
-				
+
 				time.Sleep(50 * time.Millisecond)
 				atomic.AddInt32(&concurrentCount, -1)
 				return "success", nil

@@ -60,6 +60,11 @@ type Builder struct {
 	autoExecute   bool    // If true, automatically execute tool calls
 	maxToolRounds int     // Maximum number of tool execution rounds (default 5)
 
+	// Tool orchestration (parallel execution)
+	enableParallel bool          // Enable parallel tool execution (default: false)
+	maxWorkers     int           // Max concurrent tool workers (default: 10)
+	toolTimeout    time.Duration // Timeout per tool (default: 30s)
+
 	// Response format (structured outputs)
 	responseFormat *openai.ChatCompletionNewParamsResponseFormatUnion
 
@@ -679,6 +684,53 @@ func (b *Builder) WithMaxToolRounds(max int) *Builder {
 	return b
 }
 
+// WithParallelTools enables parallel execution of independent tools.
+// Tools without dependencies run concurrently, respecting worker pool limits.
+// This can significantly speed up multi-tool executions (3x+ faster).
+//
+// Example:
+//
+//	builder.WithTools(tool1, tool2, tool3).
+//	    WithAutoExecute(true).
+//	    WithParallelTools(true).  // Execute tools in parallel
+//	    Ask(ctx, "Analyze this data")
+func (b *Builder) WithParallelTools(enable bool) *Builder {
+	b.enableParallel = enable
+	if b.maxWorkers == 0 {
+		b.maxWorkers = 10 // Default worker pool size
+	}
+	if b.toolTimeout == 0 {
+		b.toolTimeout = 30 * time.Second // Default timeout
+	}
+	return b
+}
+
+// WithMaxWorkers sets the maximum number of concurrent tool workers.
+// Only applies when parallel tool execution is enabled.
+// Default is 10 workers.
+//
+// Example:
+//
+//	builder.WithParallelTools(true).
+//	    WithMaxWorkers(5)  // Max 5 tools running concurrently
+func (b *Builder) WithMaxWorkers(max int) *Builder {
+	b.maxWorkers = max
+	return b
+}
+
+// WithToolTimeout sets the timeout for individual tool executions.
+// Only applies when parallel tool execution is enabled.
+// Default is 30 seconds.
+//
+// Example:
+//
+//	builder.WithParallelTools(true).
+//	    WithToolTimeout(60 * time.Second)  // 60s timeout per tool
+func (b *Builder) WithToolTimeout(timeout time.Duration) *Builder {
+	b.toolTimeout = timeout
+	return b
+}
+
 // WithJSONMode enables JSON object response format.
 // This is an older method of generating JSON responses.
 // The model will return valid JSON, but you need to instruct it
@@ -1029,48 +1081,24 @@ func (b *Builder) askWithToolExecution(ctx context.Context, message string) (str
 			OfAssistant: &assistantParam,
 		})
 
-		for _, toolCall := range choice.Message.ToolCalls {
-			toolStart := time.Now()
-			// Find the tool handler
-			var handler func(string) (string, error)
-			toolName := toolCall.Function.Name
+		// Execute tools (parallel or sequential based on config)
+		var toolResults []openai.ChatCompletionMessageParamUnion
+		var toolErr error
 
-			for _, tool := range b.tools {
-				if tool.Name == toolName {
-					handler = tool.Handler
-					break
-				}
-			}
-
-			if handler == nil {
-				logger.Error(ctx, "No handler found for tool", F("tool_name", toolName))
-				return "", fmt.Errorf("no handler found for tool: %s", toolName)
-			}
-
-			logger.Debug(ctx, "Executing tool",
-				F("tool_name", toolName),
-				F("args_length", len(toolCall.Function.Arguments)))
-
-			// Execute the tool
-			result, err := handler(toolCall.Function.Arguments)
-			toolDuration := time.Since(toolStart)
-
-			if err != nil {
-				logger.Error(ctx, "Tool execution failed",
-					F("tool_name", toolName),
-					F("error", err.Error()),
-					F("duration_ms", toolDuration.Milliseconds()))
-				return "", fmt.Errorf("tool execution failed: %w", err)
-			}
-
-			logger.Debug(ctx, "Tool execution succeeded",
-				F("tool_name", toolName),
-				F("result_length", len(result)),
-				F("duration_ms", toolDuration.Milliseconds()))
-
-			// Add tool result using the helper function
-			messages = append(messages, openai.ToolMessage(result, toolCall.ID))
+		if b.enableParallel && len(choice.Message.ToolCalls) > 1 {
+			// Parallel execution for multiple tools
+			toolResults, toolErr = b.executeToolsParallel(ctx, choice.Message.ToolCalls)
+		} else {
+			// Sequential execution (default or single tool)
+			toolResults, toolErr = b.executeToolsSequential(ctx, choice.Message.ToolCalls)
 		}
+
+		if toolErr != nil {
+			return "", fmt.Errorf("tool execution failed: %w", toolErr)
+		}
+
+		// Append all tool results to messages
+		messages = append(messages, toolResults...)
 	}
 
 	logger.Warn(ctx, "Max tool rounds exceeded", F("max_rounds", b.maxToolRounds))
