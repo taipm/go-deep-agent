@@ -191,17 +191,8 @@ func (b *Builder) executeOneTool(ctx context.Context, toolCall openai.ChatComple
 	var err error
 
 	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				err = fmt.Errorf("tool panicked: %v\n\n"+
-					"Fix:\n"+
-					"  1. Add error handling to tool function\n"+
-					"  2. Check for nil pointers before dereferencing\n"+
-					"  3. Validate input parameters\n"+
-					"  4. Enable debug mode: .WithDebug() to see panic details\n", r)
-			}
-			close(done)
-		}()
+		defer recoverPanicWithLogger(&err, fmt.Sprintf("tool: %s", toolName), logger)
+		defer close(done)
 
 		logger.Debug(execCtx, "Executing tool",
 			F("tool_name", toolName),

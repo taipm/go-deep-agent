@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -117,8 +116,7 @@ func example2VerboseDebug(ctx context.Context, apiKey string) {
 	fmt.Println()
 	fmt.Println("Response:", response)
 	fmt.Println()
-	// Note: GetLastUsage() is available on Builder
-	// Check token usage after the request
+	fmt.Printf("Token usage: %+v\n", ag.GetLastUsage())
 }
 
 // Example 3: Custom debug configuration
@@ -174,48 +172,63 @@ func example4DebugWithTools(ctx context.Context, apiKey string) {
 	fmt.Println("  • Tool errors with context")
 	fmt.Println()
 
-	// Define a calculator tool using the simplified Tool API
-	calculatorTool := agent.NewTool("calculator", "Performs basic arithmetic operations").
-		AddParameter("operation", "string", "The operation: add, subtract, multiply, divide", true).
-		AddParameter("x", "number", "First number", true).
-		AddParameter("y", "number", "Second number", true)
+	// Define a calculator tool
+	calculatorTool := agent.Tool{
+		Type: agent.ToolTypeFunction,
+		Function: agent.FunctionTool{
+			Name:        "calculator",
+			Description: "Performs basic arithmetic operations",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"operation": map[string]interface{}{
+						"type":        "string",
+						"description": "The operation to perform: add, subtract, multiply, divide",
+						"enum":        []string{"add", "subtract", "multiply", "divide"},
+					},
+					"x": map[string]interface{}{
+						"type":        "number",
+						"description": "First number",
+					},
+					"y": map[string]interface{}{
+						"type":        "number",
+						"description": "Second number",
+					},
+				},
+				"required": []string{"operation", "x", "y"},
+			},
+			Handler: func(args map[string]interface{}) (string, error) {
+				op := args["operation"].(string)
+				x := args["x"].(float64)
+				y := args["y"].(float64)
 
-	// Set the handler
-	calculatorTool.Handler = func(argsJSON string) (string, error) {
-		var args map[string]interface{}
-		if err := json.Unmarshal([]byte(argsJSON), &args); err != nil {
-			return "", fmt.Errorf("invalid arguments: %w", err)
-		}
+				var result float64
+				switch op {
+				case "add":
+					result = x + y
+				case "subtract":
+					result = x - y
+				case "multiply":
+					result = x * y
+				case "divide":
+					if y == 0 {
+						return "", fmt.Errorf("division by zero")
+					}
+					result = x / y
+				default:
+					return "", fmt.Errorf("unknown operation: %s", op)
+				}
 
-		op := args["operation"].(string)
-		x := args["x"].(float64)
-		y := args["y"].(float64)
-
-		var result float64
-		switch op {
-		case "add":
-			result = x + y
-		case "subtract":
-			result = x - y
-		case "multiply":
-			result = x * y
-		case "divide":
-			if y == 0 {
-				return "", fmt.Errorf("division by zero")
-			}
-			result = x / y
-		default:
-			return "", fmt.Errorf("unknown operation: %s", op)
-		}
-
-		return fmt.Sprintf("%.2f", result), nil
+				return fmt.Sprintf("%.2f", result), nil
+			},
+		},
 	}
 
 	// Create agent with verbose debug (to see tool execution)
 	ag := agent.NewOpenAI("gpt-4o-mini", apiKey).
 		WithDebug(agent.VerboseDebugConfig()).
 		WithSystem("You are a math assistant. Use the calculator tool for calculations.").
-		WithTool(calculatorTool).
+		WithTool(&calculatorTool).
 		WithAutoExecute(true)
 
 	fmt.Println("Asking agent to perform calculation (will use tool)...")
