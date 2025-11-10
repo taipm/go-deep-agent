@@ -101,6 +101,10 @@ type Builder struct {
 	// Logging
 	logger Logger // Logger for observability (default: NoopLogger)
 
+	// Enhanced debug mode
+	debugConfig DebugConfig  // Debug configuration
+	debugLogger *debugLogger // Debug logger instance
+
 	// Memory (Hierarchical memory system)
 	memory        *memory.Memory // Hierarchical memory system (default: enabled)
 	memoryEnabled bool           // Whether memory system is enabled
@@ -212,10 +216,6 @@ func (b *Builder) WithSystem(prompt string) *Builder {
 
 // WithMessages sets the conversation history directly.
 // Useful for continuing a previous conversation or providing few-shot examples.
-
-
-
-
 
 // WithTimeout sets the request timeout.
 // If set, all API requests will be wrapped with a context timeout.
