@@ -119,8 +119,10 @@
 
 **Next Steps** (Week 2):
 
+- ✅ DONE: Add comprehensive tests for all edge cases (48 test cases in utils_test.go)
+- ✅ DONE: Add importance scoring unit tests (26 test cases in system_test.go)
+- ✅ DONE: Test coverage increased to 74.7% (from 71.6%)
 - Improve importance scoring accuracy (currently threshold-based)
-- Add comprehensive tests for all edge cases
 - Create benchmarks for performance validation
 - Refactor Recall() and Search() to reduce cognitive complexity
 - Vector store integration for episodic memory
