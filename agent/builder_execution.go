@@ -517,6 +517,16 @@ func (b *Builder) buildMessages(userMessage string) []openai.ChatCompletionMessa
 		result = append(result, openai.SystemMessage(b.systemPrompt))
 	}
 
+	// Add few-shot examples after system prompt, before conversation history
+	// This ensures examples guide behavior without being part of conversation context
+	if b.fewshotConfig != nil && len(b.fewshotConfig.Examples) > 0 {
+		fewshotPrompt := b.fewshotConfig.ToPrompt()
+		if fewshotPrompt != "" {
+			// Add as system message to maintain separation from conversation
+			result = append(result, openai.SystemMessage(fewshotPrompt))
+		}
+	}
+
 	// Add conversation history (convert existing messages)
 	result = append(result, convertMessages(b.messages)...)
 

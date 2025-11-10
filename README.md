@@ -28,7 +28,8 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 - 📊 **Logging & Observability** - Zero-overhead logging with slog support (v0.5.2 🆕)
 - 🛠️ **Built-in Tools** - FileSystem, HTTP, DateTime, Math tools (v0.5.5 🆕 convenient loading)
 - 🔍 **Tools Logging** - Comprehensive logging for built-in tools with security auditing (v0.5.6 🆕)
-- ✅ **Well Tested** - 470+ tests, 66%+ coverage, 75+ working examples
+- 🎓 **Few-Shot Learning** - Teach agents with examples (inline or YAML personas) (v0.6.5 🆕)
+- ✅ **Well Tested** - 1012+ tests, 71%+ coverage, 75+ working examples
 
 ## 📦 Installation
 
@@ -62,6 +63,19 @@ builder := agent.NewOpenAI("gpt-4o-mini", apiKey).WithMemory()
 builder.Ask(ctx, "My name is John")
 builder.Ask(ctx, "What's my name?")  // AI remembers: "Your name is John"
 ```
+
+### With Few-Shot Learning (v0.6.5 🆕)
+
+```go
+ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithSystem("You are a French translator.").
+    AddFewShotExample("Translate: Hello", "Bonjour").
+    AddFewShotExample("Translate: Goodbye", "Au revoir")
+
+ai.Ask(ctx, "Translate: Good morning")  // AI follows the pattern
+```
+
+**[📖 Few-Shot Learning Guide](docs/FEWSHOT_GUIDE.md)** - Selection modes, YAML personas, best practices
 
 ### With Production Defaults (v0.5.8 🆕)
 
@@ -1035,6 +1049,7 @@ MIT License - see [LICENSE](LICENSE) for details
 
 - **[README.md](README.md)** - Main documentation (you are here)
 - **[COMPARISON.md](docs/COMPARISON.md)** - 🆚 Why go-deep-agent vs openai-go (with code examples)
+- **[FEWSHOT_GUIDE.md](docs/FEWSHOT_GUIDE.md)** - 🎓 Few-Shot Learning complete guide (v0.6.5)
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and migration guides
 - **[ERROR_HANDLING_BEST_PRACTICES.md](docs/ERROR_HANDLING_BEST_PRACTICES.md)** - 🆕 Complete error handling guide (v0.5.9)
 - **[TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - 🆕 Common issues and solutions (v0.5.9)

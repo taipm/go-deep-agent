@@ -30,6 +30,11 @@ func (b *Builder) WithPersona(persona *Persona) *Builder {
 		b.WithAgentConfig(persona.TechnicalConfig)
 	}
 
+	// Apply few-shot configuration if provided (Phase 1)
+	if persona.FewShot != nil {
+		b.WithFewShotConfig(persona.FewShot)
+	}
+
 	// Store persona reference for later retrieval
 	b.persona = persona
 

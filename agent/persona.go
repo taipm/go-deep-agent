@@ -31,6 +31,9 @@ type Persona struct {
 	// Examples (optional)
 	Examples []PersonaExample `yaml:"examples,omitempty" json:"examples,omitempty"`
 
+	// Few-shot Learning (optional) - Phase 1
+	FewShot *FewShotConfig `yaml:"fewshot,omitempty" json:"fewshot,omitempty"`
+
 	// Optional Technical Configuration Override
 	TechnicalConfig *AgentConfig `yaml:"technical_config,omitempty" json:"technical_config,omitempty"`
 }

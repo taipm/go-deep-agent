@@ -112,6 +112,9 @@ type Builder struct {
 	// Persona (Behavioral configuration)
 	persona *Persona // Active persona configuration
 
+	// Few-shot Learning
+	fewshotConfig *FewShotConfig // Few-shot examples configuration
+
 	// OpenAI client (lazy initialized)
 	client *openai.Client
 
