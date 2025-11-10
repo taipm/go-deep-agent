@@ -1,0 +1,40 @@
+# Production Settings Configuration
+# This file contains only technical settings without a persona.
+# Use this when you already have a persona and want to apply production settings.
+#
+# Usage:
+#   settings, _ := agent.LoadSettings("configs/settings_production.yaml")
+#   persona, _ := agent.LoadPersona("personas/customer_support.yaml")
+#   agent := agent.NewOpenAI("", apiKey).
+#       WithPersona(persona).
+#       WithSettings(settings)  # Settings override persona's technical_config
+
+# Model configuration - Production-grade settings
+model: "gpt-4"
+temperature: 0.6  # Slightly lower for consistency
+max_tokens: 3000
+top_p: 0.9
+timeout: 60s
+
+# Memory configuration - High capacity for production
+memory:
+  working_capacity: 100  # Keep more conversation history
+  episodic_enabled: true
+  episodic_threshold: 0.75  # Stricter threshold for relevance
+  semantic_enabled: false  # Disable if not using embeddings
+  auto_compress: true  # Auto-compress old memories
+
+# Retry configuration - Robust error handling
+retry:
+  max_attempts: 5  # More retries for production reliability
+  timeout: 60s
+  exponential_backoff: true
+  backoff_multiplier: 2.0  # Double delay each retry
+  initial_delay: 2s  # Start with 2s delay
+  max_delay: 30s  # Cap at 30s
+
+# Tools configuration - Parallel execution for performance
+tools:
+  parallel_execution: true
+  max_workers: 15  # Higher concurrency for production
+  timeout: 45s  # Per-tool timeout
