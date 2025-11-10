@@ -722,6 +722,38 @@ Supported models: `gpt-4o`, `gpt-4o-mini`, `gpt-4-turbo`, `gpt-4-vision-preview`
 - `WithRetryDelay(delay)` - Fixed delay between retries
 - `WithExponentialBackoff()` - Use exponential backoff
 
+### Error Codes & Debugging (v0.5.9 🆕)
+
+**Error Codes** for programmatic decisions:
+
+- `GetErrorCode(err)` - Extract error code from any error
+- `IsCodedError(err)` - Check if error has a code
+- `NewCodedError(code, msg, err)` - Create coded error
+- **20+ error codes** including: `ErrCodeRateLimitExceeded`, `ErrCodeRequestTimeout`, `ErrCodeAPIKeyMissing`, etc.
+
+**Debug Mode** for visibility:
+
+- `WithDebug(config)` - Enable debug logging with secret redaction
+- `DefaultDebugConfig()` - Basic logging (production-safe)
+- `VerboseDebugConfig()` - Full logging (development)
+- **Auto secret redaction**: API keys, tokens, passwords automatically masked
+
+**Panic Recovery** for stability:
+
+- `IsPanicError(err)` - Check if error is from panic
+- `GetPanicValue(err)` - Extract panic value
+- `GetStackTrace(err)` - Get full stack trace
+- **Automatic recovery**: Tool panics are caught and returned as errors
+
+**Error Context** for debugging:
+
+- `WithContext(err, operation, details)` - Add context to errors
+- `WithSimpleContext(err, operation)` - Quick context without details
+- `SummarizeError(err)` - Get comprehensive error summary
+- `NewErrorChain()` - Track multiple errors in workflows
+
+See [ERROR_HANDLING_BEST_PRACTICES.md](docs/ERROR_HANDLING_BEST_PRACTICES.md) for complete guide.
+
 ### Error Type Checking
 
 - `IsAPIKeyError(err)` - Check for API key errors
@@ -1004,6 +1036,8 @@ MIT License - see [LICENSE](LICENSE) for details
 - **[README.md](README.md)** - Main documentation (you are here)
 - **[COMPARISON.md](docs/COMPARISON.md)** - 🆚 Why go-deep-agent vs openai-go (with code examples)
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and migration guides
+- **[ERROR_HANDLING_BEST_PRACTICES.md](docs/ERROR_HANDLING_BEST_PRACTICES.md)** - 🆕 Complete error handling guide (v0.5.9)
+- **[TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - 🆕 Common issues and solutions (v0.5.9)
 - **[BUILDER_REFACTORING_PROPOSAL.md](docs/BUILDER_REFACTORING_PROPOSAL.md)** - 🆕 Builder refactoring details (v0.6.0)
 - **[RAG_VECTOR_DATABASES.md](docs/RAG_VECTOR_DATABASES.md)** - Complete Vector RAG guide (v0.5.0)
 - **[LOGGING_GUIDE.md](docs/LOGGING_GUIDE.md)** - Comprehensive logging & observability guide (v0.5.2)
