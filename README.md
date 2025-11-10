@@ -9,6 +9,7 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 ## ✨ Features
 
 - 🎯 **Fluent Builder API** - Natural, readable method chaining
+- ⚡ **WithDefaults()** - Production-ready in one line: Memory(20) + Retry(3) + Timeout(30s) + ExponentialBackoff (v0.5.8 🆕)
 - 🤖 **Multi-Provider** - OpenAI, Ollama, and custom endpoints
 - 🧠 **Hierarchical Memory** - 3-tier system (Working → Episodic → Semantic) with automatic importance scoring (v0.6.0 🆕)
 - 📡 **Streaming** - Real-time response streaming with callbacks
@@ -61,6 +62,36 @@ builder := agent.NewOpenAI("gpt-4o-mini", apiKey).WithMemory()
 builder.Ask(ctx, "My name is John")
 builder.Ask(ctx, "What's my name?")  // AI remembers: "Your name is John"
 ```
+
+### With Production Defaults (v0.5.8 🆕)
+
+**The easiest way to get started** - one method call for production-ready configuration:
+
+```go
+// WithDefaults() gives you: Memory(20), Retry(3), Timeout(30s), ExponentialBackoff
+ai := agent.NewOpenAI("gpt-4o-mini", apiKey).WithDefaults()
+
+// Now you're ready for production use with smart defaults
+resp, _ := ai.Ask(ctx, "Hello!")
+```
+
+**Customize defaults via method chaining:**
+
+```go
+ai := agent.NewOpenAI("gpt-4", apiKey).
+    WithDefaults().          // Start with smart defaults
+    WithMaxHistory(50).      // Customize: Increase memory
+    WithTools(myTool).       // Add: Tool capability
+    WithLogging(logger)      // Add: Observability
+
+resp, _ := ai.Ask(ctx, "Complex task...")
+```
+
+**Philosophy: Bare → WithDefaults() → Customize**
+
+- **Bare**: `NewOpenAI(model, key)` - Full control, zero configuration
+- **WithDefaults()**: Production-ready in one line (80% use cases)
+- **Customize**: Progressive enhancement via method chaining
 
 ### Production-Ready Configuration
 

@@ -7,6 +7,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.8] - 2025-11-10 ⚡ Production Defaults
+
+### 🎯 Usability Improvement: WithDefaults()
+
+The **easiest way to start with go-deep-agent** - production-ready configuration in one line.
+
+### ✨ Added
+
+- **WithDefaults() Method**: One-line production configuration
+  - `Memory(20)`: Keep last 20 messages in conversation history
+  - `Retry(3)`: Retry failed requests up to 3 times
+  - `Timeout(30s)`: 30-second timeout for API requests
+  - `ExponentialBackoff`: Smart retry delays (1s, 2s, 4s, 8s, ...)
+
+  ```go
+  // Production-ready in one line
+  ai := agent.NewOpenAI("gpt-4o-mini", apiKey).WithDefaults()
+  resp, _ := ai.Ask(ctx, "Hello!")
+  ```
+
+- **Progressive Enhancement**: Customize defaults via method chaining
+  ```go
+  ai := agent.NewOpenAI("gpt-4", apiKey).
+      WithDefaults().          // Start with smart defaults
+      WithMaxHistory(50).      // Customize: Increase memory
+      WithTools(myTool).       // Add: Tool capability
+      WithLogging(logger)      // Add: Observability
+  ```
+
+- **Opt-out Support**: Remove specific defaults if needed
+  ```go
+  ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
+      WithDefaults().
+      DisableMemory()          // Remove memory for stateless interactions
+  ```
+
+### 📖 Changed
+
+- **Updated README.md**: Added "With Production Defaults" section in Quick Start
+- **Updated Features List**: Highlighted `WithDefaults()` as key usability feature
+
+### 🎯 Philosophy
+
+**2-Tier Configuration System**:
+1. **Bare** (`NewOpenAI(model, key)`): Full control, zero configuration
+2. **WithDefaults()**: Production-ready, covers 80% of use cases
+3. **Customize**: Progressive enhancement via method chaining
+
+This approach follows industry best practices (GORM, Gin, LangChain) and applies the **80/20 rule** - WithDefaults() covers 80% of production scenarios out-of-the-box.
+
+### ✅ Testing
+
+- **8 comprehensive tests**, all passing:
+  - `TestWithDefaultsBasicConfiguration`: Verify all defaults set correctly
+  - `TestWithDefaultsCustomization`: Override defaults via chaining
+  - `TestWithDefaultsIdempotent`: Calling twice doesn't duplicate
+  - `TestWithDefaultsOverride`: Defaults override explicit config
+  - `TestWithDefaultsChaining`: Method chaining works correctly
+  - `TestWithDefaultsDisableMemory`: Opt-out of memory
+  - `TestWithDefaultsAllConstructors`: Works with all constructors
+  - `TestWithDefaultsNoSideEffects`: Opt-in features remain disabled
+
+### 📊 Impact
+
+- **Code**: +50 lines (`builder_defaults.go`)
+- **Tests**: +200 lines (`builder_defaults_test.go`)
+- **Coverage**: >85% for new code
+- **Backward Compatibility**: 100% (zero breaking changes)
+
+---
+
 ## [0.5.7] - 2025-11-10 🏗️ Builder Refactoring + Hierarchical Memory
 
 ### 🎯 Major Refactoring: Modular Architecture

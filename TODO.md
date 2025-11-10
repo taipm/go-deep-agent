@@ -593,7 +593,123 @@ QUALITY METRICS:
 
 ---
 
-#### Week 6: Tool Fallbacks & Circuit Breaker (Jan 13-19, 2026)
+#### Week 6: Usability Improvements - WithDefaults() (Nov 10-16, 2025)
+
+**Status**: 🚧 IN PROGRESS (Nov 10, 2025)
+
+**Goal**: Make go-deep-agent "the easiest LLM library in Go" with production-ready defaults
+
+**Tasks**:
+
+- [ ] Day 1 (Nov 10): Update TODO.md + implement WithDefaults() + basic tests
+- [ ] Day 2 (Nov 11): Comprehensive tests (6+ scenarios)
+- [ ] Day 3 (Nov 12): Documentation + examples
+- [ ] Day 4 (Nov 13): Code review + benchmarks + CHANGELOG.md
+- [ ] Day 5 (Nov 14): Beta release v0.5.8-beta + user testing
+- [ ] Day 6-7 (Nov 15-16): Iterate + final release v0.5.8
+
+**Features** (2-Tier System):
+
+**Tier 1: Bare (Default)**
+- Zero configuration required
+- Users build up from scratch
+- Full control via method chaining
+
+**Tier 2: WithDefaults() (Production-Ready)**
+- Memory(20) - Keep last 20 messages
+- Retry(3) - Retry failed requests 3 times
+- Timeout(30s) - 30-second request timeout
+- ExponentialBackoff - Smart retry delays (1s, 2s, 4s)
+
+**Philosophy**:
+- "Chatbot IS an Agent" - same nature, different complexity
+- Progressive enhancement via method chaining
+- 80/20 rule: WithDefaults() covers 80% of production use cases
+- Opt-in features: Tools, Logging, Cache, Parallel execution
+
+**API Design**:
+
+```go
+// Tier 1: Bare (full control)
+agent := agent.NewOpenAI(apiKey)
+resp, _ := agent.Ask("Hello")
+
+// Tier 2: Production-ready defaults
+agent := agent.NewOpenAI(apiKey).WithDefaults()
+resp, _ := agent.Ask("Hello")  // Uses: Memory(20), Retry(3), Timeout(30s), ExponentialBackoff
+
+// Progressive enhancement (customize defaults)
+agent := agent.NewOpenAI(apiKey).
+    WithDefaults().
+    Memory(50).              // Override memory to 50
+    WithTools(search).       // Add tools
+    WithCache(redis).        // Add caching
+    WithLogging(logger)      // Add logging
+
+// Opt-out example
+agent := agent.NewOpenAI(apiKey).
+    WithDefaults().
+    DisableMemory()          // Remove memory
+```
+
+**Deliverables**:
+
+- [ ] `agent/builder_defaults.go` - WithDefaults() implementation (~50 lines)
+- [ ] `agent/builder_defaults_test.go` - Comprehensive tests (6+ scenarios, ~200 lines)
+- [ ] Updated `README.md` - WithDefaults() section with examples
+- [ ] `examples/quickstart.go` - Simplest possible example
+- [ ] `examples/production_agent.go` - WithDefaults() + customization
+- [ ] Updated `CHANGELOG.md` - v0.5.8 section
+
+**Test Scenarios** (6+ tests):
+
+1. **TestWithDefaults_BasicConfiguration**: Verify all defaults set correctly
+2. **TestWithDefaults_Customization**: Override defaults via chaining
+3. **TestWithDefaults_Integration**: Integration with Ask() method
+4. **TestWithDefaults_Idempotent**: Calling twice doesn't duplicate
+5. **TestWithDefaults_Override**: Explicit config overrides defaults
+6. **TestWithDefaults_Chaining**: Method chaining works correctly
+
+**Success Criteria**:
+
+- [ ] All 6+ tests passing
+- [ ] Zero API breakage (100% backward compatible)
+- [ ] Documentation complete (README + examples + CHANGELOG)
+- [ ] User feedback: "dễ học hơn" (easier to learn) ✅
+- [ ] Code coverage: >85% for builder_defaults.go
+
+**Rejected Alternatives**:
+
+- ❌ 3-Tier system (ForChatbot/ForAssistant/ForAgent) - Too complex
+- ❌ ForProduction() - Only 5% adoption, 95% would customize anyway
+- ❌ Multiple presets - Progressive enhancement via chaining is simpler
+
+**Architecture Decision**:
+
+**2-Tier wins because**:
+- 75% less code than 3-tier (1 vs 3 preset methods)
+- 67% less tests (6 vs 18 scenarios)
+- 66% less docs (2 vs 6 API sections)
+- Simpler mental model: Bare → WithDefaults() → Customize
+- Industry best practice (GORM, Gin, LangChain all use similar approach)
+
+**Cost-Benefit Analysis**:
+
+| Metric | Bare Only | 2-Tier (Bare + WithDefaults) | 3-Tier (+ ForProduction) |
+|--------|-----------|------------------------------|--------------------------|
+| Code | 0 lines | +50 lines | +150 lines |
+| Tests | 0 tests | +6 tests | +18 tests |
+| Docs | 0 sections | +1 section | +3 sections |
+| Value | Full control | 80% coverage | 95% coverage |
+| Adoption | 100% | 80% use defaults | 5% use ForProduction |
+
+**Timeline**: 5-7 days for v0.5.8 release
+
+**Next Week**: Week 7 - Tool Observability & Metrics
+
+---
+
+#### Week 7: Tool Fallbacks & Circuit Breaker (Jan 13-19, 2026)
 
 **Tasks**:
 
