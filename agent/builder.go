@@ -484,10 +484,6 @@ func (b *Builder) WithTimeout(timeout time.Duration) *Builder {
 //	builder.OnStream(func(content string) {
 //	    fmt.Print(content)
 //	})
-func (b *Builder) OnStream(callback func(string)) *Builder {
-	b.onStream = callback
-	return b
-}
 
 // OnToolCall sets a callback for when a tool call is detected during streaming.
 //
@@ -504,10 +500,6 @@ func (b *Builder) OnStream(callback func(string)) *Builder {
 //	builder.OnRefusal(func(refusal string) {
 //	    fmt.Printf("Model refused: %s\n", refusal)
 //	})
-func (b *Builder) OnRefusal(callback func(string)) *Builder {
-	b.onRefusal = callback
-	return b
-}
 
 // WithTool adds a tool that the model can call.
 // Tools allow the model to execute functions and use the results.
