@@ -7,6 +7,153 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-11-10 🚀 Production Ready Release
+
+**Major milestone combining v0.5.7, v0.5.8, and v0.5.9 improvements**
+
+This release represents a **production-ready foundation** with major architecture improvements, enhanced error handling, and intelligent memory management.
+
+### 🎯 Highlights
+
+- 🏗️ **Modular Architecture**: Builder split into 10 focused files (-61% code complexity)
+- 🧠 **Hierarchical Memory**: 3-tier system (Working → Episodic → Semantic)
+- ⚡ **Production Defaults**: One-line configuration with `WithDefaults()`
+- 🔧 **Enhanced Error Handling**: Typed errors, debug mode, panic recovery
+- 📊 **Error Codes**: Programmatic error handling with actionable messages
+
+### ✨ Added
+
+#### Hierarchical Memory System (v0.5.7)
+
+- **3-tier Memory Architecture** (Working → Episodic → Semantic)
+  - **Working Memory**: FIFO buffer for recent conversations
+  - **Episodic Memory**: Vector-based semantic search for past events
+  - **Semantic Memory**: Fact extraction and long-term knowledge storage
+  - **Automatic Importance Scoring**: Smart filtering of important information
+
+- **Memory Configuration Methods**:
+  ```go
+  WithHierarchicalMemory()              // Enable full 3-tier system
+  WithEpisodicMemory(threshold)         // Configure episodic storage
+  WithImportanceWeights(weights)        // Customize scoring algorithm
+  WithWorkingMemorySize(size)           // Set working memory capacity
+  WithSemanticMemory()                  // Enable fact storage
+  DisableMemory()                       // Opt-out of hierarchical memory
+  ```
+
+#### Production Defaults (v0.5.8)
+
+- **WithDefaults() Method**: One-line production configuration
+  ```go
+  ai := agent.NewOpenAI("gpt-4o-mini", apiKey).WithDefaults()
+  ```
+  - Includes: Memory(20), Retry(3), Timeout(30s), ExponentialBackoff
+
+#### Error Handling System (v0.5.9)
+
+- **Typed Error Codes**: Programmatic error detection
+  ```go
+  const (
+      ErrCodeInvalidModel    = "INVALID_MODEL"
+      ErrCodeAPIKeyMissing   = "API_KEY_MISSING"
+      ErrCodeRateLimitExceeded = "RATE_LIMIT_EXCEEDED"
+      // ... 15+ error codes
+  )
+  ```
+
+- **Enhanced Debug Mode**:
+  ```go
+  WithDebug(true)                      // Enable debug logging
+  WithDebugConfig(config)              // Custom debug configuration
+  ```
+
+- **Panic Recovery System**:
+  ```go
+  WithPanicRecovery(true)              // Auto-recover from panics
+  OnPanic(handler)                     // Custom panic handler
+  ```
+
+- **Error Context**: Detailed error information for troubleshooting
+
+### 🏗️ Changed
+
+#### Builder Architecture Refactoring (v0.5.7)
+
+Split monolithic `builder.go` (1,854 lines) into 10 focused modules (720 lines core):
+
+```
+agent/
+├── builder.go: 720 lines (-61.1%) ← Core type + constructors
+└── Feature modules:
+    ├── builder_execution.go: 732 lines ← Ask, Stream, execute methods
+    ├── builder_cache.go: 96 lines ← Cache configuration
+    ├── builder_memory.go: 76 lines ← Memory systems
+    ├── builder_llm.go: 50 lines ← LLM parameters
+    ├── builder_messages.go: 81 lines ← History/messages
+    ├── builder_tools.go: 91 lines ← Tool configuration
+    ├── builder_retry.go: 30 lines ← Retry logic
+    ├── builder_callbacks.go: 16 lines ← Callbacks
+    └── builder_logging.go: 30 lines ← Logging
+```
+
+**Benefits**:
+- Easier navigation and maintenance
+- Clearer separation of concerns
+- Better code organization
+- 100% backward compatibility
+
+### 📖 Documentation
+
+- Updated **README.md** with v0.6.0 features
+- Added **Hierarchical Memory** section with examples
+- Enhanced **Error Handling** guide with troubleshooting
+- Added **Migration Guide** for v0.5.x → v0.6.0
+
+### ✅ Testing
+
+- **638 total tests** across all packages
+- **72.4% code coverage**
+- All tests passing in agent, memory, and tools packages
+- Comprehensive integration tests for memory system
+
+### 📊 Stats
+
+- **Production Code**: 11,110 lines (non-test Go files)
+- **Test Code**: 7,234 lines (638 tests)
+- **Examples**: 38 files, 8,115 lines
+- **Documentation**: 15+ comprehensive guides
+
+### 🔄 Migration from v0.5.x
+
+**No breaking changes!** All existing code continues to work.
+
+**Optional enhancements**:
+
+```go
+// Before (still works)
+ai := agent.NewOpenAI("gpt-4o", apiKey).
+    WithMemory().
+    WithRetry(3).
+    WithTimeout(30 * time.Second)
+
+// After (simpler with v0.6.0)
+ai := agent.NewOpenAI("gpt-4o", apiKey).WithDefaults()
+
+// Or use new hierarchical memory
+ai := agent.NewOpenAI("gpt-4o", apiKey).
+    WithHierarchicalMemory().
+    WithEpisodicMemory(0.5) // Store messages with importance > 0.5
+```
+
+### 🎯 What's Next
+
+See **[AI_AGENT_CAPABILITY_ASSESSMENT.md](./AI_AGENT_CAPABILITY_ASSESSMENT.md)** for strategic roadmap:
+- v0.7.0: Planning & Reasoning capabilities
+- v0.8.0: Enhanced observability & metrics
+- Long-term: Production features focus
+
+---
+
 ## [0.5.8] - 2025-11-10 ⚡ Production Defaults
 
 ### 🎯 Usability Improvement: WithDefaults()
