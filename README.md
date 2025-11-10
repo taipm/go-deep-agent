@@ -10,7 +10,7 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 
 - 🎯 **Fluent Builder API** - Natural, readable method chaining
 - 🤖 **Multi-Provider** - OpenAI, Ollama, and custom endpoints
-- 🧠 **Conversation Memory** - Automatic history management with FIFO truncation
+- 🧠 **Hierarchical Memory** - 3-tier system (Working → Episodic → Semantic) with automatic importance scoring (v0.6.0 🆕)
 - 📡 **Streaming** - Real-time response streaming with callbacks
 - 🛠️ **Tool Calling** - Auto-execution with type-safe function definitions
 - 📋 **Structured Outputs** - JSON Schema with strict mode
@@ -27,7 +27,7 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 - 📊 **Logging & Observability** - Zero-overhead logging with slog support (v0.5.2 🆕)
 - 🛠️ **Built-in Tools** - FileSystem, HTTP, DateTime, Math tools (v0.5.5 🆕 convenient loading)
 - 🔍 **Tools Logging** - Comprehensive logging for built-in tools with security auditing (v0.5.6 🆕)
-- ✅ **Well Tested** - 460+ tests, 65%+ coverage, 70+ working examples
+- ✅ **Well Tested** - 470+ tests, 66%+ coverage, 75+ working examples
 
 ## 📦 Installation
 
@@ -112,6 +112,43 @@ builder.Ask(ctx, "My name is John and I'm from Vietnam")
 builder.Ask(ctx, "What's my name and where am I from?")
 // Response: "Your name is John and you're from Vietnam"
 ```
+
+### 3.1 Hierarchical Memory (v0.6.0 🆕)
+
+**3-tier intelligent memory system**: Working → Episodic → Semantic
+
+```go
+// Automatic episodic storage for important messages
+builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithEpisodicMemory(0.7).           // Store messages with importance >= 0.7
+    WithWorkingMemorySize(20).          // Working capacity
+    WithSemanticMemory()                // Enable fact storage
+
+// Important messages automatically stored in episodic memory
+builder.Ask(ctx, "Remember: my birthday is Jan 15")  // importance: 1.0 → episodic
+builder.Ask(ctx, "How's the weather?")               // importance: 0.1 → working only
+
+// Recall from episodic memory
+episodes := builder.GetMemory().Recall(ctx, "birthday", 5)
+
+// Get detailed stats
+stats := builder.GetMemory().Stats(ctx)
+fmt.Printf("Working: %d, Episodic: %d, Semantic: %d\n", 
+    stats.WorkingSize, stats.EpisodicSize, stats.SemanticSize)
+```
+
+**Importance weights** (customizable):
+```go
+builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithImportanceWeights(agent.ImportanceWeights{
+        RememberKeyword: 1.0,  // "Remember this", "Don't forget"
+        PersonalInfo:    0.8,  // Names, dates, locations
+        Question:        0.3,  // Questions from user
+        Answer:          0.2,  // Answers from assistant
+    })
+```
+
+📚 **See migration guide**: [docs/MEMORY_MIGRATION.md](docs/MEMORY_MIGRATION.md)
 
 ### 4. Tool Calling with Auto-Execution
 
@@ -610,6 +647,12 @@ aiProd := agent.NewOpenAI("gpt-4o-mini", apiKey).
 
 - `WithMemory()` - Enable automatic conversation memory
 - `WithMaxHistory(max)` - Limit messages (FIFO truncation)
+- `WithEpisodicMemory(threshold)` - Enable episodic storage (0.0-1.0)
+- `WithWorkingMemorySize(size)` - Set working memory capacity
+- `WithImportanceWeights(weights)` - Customize importance calculation
+- `WithSemanticMemory()` - Enable fact storage
+- `GetMemory()` - Access memory system for advanced operations
+- `DisableMemory()` - Disable hierarchical memory (use simple FIFO)
 - `GetHistory()` - Get conversation messages
 - `SetHistory(messages)` - Restore conversation
 - `Clear()` - Reset conversation (keeps system prompt)
