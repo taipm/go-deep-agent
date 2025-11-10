@@ -810,11 +810,6 @@ func (b *Builder) addMessage(message Message) {
 //	logger := slog.Default()
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithLogger(agent.NewSlogAdapter(logger))
-func (b *Builder) WithLogger(logger Logger) *Builder {
-	b.logger = logger
-	b.injectLoggerToTools() // Propagate logger to built-in tools
-	return b
-}
 
 // WithDebugLogging enables debug-level logging using the standard library logger.
 // This is useful for development and troubleshooting.
@@ -835,11 +830,6 @@ func (b *Builder) WithLogger(logger Logger) *Builder {
 //	// [2025-01-15 10:30:45.123] DEBUG: Starting request | model=gpt-4o-mini message_length=50
 //	// [2025-01-15 10:30:45.124] DEBUG: Cache miss | cache_key=abc123
 //	// [2025-01-15 10:30:46.456] INFO: Request completed | duration_ms=1332 tokens_prompt=12
-func (b *Builder) WithDebugLogging() *Builder {
-	b.logger = NewStdLogger(LogLevelDebug)
-	b.injectLoggerToTools() // Propagate logger to built-in tools
-	return b
-}
 
 // WithInfoLogging enables info-level logging using the standard library logger.
 // This is recommended for production use.
@@ -858,20 +848,9 @@ func (b *Builder) WithDebugLogging() *Builder {
 //	// Output example:
 //	// [2025-01-15 10:30:46.456] INFO: Request completed | duration_ms=1332 tokens_prompt=12 tokens_completion=45
 //	// [2025-01-15 10:30:47.789] INFO: Cache hit | cache_key=abc123
-func (b *Builder) WithInfoLogging() *Builder {
-	b.logger = NewStdLogger(LogLevelInfo)
-	b.injectLoggerToTools() // Propagate logger to built-in tools
-	return b
-}
 
 // getLogger returns the configured logger or NoopLogger if none is set.
 // This ensures zero overhead when logging is not enabled.
-func (b *Builder) getLogger() Logger {
-	if b.logger == nil {
-		return &NoopLogger{}
-	}
-	return b.logger
-}
 
 // injectLoggerToTools propagates the Builder's logger to the tools package
 // using a callback function via go:linkname to avoid import cycles.
