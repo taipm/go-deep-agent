@@ -55,9 +55,9 @@ func main() {
 	// Example 2: Custom importance weights
 	fmt.Println("=== Example 2: Custom Importance Weights ===")
 	weights := memory.DefaultImportanceWeights()
-	weights.ExplicitRemember = 2.0  // Double weight for "remember this"
-	weights.PersonalInfo = 1.5       // Higher weight for personal info
-	weights.QuestionAnswer = 0.8     // Higher weight for Q&A
+	weights.ExplicitRemember = 2.0 // Double weight for "remember this"
+	weights.PersonalInfo = 1.5     // Higher weight for personal info
+	weights.QuestionAnswer = 0.8   // Higher weight for Q&A
 
 	builder2 := agent.NewOpenAI("gpt-4o-mini", apiKey).
 		WithWorkingMemorySize(15).
@@ -151,4 +151,3 @@ func main() {
 	fmt.Println("4. Use WithHierarchicalMemory(config) for full control")
 	fmt.Println("5. Use GetMemory() to access memory system directly")
 }
-

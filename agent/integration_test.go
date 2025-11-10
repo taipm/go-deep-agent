@@ -355,9 +355,71 @@ func TestIntegration_ProductionConfiguration(t *testing.T) {
 	t.Logf("Production config test passed: %s", response[:min(100, len(response))])
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
+// TestIntegration_MemorySystem tests hierarchical memory with real API
+func TestIntegration_MemorySystem(t *testing.T) {
+	apiKey := os.Getenv("OPENAI_API_KEY")
+	if apiKey == "" {
+		t.Skip("OPENAI_API_KEY not set, skipping integration test")
 	}
-	return b
+
+	ctx := context.Background()
+
+	builder := NewOpenAI("gpt-4o-mini", apiKey).
+		WithWorkingMemorySize(5).
+		WithEpisodicMemory(0.7).
+		WithSystem("You are a helpful assistant with excellent memory.")
+
+	mem := builder.GetMemory()
+
+	// Test 1: Important message
+	t.Log("Test 1: Sending important message...")
+	_, err := builder.Ask(ctx, "Remember that my birthday is May 5th")
+	if err != nil {
+		t.Fatalf("Failed to send important message: %v", err)
+	}
+
+	time.Sleep(500 * time.Millisecond)
+	stats1 := mem.Stats(ctx)
+
+	if stats1.EpisodicSize < 1 {
+		t.Error("Expected important message to be stored in episodic memory")
+	}
+	t.Logf("Stats after important message: Working=%d, Episodic=%d, AvgImportance=%.2f",
+		stats1.WorkingSize, stats1.EpisodicSize, stats1.AverageImportance)
+
+	// Test 2: Casual message
+	t.Log("Test 2: Sending casual message...")
+	_, err = builder.Ask(ctx, "What's the weather like?")
+	if err != nil {
+		t.Fatalf("Failed to send casual message: %v", err)
+	}
+
+	time.Sleep(500 * time.Millisecond)
+	stats2 := mem.Stats(ctx)
+
+	// Episodic count should not increase significantly
+	if stats2.EpisodicSize > stats1.EpisodicSize+1 {
+		t.Errorf("Casual message shouldn't significantly increase episodic: was %d, now %d",
+			stats1.EpisodicSize, stats2.EpisodicSize)
+	}
+	t.Logf("Stats after casual message: Working=%d, Episodic=%d",
+		stats2.WorkingSize, stats2.EpisodicSize)
+
+	// Test 3: Memory recall
+	t.Log("Test 3: Testing memory recall...")
+	response, err := builder.Ask(ctx, "What did I tell you about my birthday?")
+	if err != nil {
+		t.Fatalf("Failed to recall: %v", err)
+	}
+
+	t.Logf("Recall response: %s", response)
+
+	// Verify final stats
+	stats3 := mem.Stats(ctx)
+	if stats3.TotalMessages < 3 {
+		t.Errorf("Expected at least 3 messages processed, got %d", stats3.TotalMessages)
+	}
+
+	t.Logf("Final stats: Total=%d, Working=%d, Episodic=%d, Compressions=%d",
+		stats3.TotalMessages, stats3.WorkingSize, stats3.EpisodicSize, stats3.CompressionCount)
 }
