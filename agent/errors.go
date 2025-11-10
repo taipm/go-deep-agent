@@ -9,25 +9,59 @@ import (
 
 var (
 	// ErrAPIKey indicates missing or invalid API key
-	ErrAPIKey = errors.New("API key is missing or invalid")
+	ErrAPIKey = errors.New("API key is missing or invalid\n\n" +
+		"Fix:\n" +
+		"  1. Set environment variable: export OPENAI_API_KEY=\"sk-...\"\n" +
+		"  2. Or pass to constructor: agent.NewOpenAI(\"gpt-4\", \"sk-...\")\n" +
+		"  3. Get your key: https://platform.openai.com/api-keys")
 
 	// ErrRateLimit indicates rate limit exceeded
-	ErrRateLimit = errors.New("rate limit exceeded")
+	ErrRateLimit = errors.New("rate limit exceeded - too many requests\n\n" +
+		"Fix:\n" +
+		"  1. Use .WithDefaults() - includes retry with exponential backoff\n" +
+		"  2. Or configure: .WithRetry(5).WithRetryDelay(2*time.Second).WithExponentialBackoff()\n" +
+		"  3. Upgrade tier: https://platform.openai.com/account/limits\n" +
+		"  4. Use caching: .WithRedisCache(\"localhost:6379\", \"\", 0)")
 
 	// ErrTimeout indicates request timeout
-	ErrTimeout = errors.New("request timeout")
+	ErrTimeout = errors.New("request timeout - operation took too long\n\n" +
+		"Fix:\n" +
+		"  1. Increase timeout: .WithTimeout(60 * time.Second)\n" +
+		"  2. Use streaming for long responses: .Stream(...)\n" +
+		"  3. Check network connection\n" +
+		"  4. Check OpenAI status: https://status.openai.com")
 
 	// ErrRefusal indicates content was refused by the model
-	ErrRefusal = errors.New("content refused by model")
+	ErrRefusal = errors.New("content refused by model - policy violation\n\n" +
+		"Fix:\n" +
+		"  1. Review policies: https://openai.com/policies/usage-policies\n" +
+		"  2. Rephrase your prompt to avoid policy violations\n" +
+		"  3. Check content filters and safety settings")
 
 	// ErrInvalidResponse indicates malformed or unexpected response
-	ErrInvalidResponse = errors.New("invalid response from API")
+	ErrInvalidResponse = errors.New("invalid response from API\n\n" +
+		"Fix:\n" +
+		"  1. Enable debug mode: .WithDebug() to see raw response\n" +
+		"  2. Check OpenAI status: https://status.openai.com\n" +
+		"  3. Verify API key has proper permissions\n" +
+		"  4. Update library: go get -u github.com/taipm/go-deep-agent")
 
 	// ErrMaxRetries indicates maximum retry attempts exceeded
-	ErrMaxRetries = errors.New("maximum retry attempts exceeded")
+	ErrMaxRetries = errors.New("maximum retry attempts exceeded\n\n" +
+		"Fix:\n" +
+		"  1. Increase retries: .WithRetry(5) or .WithRetry(10)\n" +
+		"  2. Check root cause - enable debug: .WithDebug()\n" +
+		"  3. Increase retry delay: .WithRetryDelay(5*time.Second)\n" +
+		"  4. Use exponential backoff: .WithExponentialBackoff()")
 
 	// ErrToolExecution indicates tool execution failed
-	ErrToolExecution = errors.New("tool execution failed")
+	ErrToolExecution = errors.New("tool execution failed\n\n" +
+		"Fix:\n" +
+		"  1. Enable debug logging: .WithDebug()\n" +
+		"  2. Check tool function implementation\n" +
+		"  3. Verify tool parameters match JSON schema\n" +
+		"  4. Add error handling in tool function\n" +
+		"  5. Increase tool timeout: .WithToolTimeout(60*time.Second)")
 )
 
 // APIError wraps API errors with additional context

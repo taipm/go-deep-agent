@@ -1,0 +1,52 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/taipm/go-deep-agent/agent
+cpu: Apple M1 Pro
+BenchmarkBatchProcessing-10         	      13	 271087933 ns/op	  116052 B/op	     959 allocs/op
+BenchmarkBuilderCreation/NewOpenAI-10         	11212251	       290.7 ns/op	    1248 B/op	       6 allocs/op
+BenchmarkBuilderCreation/NewOllama-10         	12941961	       275.8 ns/op	    1248 B/op	       6 allocs/op
+BenchmarkBuilderCreation/WithConfiguration-10 	12353416	       281.3 ns/op	    1264 B/op	       7 allocs/op
+BenchmarkMemoryOperations/WithMemory-10       	1000000000	         0.3116 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemoryOperations/GetHistory_Empty-10 	1000000000	         2.036 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemoryOperations/GetHistory_10Messages-10         	52693786	        61.16 ns/op	     320 B/op	       1 allocs/op
+BenchmarkMemoryOperations/SetHistory-10                    	1000000000	         0.3116 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemoryOperations/Clear-10                         	15390512	       232.7 ns/op	     992 B/op	       5 allocs/op
+BenchmarkHistoryManagement/SetHistory_10Messages-10        	1000000000	         0.3117 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHistoryManagement/Clear_WithMessages-10           	145282299	        24.65 ns/op	      96 B/op	       1 allocs/op
+BenchmarkHistoryManagement/WithMaxHistory-10               	1000000000	         0.3109 ns/op	       0 B/op	       0 allocs/op
+BenchmarkToolCreation/NewTool_Simple-10                    	46027638	        71.83 ns/op	      72 B/op	       2 allocs/op
+BenchmarkToolCreation/NewTool_WithParameters-10            	 6364147	       564.2 ns/op	    1464 B/op	      13 allocs/op
+BenchmarkToolCreation/NewTool_WithHandler-10               	48577669	        71.06 ns/op	      72 B/op	       2 allocs/op
+BenchmarkToolCreation/Tool_Complete-10                     	13225615	       280.2 ns/op	     736 B/op	       7 allocs/op
+BenchmarkConfigurationMethods/MethodChaining_Short-10      	11277908	       321.7 ns/op	    1264 B/op	       7 allocs/op
+BenchmarkConfigurationMethods/MethodChaining_Long-10       	11819436	       299.4 ns/op	    1296 B/op	       9 allocs/op
+BenchmarkErrorChecking/IsAPIKeyError-10                    	65188850	        53.62 ns/op	       8 B/op	       1 allocs/op
+BenchmarkErrorChecking/IsRateLimitError-10                 	66403970	        52.43 ns/op	       8 B/op	       1 allocs/op
+BenchmarkErrorChecking/IsTimeoutError-10                   	576704385	         6.279 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMessageHelpers/System-10                          	1000000000	         0.3134 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMessageHelpers/User-10                            	1000000000	         0.3121 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMessageHelpers/Assistant-10                       	1000000000	         0.3133 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMessageHelpers/All_Helpers-10                     	1000000000	         0.3115 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBuilderCopy/ShallowCopy-10                        	1000000000	         0.3123 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBuilderCopy/DeepCopyMessages-10                   	10509144	       338.7 ns/op	    1568 B/op	       7 allocs/op
+BenchmarkStreamingSetup/OnStream-10                        	1000000000	         0.3122 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStreamingSetup/OnRefusal-10                       	1000000000	         0.3120 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRetryConfiguration/WithRetry-10                   	1000000000	         0.6300 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRetryConfiguration/WithExponentialBackoff-10      	1000000000	         0.6393 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRetryConfiguration/CompleteRetrySetup-10          	12035799	       282.6 ns/op	    1248 B/op	       6 allocs/op
+BenchmarkContextOperations/ContextWithCancel-10            	53684836	        64.98 ns/op	      96 B/op	       2 allocs/op
+BenchmarkContextOperations/BuilderWithContext-10           	1000000000	         0.3116 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCacheSet-10                                       	33656156	       104.1 ns/op	      96 B/op	       1 allocs/op
+BenchmarkCacheGet-10                                       	34810958	       102.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGenerateCacheKey-10                               	 9751713	       367.0 ns/op	     304 B/op	       4 allocs/op
+BenchmarkCosineSimilarity-10                               	 1871252	      1896 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNormalizeVector-10                                	 1209951	      2969 ns/op	    6144 B/op	       1 allocs/op
+BenchmarkSqrt32-10                                         	156059971	        23.16 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNoopLogger-10                                     	1000000000	         0.3131 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStdLogger-10                                      	 2411080	      1514 ns/op	     656 B/op	      22 allocs/op
+BenchmarkStdLoggerFiltered-10                              	 4658601	       758.5 ns/op	     328 B/op	      11 allocs/op
+BenchmarkChunkDocument-10                                  	 9911854	       364.7 ns/op	     240 B/op	       4 allocs/op
+BenchmarkCalculateSimilarity-10                            	  717220	      4850 ns/op	    4825 B/op	      51 allocs/op
+BenchmarkTokenize-10                                       	 1371637	      2625 ns/op	    2730 B/op	      24 allocs/op
+PASS
+ok  	github.com/taipm/go-deep-agent/agent	136.308s

@@ -114,7 +114,12 @@ func NewRedisCacheWithOptions(opts *RedisCacheOptions) (*RedisCache, error) {
 	defer cancel()
 
 	if err := client.Ping(ctx).Err(); err != nil {
-		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
+		return nil, fmt.Errorf("failed to connect to Redis: %w\n\n"+
+			"Fix:\n"+
+			"  1. Check Redis is running: redis-cli ping\n"+
+			"  2. Verify connection: redis://localhost:6379\n"+
+			"  3. Check firewall/network settings\n"+
+			"  4. Start Redis: redis-server or docker run -p 6379:6379 redis\n", err)
 	}
 
 	cache := &RedisCache{
@@ -154,7 +159,11 @@ func (c *RedisCache) Get(ctx context.Context, key string) (string, bool, error) 
 		return "", false, nil
 	}
 	if err != nil {
-		return "", false, fmt.Errorf("redis get failed: %w", err)
+		return "", false, fmt.Errorf("redis get failed: %w\n\n"+
+			"Possible causes:\n"+
+			"  - Redis connection lost (check redis-cli ping)\n"+
+			"  - Network timeout (increase DialTimeout in RedisCacheOptions)\n"+
+			"  - Redis server overloaded (check memory/CPU)\n", err)
 	}
 
 	// Cache hit

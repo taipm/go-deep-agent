@@ -184,12 +184,21 @@ func (c *ChromaStore) Add(ctx context.Context, collection string, docs []*Vector
 		if doc.Embedding == nil {
 			if c.embedding == nil {
 				return nil, NewVectorStoreError("Add", collection,
-					fmt.Errorf("no embedding provided and no embedding provider configured"))
+					fmt.Errorf("no embedding provided and no embedding provider configured\n\n"+
+						"Fix:\n"+
+						"  1. Set embedding provider: NewChromaStore(url).WithEmbedding(embedder)\n"+
+						"  2. Or provide embeddings: doc.Embedding = []float32{...}\n"+
+						"  3. Example: embedder, _ := agent.NewOpenAIEmbedding(\"text-embedding-3-small\", apiKey)\n"))
 			}
 			emb, err := c.embedding.Embed(ctx, doc.Content)
 			if err != nil {
 				return nil, NewVectorStoreError("Add", collection,
-					fmt.Errorf("failed to generate embedding: %w", err))
+					fmt.Errorf("failed to generate embedding: %w\n\n"+
+						"Possible causes:\n"+
+						"  - Embedding API timeout (increase context deadline)\n"+
+						"  - Document too long (max ~8,000 tokens)\n"+
+						"  - Rate limit (add retry or use WithDefaults())\n"+
+						"  - Invalid API key\n", err))
 			}
 			doc.Embedding = emb
 		}

@@ -480,7 +480,11 @@ func (b *Builder) ensureClient() error {
 	switch b.provider {
 	case ProviderOpenAI:
 		if b.apiKey == "" {
-			return fmt.Errorf("API key is required for OpenAI")
+			return fmt.Errorf("API key is required for OpenAI\n\n" +
+				"Fix:\n" +
+				"  1. Set environment variable: export OPENAI_API_KEY=\"sk-...\"\n" +
+				"  2. Or pass to constructor: agent.NewOpenAI(\"gpt-4\", \"sk-...\")\n" +
+				"  3. Get your key: https://platform.openai.com/api-keys")
 		}
 		client := openai.NewClient(option.WithAPIKey(b.apiKey))
 		b.client = &client
@@ -496,7 +500,10 @@ func (b *Builder) ensureClient() error {
 		b.client = &client
 
 	default:
-		return fmt.Errorf("unsupported provider: %s", b.provider)
+		return fmt.Errorf("unsupported provider: %s\n\n"+
+			"Supported providers:\n"+
+			"  - OpenAI: agent.NewOpenAI(model, apiKey)\n"+
+			"  - Ollama: agent.NewOllama(model)\n", b.provider)
 	}
 
 	return nil

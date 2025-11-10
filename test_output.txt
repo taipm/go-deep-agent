@@ -1,0 +1,1105 @@
+=== RUN   TestBackwardCompatibility_V056_SimpleUsage
+--- PASS: TestBackwardCompatibility_V056_SimpleUsage (0.00s)
+=== RUN   TestBackwardCompatibility_DisableMemory
+--- PASS: TestBackwardCompatibility_DisableMemory (0.00s)
+=== RUN   TestBackwardCompatibility_WithMessages
+--- PASS: TestBackwardCompatibility_WithMessages (0.00s)
+=== RUN   TestBackwardCompatibility_WithSystem
+--- PASS: TestBackwardCompatibility_WithSystem (0.00s)
+=== RUN   TestBackwardCompatibility_MethodChaining
+--- PASS: TestBackwardCompatibility_MethodChaining (0.00s)
+=== RUN   TestBackwardCompatibility_DefaultBehavior
+--- PASS: TestBackwardCompatibility_DefaultBehavior (0.00s)
+=== RUN   TestBackwardCompatibility_MultipleBuilders
+--- PASS: TestBackwardCompatibility_MultipleBuilders (0.00s)
+=== RUN   TestBackwardCompatibility_MessageHelpers
+--- PASS: TestBackwardCompatibility_MessageHelpers (0.00s)
+=== RUN   TestBackwardCompatibility_ConfigUpdate
+--- PASS: TestBackwardCompatibility_ConfigUpdate (0.00s)
+=== RUN   TestBackwardCompatibility_NoAPIKey
+--- PASS: TestBackwardCompatibility_NoAPIKey (0.00s)
+=== RUN   TestBatchSimple
+--- PASS: TestBatchSimple (0.32s)
+=== RUN   TestBatchWithOptions
+--- PASS: TestBatchWithOptions (0.59s)
+=== RUN   TestBatchEmpty
+--- PASS: TestBatchEmpty (0.00s)
+=== RUN   TestBatchWithSize
+--- PASS: TestBatchWithSize (0.00s)
+=== RUN   TestBatchWithDelay
+--- PASS: TestBatchWithDelay (0.00s)
+=== RUN   TestBatchProgressCallback
+    batch_test.go:131: Progress calls: [1/3 2/3 3/3]
+--- PASS: TestBatchProgressCallback (0.26s)
+=== RUN   TestBatchItemCompleteCallback
+--- PASS: TestBatchItemCompleteCallback (0.24s)
+=== RUN   TestBatchSimpleMethod
+--- PASS: TestBatchSimpleMethod (0.24s)
+=== RUN   TestBatchWithRetry
+--- PASS: TestBatchWithRetry (0.75s)
+=== RUN   TestBatchStats
+--- PASS: TestBatchStats (0.00s)
+=== RUN   TestDefaultBatchOptions
+--- PASS: TestDefaultBatchOptions (0.00s)
+=== RUN   TestBatchResultStructure
+--- PASS: TestBatchResultStructure (0.00s)
+=== RUN   TestBatchConcurrencyControl
+--- PASS: TestBatchConcurrencyControl (1.25s)
+=== RUN   TestBatchOrderPreserved
+--- PASS: TestBatchOrderPreserved (0.24s)
+=== RUN   TestBatchWithConfiguration
+--- PASS: TestBatchWithConfiguration (0.34s)
+=== RUN   TestTokenUsageTracking
+--- PASS: TestTokenUsageTracking (0.00s)
+=== RUN   TestBatchResultsContainErrors
+--- PASS: TestBatchResultsContainErrors (0.82s)
+=== RUN   TestBatchChaining
+--- PASS: TestBatchChaining (0.00s)
+=== RUN   TestBatchWithNilOptions
+--- PASS: TestBatchWithNilOptions (0.21s)
+=== RUN   TestWithTemperature
+--- PASS: TestWithTemperature (0.00s)
+=== RUN   TestWithTopP
+--- PASS: TestWithTopP (0.00s)
+=== RUN   TestWithMaxTokens
+--- PASS: TestWithMaxTokens (0.00s)
+=== RUN   TestWithPresencePenalty
+--- PASS: TestWithPresencePenalty (0.00s)
+=== RUN   TestWithFrequencyPenalty
+--- PASS: TestWithFrequencyPenalty (0.00s)
+=== RUN   TestWithSeed
+--- PASS: TestWithSeed (0.00s)
+=== RUN   TestWithLogprobs
+--- PASS: TestWithLogprobs (0.00s)
+=== RUN   TestWithTopLogprobs
+--- PASS: TestWithTopLogprobs (0.00s)
+=== RUN   TestWithMultipleChoices
+--- PASS: TestWithMultipleChoices (0.00s)
+=== RUN   TestOnStream
+--- PASS: TestOnStream (0.00s)
+=== RUN   TestOnToolCall
+--- PASS: TestOnToolCall (0.00s)
+=== RUN   TestOnRefusal
+--- PASS: TestOnRefusal (0.00s)
+=== RUN   TestWithToolSingle
+--- PASS: TestWithToolSingle (0.00s)
+=== RUN   TestWithToolsMultiple
+--- PASS: TestWithToolsMultiple (0.00s)
+=== RUN   TestWithToolChaining
+--- PASS: TestWithToolChaining (0.00s)
+=== RUN   TestWithAutoExecute
+--- PASS: TestWithAutoExecute (0.00s)
+=== RUN   TestWithMaxToolRounds
+--- PASS: TestWithMaxToolRounds (0.00s)
+=== RUN   TestWithJSONModeConfig
+--- PASS: TestWithJSONModeConfig (0.00s)
+=== RUN   TestWithJSONSchemaConfig
+--- PASS: TestWithJSONSchemaConfig (0.00s)
+=== RUN   TestWithResponseFormat
+--- PASS: TestWithResponseFormat (0.00s)
+=== RUN   TestAdvancedParametersChaining
+--- PASS: TestAdvancedParametersChaining (0.00s)
+=== RUN   TestBuildParams
+--- PASS: TestBuildParams (0.00s)
+=== RUN   TestBuildMessagesWithSystem
+--- PASS: TestBuildMessagesWithSystem (0.00s)
+=== RUN   TestBuildMessagesWithHistory
+--- PASS: TestBuildMessagesWithHistory (0.00s)
+=== RUN   TestAddMessage
+--- PASS: TestAddMessage (0.00s)
+=== RUN   TestGetHistory
+--- PASS: TestGetHistory (0.00s)
+=== RUN   TestSetHistory
+--- PASS: TestSetHistory (0.00s)
+=== RUN   TestClear
+--- PASS: TestClear (0.00s)
+=== RUN   TestWithMaxHistory
+--- PASS: TestWithMaxHistory (0.00s)
+=== RUN   TestMaxHistoryAutoTruncate
+--- PASS: TestMaxHistoryAutoTruncate (0.00s)
+=== RUN   TestMaxHistoryUnlimited
+--- PASS: TestMaxHistoryUnlimited (0.00s)
+=== RUN   TestConversationManagementChaining
+--- PASS: TestConversationManagementChaining (0.00s)
+=== RUN   TestBuilder_WithEpisodicMemory
+--- PASS: TestBuilder_WithEpisodicMemory (0.00s)
+=== RUN   TestBuilder_WithImportanceWeights
+--- PASS: TestBuilder_WithImportanceWeights (0.00s)
+=== RUN   TestBuilder_WithWorkingMemorySize
+--- PASS: TestBuilder_WithWorkingMemorySize (0.00s)
+=== RUN   TestBuilder_WithSemanticMemory
+--- PASS: TestBuilder_WithSemanticMemory (0.00s)
+=== RUN   TestBuilder_MemoryMethodChaining
+--- PASS: TestBuilder_MemoryMethodChaining (0.00s)
+=== RUN   TestBuilder_MemoryInitialization
+--- PASS: TestBuilder_MemoryInitialization (0.00s)
+=== RUN   TestParallelToolExecution
+    builder_parallel_test.go:83: ✓ Parallel execution completed in 51.203709ms (3 tools in ~50ms)
+--- PASS: TestParallelToolExecution (0.05s)
+=== RUN   TestSequentialToolExecution
+    builder_parallel_test.go:137: ✓ Sequential execution preserved order: [tool1 tool2]
+--- PASS: TestSequentialToolExecution (0.02s)
+=== RUN   TestWorkerPoolLimit
+    builder_parallel_test.go:197: ✓ Worker pool limit enforced: max 2 concurrent (limit: 2)
+--- PASS: TestWorkerPoolLimit (0.15s)
+=== RUN   TestToolTimeout
+    builder_parallel_test.go:229: ✓ Timeout enforced correctly: tool execution failed (slow_tool): tool execution timeout after 20ms
+--- PASS: TestToolTimeout (0.02s)
+=== RUN   TestToolErrorHandling
+    builder_parallel_test.go:268: ✓ Error handled correctly: tool execution failed (bad_tool): intentional error
+--- PASS: TestToolErrorHandling (0.00s)
+=== RUN   TestSingleToolExecution
+    builder_parallel_test.go:307: ✓ Single tool executed successfully
+--- PASS: TestSingleToolExecution (0.00s)
+=== RUN   TestParallelDisabled
+    builder_parallel_test.go:327: ✓ Parallel disabled by default
+--- PASS: TestParallelDisabled (0.00s)
+=== RUN   TestContextCancellation
+    builder_parallel_test.go:364: ✓ Context cancellation handled: tool execution failed (slow_tool): tool execution timeout after 30s
+--- PASS: TestContextCancellation (0.05s)
+=== RUN   TestMessageHelpers
+=== RUN   TestMessageHelpers/System_message
+=== RUN   TestMessageHelpers/User_message
+=== RUN   TestMessageHelpers/Assistant_message
+--- PASS: TestMessageHelpers (0.00s)
+    --- PASS: TestMessageHelpers/System_message (0.00s)
+    --- PASS: TestMessageHelpers/User_message (0.00s)
+    --- PASS: TestMessageHelpers/Assistant_message (0.00s)
+=== RUN   TestConvertMessages
+--- PASS: TestConvertMessages (0.00s)
+=== RUN   TestBuilder_New
+--- PASS: TestBuilder_New (0.00s)
+=== RUN   TestBuilder_NewOpenAI
+--- PASS: TestBuilder_NewOpenAI (0.00s)
+=== RUN   TestBuilder_NewOllama
+--- PASS: TestBuilder_NewOllama (0.00s)
+=== RUN   TestBuilder_WithAPIKey
+--- PASS: TestBuilder_WithAPIKey (0.00s)
+=== RUN   TestBuilder_WithBaseURL
+--- PASS: TestBuilder_WithBaseURL (0.00s)
+=== RUN   TestBuilder_WithSystem
+--- PASS: TestBuilder_WithSystem (0.00s)
+=== RUN   TestBuilder_WithMemory
+--- PASS: TestBuilder_WithMemory (0.00s)
+=== RUN   TestBuilder_WithMessages
+--- PASS: TestBuilder_WithMessages (0.00s)
+=== RUN   TestBuilder_Chaining
+--- PASS: TestBuilder_Chaining (0.00s)
+=== RUN   TestBuilder_EnsureClientOpenAI_NoAPIKey
+--- PASS: TestBuilder_EnsureClientOpenAI_NoAPIKey (0.00s)
+=== RUN   TestBuilder_BuildMessages
+--- PASS: TestBuilder_BuildMessages (0.00s)
+=== RUN   TestNewRedisCache
+redis: 2025/11/10 12:18:02 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestNewRedisCache (0.00s)
+=== RUN   TestNewRedisCacheWithOptions
+redis: 2025/11/10 12:18:02 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestNewRedisCacheWithOptions (0.00s)
+=== RUN   TestNewRedisCacheWithNilOptions
+--- PASS: TestNewRedisCacheWithNilOptions (0.00s)
+=== RUN   TestNewRedisCacheConnectionFailed
+redis: 2025/11/10 12:18:03 pool.go:376: redis: connection pool: failed to dial after 5 attempts: dial tcp [::1]:9999: connect: connection refused
+redis: 2025/11/10 12:18:03 pool.go:376: redis: connection pool: failed to dial after 5 attempts: dial tcp [::1]:9999: connect: connection refused
+redis: 2025/11/10 12:18:03 pool.go:376: redis: connection pool: failed to dial after 5 attempts: dial tcp [::1]:9999: connect: connection refused
+redis: 2025/11/10 12:18:03 pool.go:376: redis: connection pool: failed to dial after 5 attempts: dial tcp [::1]:9999: connect: connection refused
+redis: 2025/11/10 12:18:03 pool.go:376: redis: connection pool: failed to dial after 5 attempts: dial tcp [::1]:9999: connect: connection refused
+redis: 2025/11/10 12:18:03 pool.go:376: redis: connection pool: failed to dial after 5 attempts: dial tcp [::1]:9999: connect: connection refused
+redis: 2025/11/10 12:18:04 pool.go:376: redis: connection pool: failed to dial after 5 attempts: dial tcp [::1]:9999: connect: connection refused
+redis: 2025/11/10 12:18:04 pool.go:376: redis: connection pool: failed to dial after 5 attempts: dial tcp [::1]:9999: connect: connection refused
+redis: 2025/11/10 12:18:04 pool.go:376: redis: connection pool: failed to dial after 5 attempts: dial tcp [::1]:9999: connect: connection refused
+redis: 2025/11/10 12:18:04 pool.go:376: redis: connection pool: failed to dial after 5 attempts: dial tcp [::1]:9999: connect: connection refused
+redis: 2025/11/10 12:18:04 pool.go:376: redis: connection pool: failed to dial after 5 attempts: dial tcp [::1]:9999: connect: connection refused
+redis: 2025/11/10 12:18:04 pool.go:376: redis: connection pool: failed to dial after 5 attempts: dial tcp [::1]:9999: connect: connection refused
+--- PASS: TestNewRedisCacheConnectionFailed (1.10s)
+=== RUN   TestRedisCacheSetGet
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheSetGet (0.00s)
+=== RUN   TestRedisCacheGetMiss
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheGetMiss (0.00s)
+=== RUN   TestRedisCacheSetWithDefaultTTL
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheSetWithDefaultTTL (0.00s)
+=== RUN   TestRedisCacheDelete
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheDelete (0.00s)
+=== RUN   TestRedisCacheClear
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheClear (0.00s)
+=== RUN   TestRedisCacheStats
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheStats (0.00s)
+=== RUN   TestRedisCacheExists
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheExists (0.00s)
+=== RUN   TestRedisCacheTTL
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheTTL (0.00s)
+=== RUN   TestRedisCacheExpire
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheExpire (0.00s)
+=== RUN   TestRedisCacheSetNX
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheSetNX (0.00s)
+=== RUN   TestRedisCacheMGet
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheMGet (0.00s)
+=== RUN   TestRedisCacheMSet
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheMSet (0.00s)
+=== RUN   TestRedisCacheDeletePattern
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheDeletePattern (0.00s)
+=== RUN   TestRedisCachePing
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCachePing (0.00s)
+=== RUN   TestRedisCacheClose
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheClose (0.00s)
+=== RUN   TestRedisCacheKeyPrefix
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheKeyPrefix (0.00s)
+=== RUN   TestRedisCacheMultipleOperations
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheMultipleOperations (0.00s)
+=== RUN   TestRedisCacheEmptyValue
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheEmptyValue (0.00s)
+=== RUN   TestRedisCacheConcurrentAccess
+redis: 2025/11/10 12:18:04 redis.go:478: auto mode fallback: maintnotifications disabled due to handshake error: ERR unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+--- PASS: TestRedisCacheConcurrentAccess (0.00s)
+=== RUN   TestMemoryCacheBasic
+--- PASS: TestMemoryCacheBasic (0.00s)
+=== RUN   TestMemoryCacheMiss
+--- PASS: TestMemoryCacheMiss (0.00s)
+=== RUN   TestMemoryCacheExpiration
+--- PASS: TestMemoryCacheExpiration (0.15s)
+=== RUN   TestMemoryCacheLRU
+--- PASS: TestMemoryCacheLRU (0.00s)
+=== RUN   TestMemoryCacheDelete
+--- PASS: TestMemoryCacheDelete (0.00s)
+=== RUN   TestMemoryCacheClear
+--- PASS: TestMemoryCacheClear (0.00s)
+=== RUN   TestMemoryCacheStats
+--- PASS: TestMemoryCacheStats (0.00s)
+=== RUN   TestGenerateCacheKey
+--- PASS: TestGenerateCacheKey (0.00s)
+=== RUN   TestWithCache
+--- PASS: TestWithCache (0.00s)
+=== RUN   TestWithMemoryCache
+--- PASS: TestWithMemoryCache (0.00s)
+=== RUN   TestWithCacheTTL
+--- PASS: TestWithCacheTTL (0.00s)
+=== RUN   TestDisableCache
+--- PASS: TestDisableCache (0.00s)
+=== RUN   TestCacheIntegrationMock
+--- PASS: TestCacheIntegrationMock (0.23s)
+=== RUN   TestClearCache
+--- PASS: TestClearCache (0.00s)
+=== RUN   TestGetCacheStatsNil
+--- PASS: TestGetCacheStatsNil (0.00s)
+=== RUN   TestCacheWithDifferentTemperatures
+--- PASS: TestCacheWithDifferentTemperatures (0.00s)
+=== RUN   TestCacheWithDifferentModels
+--- PASS: TestCacheWithDifferentModels (0.00s)
+=== RUN   TestCacheEntryAccessCount
+--- PASS: TestCacheEntryAccessCount (0.00s)
+=== RUN   TestCacheDefaultValues
+--- PASS: TestCacheDefaultValues (0.00s)
+=== RUN   TestCacheConcurrency
+--- PASS: TestCacheConcurrency (0.00s)
+=== RUN   TestBuilder_EdgeCases
+=== RUN   TestBuilder_EdgeCases/EmptyAPIKey
+=== RUN   TestBuilder_EdgeCases/EmptyModel
+=== RUN   TestBuilder_EdgeCases/NilContext
+=== RUN   TestBuilder_EdgeCases/EmptyMessage
+=== RUN   TestBuilder_EdgeCases/VeryLongMessage
+--- PASS: TestBuilder_EdgeCases (0.00s)
+    --- PASS: TestBuilder_EdgeCases/EmptyAPIKey (0.00s)
+    --- PASS: TestBuilder_EdgeCases/EmptyModel (0.00s)
+    --- PASS: TestBuilder_EdgeCases/NilContext (0.00s)
+    --- PASS: TestBuilder_EdgeCases/EmptyMessage (0.00s)
+    --- PASS: TestBuilder_EdgeCases/VeryLongMessage (0.00s)
+=== RUN   TestBuilder_BoundaryConditions
+=== RUN   TestBuilder_BoundaryConditions/Temperature_Min
+=== RUN   TestBuilder_BoundaryConditions/Temperature_Max
+=== RUN   TestBuilder_BoundaryConditions/Temperature_Negative
+=== RUN   TestBuilder_BoundaryConditions/MaxTokens_Zero
+=== RUN   TestBuilder_BoundaryConditions/MaxTokens_Large
+=== RUN   TestBuilder_BoundaryConditions/MaxTokens_Negative
+=== RUN   TestBuilder_BoundaryConditions/TopP_Zero
+=== RUN   TestBuilder_BoundaryConditions/TopP_One
+--- PASS: TestBuilder_BoundaryConditions (0.00s)
+    --- PASS: TestBuilder_BoundaryConditions/Temperature_Min (0.00s)
+    --- PASS: TestBuilder_BoundaryConditions/Temperature_Max (0.00s)
+    --- PASS: TestBuilder_BoundaryConditions/Temperature_Negative (0.00s)
+    --- PASS: TestBuilder_BoundaryConditions/MaxTokens_Zero (0.00s)
+    --- PASS: TestBuilder_BoundaryConditions/MaxTokens_Large (0.00s)
+    --- PASS: TestBuilder_BoundaryConditions/MaxTokens_Negative (0.00s)
+    --- PASS: TestBuilder_BoundaryConditions/TopP_Zero (0.00s)
+    --- PASS: TestBuilder_BoundaryConditions/TopP_One (0.00s)
+=== RUN   TestBuilder_RetryBoundaries
+=== RUN   TestBuilder_RetryBoundaries/Retry_Zero
+=== RUN   TestBuilder_RetryBoundaries/Retry_Negative
+=== RUN   TestBuilder_RetryBoundaries/Retry_Large
+=== RUN   TestBuilder_RetryBoundaries/RetryDelay_Zero
+=== RUN   TestBuilder_RetryBoundaries/RetryDelay_Negative
+=== RUN   TestBuilder_RetryBoundaries/ExponentialBackoff_WithoutRetry
+=== RUN   TestBuilder_RetryBoundaries/ExponentialBackoff_WithRetry
+--- PASS: TestBuilder_RetryBoundaries (0.00s)
+    --- PASS: TestBuilder_RetryBoundaries/Retry_Zero (0.00s)
+    --- PASS: TestBuilder_RetryBoundaries/Retry_Negative (0.00s)
+    --- PASS: TestBuilder_RetryBoundaries/Retry_Large (0.00s)
+    --- PASS: TestBuilder_RetryBoundaries/RetryDelay_Zero (0.00s)
+    --- PASS: TestBuilder_RetryBoundaries/RetryDelay_Negative (0.00s)
+    --- PASS: TestBuilder_RetryBoundaries/ExponentialBackoff_WithoutRetry (0.00s)
+    --- PASS: TestBuilder_RetryBoundaries/ExponentialBackoff_WithRetry (0.00s)
+=== RUN   TestBuilder_MemoryBoundaries
+=== RUN   TestBuilder_MemoryBoundaries/MaxHistory_Zero
+=== RUN   TestBuilder_MemoryBoundaries/MaxHistory_Negative
+=== RUN   TestBuilder_MemoryBoundaries/MaxHistory_Large
+=== RUN   TestBuilder_MemoryBoundaries/Memory_WithoutWithMemory
+=== RUN   TestBuilder_MemoryBoundaries/SetHistory_Nil
+=== RUN   TestBuilder_MemoryBoundaries/SetHistory_Empty
+=== RUN   TestBuilder_MemoryBoundaries/SetHistory_SingleMessage
+=== RUN   TestBuilder_MemoryBoundaries/SetHistory_LargeHistory
+--- PASS: TestBuilder_MemoryBoundaries (0.00s)
+    --- PASS: TestBuilder_MemoryBoundaries/MaxHistory_Zero (0.00s)
+    --- PASS: TestBuilder_MemoryBoundaries/MaxHistory_Negative (0.00s)
+    --- PASS: TestBuilder_MemoryBoundaries/MaxHistory_Large (0.00s)
+    --- PASS: TestBuilder_MemoryBoundaries/Memory_WithoutWithMemory (0.00s)
+    --- PASS: TestBuilder_MemoryBoundaries/SetHistory_Nil (0.00s)
+    --- PASS: TestBuilder_MemoryBoundaries/SetHistory_Empty (0.00s)
+    --- PASS: TestBuilder_MemoryBoundaries/SetHistory_SingleMessage (0.00s)
+    --- PASS: TestBuilder_MemoryBoundaries/SetHistory_LargeHistory (0.00s)
+=== RUN   TestBuilder_ToolEdgeCases
+=== RUN   TestBuilder_ToolEdgeCases/Tool_EmptyName
+=== RUN   TestBuilder_ToolEdgeCases/Tool_EmptyDescription
+=== RUN   TestBuilder_ToolEdgeCases/Tool_NoParameters
+=== RUN   TestBuilder_ToolEdgeCases/Tool_NoHandler
+=== RUN   TestBuilder_ToolEdgeCases/Tool_DuplicateParameters
+=== RUN   TestBuilder_ToolEdgeCases/Tool_InvalidType
+=== RUN   TestBuilder_ToolEdgeCases/WithTools_Nil
+=== RUN   TestBuilder_ToolEdgeCases/WithTools_Empty
+=== RUN   TestBuilder_ToolEdgeCases/WithAutoExecute_False
+=== RUN   TestBuilder_ToolEdgeCases/WithAutoExecute_True
+=== RUN   TestBuilder_ToolEdgeCases/WithMaxToolRounds_Zero
+=== RUN   TestBuilder_ToolEdgeCases/WithMaxToolRounds_Negative
+--- PASS: TestBuilder_ToolEdgeCases (0.00s)
+    --- PASS: TestBuilder_ToolEdgeCases/Tool_EmptyName (0.00s)
+    --- PASS: TestBuilder_ToolEdgeCases/Tool_EmptyDescription (0.00s)
+    --- PASS: TestBuilder_ToolEdgeCases/Tool_NoParameters (0.00s)
+    --- PASS: TestBuilder_ToolEdgeCases/Tool_NoHandler (0.00s)
+    --- PASS: TestBuilder_ToolEdgeCases/Tool_DuplicateParameters (0.00s)
+    --- PASS: TestBuilder_ToolEdgeCases/Tool_InvalidType (0.00s)
+    --- PASS: TestBuilder_ToolEdgeCases/WithTools_Nil (0.00s)
+    --- PASS: TestBuilder_ToolEdgeCases/WithTools_Empty (0.00s)
+    --- PASS: TestBuilder_ToolEdgeCases/WithAutoExecute_False (0.00s)
+    --- PASS: TestBuilder_ToolEdgeCases/WithAutoExecute_True (0.00s)
+    --- PASS: TestBuilder_ToolEdgeCases/WithMaxToolRounds_Zero (0.00s)
+    --- PASS: TestBuilder_ToolEdgeCases/WithMaxToolRounds_Negative (0.00s)
+=== RUN   TestBuilder_CallbackEdgeCases
+=== RUN   TestBuilder_CallbackEdgeCases/OnStream_Nil
+=== RUN   TestBuilder_CallbackEdgeCases/OnStream_Overwrite
+=== RUN   TestBuilder_CallbackEdgeCases/OnRefusal_Nil
+=== RUN   TestBuilder_CallbackEdgeCases/OnRefusal_Overwrite
+--- PASS: TestBuilder_CallbackEdgeCases (0.00s)
+    --- PASS: TestBuilder_CallbackEdgeCases/OnStream_Nil (0.00s)
+    --- PASS: TestBuilder_CallbackEdgeCases/OnStream_Overwrite (0.00s)
+    --- PASS: TestBuilder_CallbackEdgeCases/OnRefusal_Nil (0.00s)
+    --- PASS: TestBuilder_CallbackEdgeCases/OnRefusal_Overwrite (0.00s)
+=== RUN   TestBuilder_TimeoutEdgeCases
+=== RUN   TestBuilder_TimeoutEdgeCases/Timeout_Zero
+=== RUN   TestBuilder_TimeoutEdgeCases/Timeout_Negative
+=== RUN   TestBuilder_TimeoutEdgeCases/Timeout_VeryShort
+=== RUN   TestBuilder_TimeoutEdgeCases/Timeout_VeryLong
+--- PASS: TestBuilder_TimeoutEdgeCases (0.00s)
+    --- PASS: TestBuilder_TimeoutEdgeCases/Timeout_Zero (0.00s)
+    --- PASS: TestBuilder_TimeoutEdgeCases/Timeout_Negative (0.00s)
+    --- PASS: TestBuilder_TimeoutEdgeCases/Timeout_VeryShort (0.00s)
+    --- PASS: TestBuilder_TimeoutEdgeCases/Timeout_VeryLong (0.00s)
+=== RUN   TestBuilder_JSONSchemaEdgeCases
+=== RUN   TestBuilder_JSONSchemaEdgeCases/JSONMode_Simple
+=== RUN   TestBuilder_JSONSchemaEdgeCases/JSONSchema_EmptyName
+=== RUN   TestBuilder_JSONSchemaEdgeCases/JSONSchema_EmptyDescription
+=== RUN   TestBuilder_JSONSchemaEdgeCases/JSONSchema_NilSchema
+=== RUN   TestBuilder_JSONSchemaEdgeCases/JSONSchema_EmptySchema
+=== RUN   TestBuilder_JSONSchemaEdgeCases/JSONSchema_StrictFalse
+--- PASS: TestBuilder_JSONSchemaEdgeCases (0.00s)
+    --- PASS: TestBuilder_JSONSchemaEdgeCases/JSONMode_Simple (0.00s)
+    --- PASS: TestBuilder_JSONSchemaEdgeCases/JSONSchema_EmptyName (0.00s)
+    --- PASS: TestBuilder_JSONSchemaEdgeCases/JSONSchema_EmptyDescription (0.00s)
+    --- PASS: TestBuilder_JSONSchemaEdgeCases/JSONSchema_NilSchema (0.00s)
+    --- PASS: TestBuilder_JSONSchemaEdgeCases/JSONSchema_EmptySchema (0.00s)
+    --- PASS: TestBuilder_JSONSchemaEdgeCases/JSONSchema_StrictFalse (0.00s)
+=== RUN   TestBuilder_ProviderEdgeCases
+=== RUN   TestBuilder_ProviderEdgeCases/Custom_Provider
+=== RUN   TestBuilder_ProviderEdgeCases/Empty_Provider
+=== RUN   TestBuilder_ProviderEdgeCases/Ollama_DefaultBaseURL
+=== RUN   TestBuilder_ProviderEdgeCases/Ollama_CustomBaseURL
+=== RUN   TestBuilder_ProviderEdgeCases/BaseURL_Empty
+--- PASS: TestBuilder_ProviderEdgeCases (0.00s)
+    --- PASS: TestBuilder_ProviderEdgeCases/Custom_Provider (0.00s)
+    --- PASS: TestBuilder_ProviderEdgeCases/Empty_Provider (0.00s)
+    --- PASS: TestBuilder_ProviderEdgeCases/Ollama_DefaultBaseURL (0.00s)
+    --- PASS: TestBuilder_ProviderEdgeCases/Ollama_CustomBaseURL (0.00s)
+    --- PASS: TestBuilder_ProviderEdgeCases/BaseURL_Empty (0.00s)
+=== RUN   TestBuilder_PenaltyEdgeCases
+=== RUN   TestBuilder_PenaltyEdgeCases/PresencePenalty_Min
+=== RUN   TestBuilder_PenaltyEdgeCases/PresencePenalty_Max
+=== RUN   TestBuilder_PenaltyEdgeCases/PresencePenalty_Zero
+=== RUN   TestBuilder_PenaltyEdgeCases/FrequencyPenalty_Min
+=== RUN   TestBuilder_PenaltyEdgeCases/FrequencyPenalty_Max
+=== RUN   TestBuilder_PenaltyEdgeCases/FrequencyPenalty_Zero
+--- PASS: TestBuilder_PenaltyEdgeCases (0.00s)
+    --- PASS: TestBuilder_PenaltyEdgeCases/PresencePenalty_Min (0.00s)
+    --- PASS: TestBuilder_PenaltyEdgeCases/PresencePenalty_Max (0.00s)
+    --- PASS: TestBuilder_PenaltyEdgeCases/PresencePenalty_Zero (0.00s)
+    --- PASS: TestBuilder_PenaltyEdgeCases/FrequencyPenalty_Min (0.00s)
+    --- PASS: TestBuilder_PenaltyEdgeCases/FrequencyPenalty_Max (0.00s)
+    --- PASS: TestBuilder_PenaltyEdgeCases/FrequencyPenalty_Zero (0.00s)
+=== RUN   TestBuilder_SeedAndN
+=== RUN   TestBuilder_SeedAndN/Seed_Zero
+=== RUN   TestBuilder_SeedAndN/Seed_Negative
+=== RUN   TestBuilder_SeedAndN/Seed_Large
+--- PASS: TestBuilder_SeedAndN (0.00s)
+    --- PASS: TestBuilder_SeedAndN/Seed_Zero (0.00s)
+    --- PASS: TestBuilder_SeedAndN/Seed_Negative (0.00s)
+    --- PASS: TestBuilder_SeedAndN/Seed_Large (0.00s)
+=== RUN   TestMessage_ConvertEdgeCases
+=== RUN   TestMessage_ConvertEdgeCases/Convert_EmptySlice
+=== RUN   TestMessage_ConvertEdgeCases/Convert_NilSlice
+=== RUN   TestMessage_ConvertEdgeCases/Convert_SingleMessage
+=== RUN   TestMessage_ConvertEdgeCases/Convert_EmptyContent
+=== RUN   TestMessage_ConvertEdgeCases/Convert_InvalidRole
+--- PASS: TestMessage_ConvertEdgeCases (0.00s)
+    --- PASS: TestMessage_ConvertEdgeCases/Convert_EmptySlice (0.00s)
+    --- PASS: TestMessage_ConvertEdgeCases/Convert_NilSlice (0.00s)
+    --- PASS: TestMessage_ConvertEdgeCases/Convert_SingleMessage (0.00s)
+    --- PASS: TestMessage_ConvertEdgeCases/Convert_EmptyContent (0.00s)
+    --- PASS: TestMessage_ConvertEdgeCases/Convert_InvalidRole (0.00s)
+=== RUN   TestCosineSimilarity
+=== RUN   TestCosineSimilarity/identical_vectors
+=== RUN   TestCosineSimilarity/opposite_vectors
+=== RUN   TestCosineSimilarity/orthogonal_vectors
+=== RUN   TestCosineSimilarity/45_degree_angle
+=== RUN   TestCosineSimilarity/multi-dimensional_similar
+--- PASS: TestCosineSimilarity (0.00s)
+    --- PASS: TestCosineSimilarity/identical_vectors (0.00s)
+    --- PASS: TestCosineSimilarity/opposite_vectors (0.00s)
+    --- PASS: TestCosineSimilarity/orthogonal_vectors (0.00s)
+    --- PASS: TestCosineSimilarity/45_degree_angle (0.00s)
+    --- PASS: TestCosineSimilarity/multi-dimensional_similar (0.00s)
+=== RUN   TestCosineSimilarityEdgeCases
+=== RUN   TestCosineSimilarityEdgeCases/empty_vectors
+=== RUN   TestCosineSimilarityEdgeCases/zero_vectors
+=== RUN   TestCosineSimilarityEdgeCases/mismatched_dimensions
+--- PASS: TestCosineSimilarityEdgeCases (0.00s)
+    --- PASS: TestCosineSimilarityEdgeCases/empty_vectors (0.00s)
+    --- PASS: TestCosineSimilarityEdgeCases/zero_vectors (0.00s)
+    --- PASS: TestCosineSimilarityEdgeCases/mismatched_dimensions (0.00s)
+=== RUN   TestDotProduct
+=== RUN   TestDotProduct/simple_vectors
+=== RUN   TestDotProduct/negative_values
+=== RUN   TestDotProduct/zero_result
+=== RUN   TestDotProduct/empty_vectors
+--- PASS: TestDotProduct (0.00s)
+    --- PASS: TestDotProduct/simple_vectors (0.00s)
+    --- PASS: TestDotProduct/negative_values (0.00s)
+    --- PASS: TestDotProduct/zero_result (0.00s)
+    --- PASS: TestDotProduct/empty_vectors (0.00s)
+=== RUN   TestEuclideanDistance
+=== RUN   TestEuclideanDistance/identical_vectors
+=== RUN   TestEuclideanDistance/simple_distance
+=== RUN   TestEuclideanDistance/negative_coordinates
+=== RUN   TestEuclideanDistance/1D_distance
+--- PASS: TestEuclideanDistance (0.00s)
+    --- PASS: TestEuclideanDistance/identical_vectors (0.00s)
+    --- PASS: TestEuclideanDistance/simple_distance (0.00s)
+    --- PASS: TestEuclideanDistance/negative_coordinates (0.00s)
+    --- PASS: TestEuclideanDistance/1D_distance (0.00s)
+=== RUN   TestNormalizeVector
+=== RUN   TestNormalizeVector/simple_vector
+=== RUN   TestNormalizeVector/already_normalized
+=== RUN   TestNormalizeVector/3D_vector
+=== RUN   TestNormalizeVector/negative_values
+--- PASS: TestNormalizeVector (0.00s)
+    --- PASS: TestNormalizeVector/simple_vector (0.00s)
+    --- PASS: TestNormalizeVector/already_normalized (0.00s)
+    --- PASS: TestNormalizeVector/3D_vector (0.00s)
+    --- PASS: TestNormalizeVector/negative_values (0.00s)
+=== RUN   TestNormalizeVectorZero
+--- PASS: TestNormalizeVectorZero (0.00s)
+=== RUN   TestSqrt32
+=== RUN   TestSqrt32/perfect_square
+=== RUN   TestSqrt32/small_number
+=== RUN   TestSqrt32/large_number
+=== RUN   TestSqrt32/fractional
+=== RUN   TestSqrt32/zero
+--- PASS: TestSqrt32 (0.00s)
+    --- PASS: TestSqrt32/perfect_square (0.00s)
+    --- PASS: TestSqrt32/small_number (0.00s)
+    --- PASS: TestSqrt32/large_number (0.00s)
+    --- PASS: TestSqrt32/fractional (0.00s)
+    --- PASS: TestSqrt32/zero (0.00s)
+=== RUN   TestPrepareTextForEmbedding
+=== RUN   TestPrepareTextForEmbedding/no_processing
+=== RUN   TestPrepareTextForEmbedding/strip_newlines
+=== RUN   TestPrepareTextForEmbedding/multiple_newlines
+=== RUN   TestPrepareTextForEmbedding/mixed_whitespace
+=== RUN   TestPrepareTextForEmbedding/trim_spaces
+--- PASS: TestPrepareTextForEmbedding (0.00s)
+    --- PASS: TestPrepareTextForEmbedding/no_processing (0.00s)
+    --- PASS: TestPrepareTextForEmbedding/strip_newlines (0.00s)
+    --- PASS: TestPrepareTextForEmbedding/multiple_newlines (0.00s)
+    --- PASS: TestPrepareTextForEmbedding/mixed_whitespace (0.00s)
+    --- PASS: TestPrepareTextForEmbedding/trim_spaces (0.00s)
+=== RUN   TestDefaultEmbeddingConfig
+--- PASS: TestDefaultEmbeddingConfig (0.00s)
+=== RUN   TestMockEmbeddingProvider
+--- PASS: TestMockEmbeddingProvider (0.00s)
+=== RUN   TestEmbeddingProviderInterface
+--- PASS: TestEmbeddingProviderInterface (0.00s)
+=== RUN   TestEmbeddingIntegration
+--- PASS: TestEmbeddingIntegration (0.00s)
+=== RUN   TestEmbeddingConfigNormalization
+--- PASS: TestEmbeddingConfigNormalization (0.00s)
+=== RUN   TestTextPreparationWithNewlines
+--- PASS: TestTextPreparationWithNewlines (0.00s)
+=== RUN   TestCustomErrorTypes
+=== RUN   TestCustomErrorTypes/ErrAPIKey
+=== RUN   TestCustomErrorTypes/ErrRateLimit
+=== RUN   TestCustomErrorTypes/ErrTimeout
+=== RUN   TestCustomErrorTypes/ErrRefusal
+=== RUN   TestCustomErrorTypes/ErrInvalidResponse
+=== RUN   TestCustomErrorTypes/ErrMaxRetries
+=== RUN   TestCustomErrorTypes/ErrToolExecution
+--- PASS: TestCustomErrorTypes (0.00s)
+    --- PASS: TestCustomErrorTypes/ErrAPIKey (0.00s)
+    --- PASS: TestCustomErrorTypes/ErrRateLimit (0.00s)
+    --- PASS: TestCustomErrorTypes/ErrTimeout (0.00s)
+    --- PASS: TestCustomErrorTypes/ErrRefusal (0.00s)
+    --- PASS: TestCustomErrorTypes/ErrInvalidResponse (0.00s)
+    --- PASS: TestCustomErrorTypes/ErrMaxRetries (0.00s)
+    --- PASS: TestCustomErrorTypes/ErrToolExecution (0.00s)
+=== RUN   TestAPIError
+--- PASS: TestAPIError (0.00s)
+=== RUN   TestAPIErrorWithoutStatusCode
+--- PASS: TestAPIErrorWithoutStatusCode (0.00s)
+=== RUN   TestErrorCheckers
+=== RUN   TestErrorCheckers/IsAPIKeyError_with_ErrAPIKey
+=== RUN   TestErrorCheckers/IsAPIKeyError_with_wrapped
+=== RUN   TestErrorCheckers/IsAPIKeyError_with_other
+=== RUN   TestErrorCheckers/IsRateLimitError_with_ErrRateLimit
+=== RUN   TestErrorCheckers/IsRateLimitError_with_wrapped
+=== RUN   TestErrorCheckers/IsRateLimitError_with_other
+=== RUN   TestErrorCheckers/IsTimeoutError_with_ErrTimeout
+=== RUN   TestErrorCheckers/IsTimeoutError_with_wrapped
+=== RUN   TestErrorCheckers/IsTimeoutError_with_other
+=== RUN   TestErrorCheckers/IsRefusalError_with_ErrRefusal
+=== RUN   TestErrorCheckers/IsRefusalError_with_wrapped
+=== RUN   TestErrorCheckers/IsRefusalError_with_other
+=== RUN   TestErrorCheckers/IsMaxRetriesError_with_ErrMaxRetries
+=== RUN   TestErrorCheckers/IsMaxRetriesError_with_wrapped
+=== RUN   TestErrorCheckers/IsMaxRetriesError_with_other
+--- PASS: TestErrorCheckers (0.00s)
+    --- PASS: TestErrorCheckers/IsAPIKeyError_with_ErrAPIKey (0.00s)
+    --- PASS: TestErrorCheckers/IsAPIKeyError_with_wrapped (0.00s)
+    --- PASS: TestErrorCheckers/IsAPIKeyError_with_other (0.00s)
+    --- PASS: TestErrorCheckers/IsRateLimitError_with_ErrRateLimit (0.00s)
+    --- PASS: TestErrorCheckers/IsRateLimitError_with_wrapped (0.00s)
+    --- PASS: TestErrorCheckers/IsRateLimitError_with_other (0.00s)
+    --- PASS: TestErrorCheckers/IsTimeoutError_with_ErrTimeout (0.00s)
+    --- PASS: TestErrorCheckers/IsTimeoutError_with_wrapped (0.00s)
+    --- PASS: TestErrorCheckers/IsTimeoutError_with_other (0.00s)
+    --- PASS: TestErrorCheckers/IsRefusalError_with_ErrRefusal (0.00s)
+    --- PASS: TestErrorCheckers/IsRefusalError_with_wrapped (0.00s)
+    --- PASS: TestErrorCheckers/IsRefusalError_with_other (0.00s)
+    --- PASS: TestErrorCheckers/IsMaxRetriesError_with_ErrMaxRetries (0.00s)
+    --- PASS: TestErrorCheckers/IsMaxRetriesError_with_wrapped (0.00s)
+    --- PASS: TestErrorCheckers/IsMaxRetriesError_with_other (0.00s)
+=== RUN   TestWithTimeout
+--- PASS: TestWithTimeout (0.00s)
+=== RUN   TestWithRetry
+--- PASS: TestWithRetry (0.00s)
+=== RUN   TestWithRetryDelay
+--- PASS: TestWithRetryDelay (0.00s)
+=== RUN   TestWithExponentialBackoff
+--- PASS: TestWithExponentialBackoff (0.00s)
+=== RUN   TestCalculateRetryDelayFixed
+--- PASS: TestCalculateRetryDelayFixed (0.00s)
+=== RUN   TestCalculateRetryDelayExponential
+--- PASS: TestCalculateRetryDelayExponential (0.00s)
+=== RUN   TestIsRetryable
+=== RUN   TestIsRetryable/RateLimit_is_retryable
+=== RUN   TestIsRetryable/Wrapped_RateLimit_is_retryable
+=== RUN   TestIsRetryable/Timeout_is_retryable
+=== RUN   TestIsRetryable/Wrapped_Timeout_is_retryable
+=== RUN   TestIsRetryable/APIKey_is_not_retryable
+=== RUN   TestIsRetryable/Wrapped_APIKey_is_not_retryable
+=== RUN   TestIsRetryable/Refusal_is_not_retryable
+=== RUN   TestIsRetryable/InvalidResponse_is_not_retryable
+=== RUN   TestIsRetryable/Generic_error_is_not_retryable
+--- PASS: TestIsRetryable (0.00s)
+    --- PASS: TestIsRetryable/RateLimit_is_retryable (0.00s)
+    --- PASS: TestIsRetryable/Wrapped_RateLimit_is_retryable (0.00s)
+    --- PASS: TestIsRetryable/Timeout_is_retryable (0.00s)
+    --- PASS: TestIsRetryable/Wrapped_Timeout_is_retryable (0.00s)
+    --- PASS: TestIsRetryable/APIKey_is_not_retryable (0.00s)
+    --- PASS: TestIsRetryable/Wrapped_APIKey_is_not_retryable (0.00s)
+    --- PASS: TestIsRetryable/Refusal_is_not_retryable (0.00s)
+    --- PASS: TestIsRetryable/InvalidResponse_is_not_retryable (0.00s)
+    --- PASS: TestIsRetryable/Generic_error_is_not_retryable (0.00s)
+=== RUN   TestExecuteWithRetrySuccess
+--- PASS: TestExecuteWithRetrySuccess (0.00s)
+=== RUN   TestExecuteWithRetryEventualSuccess
+--- PASS: TestExecuteWithRetryEventualSuccess (0.02s)
+=== RUN   TestExecuteWithRetryMaxRetriesExceeded
+--- PASS: TestExecuteWithRetryMaxRetriesExceeded (0.02s)
+=== RUN   TestExecuteWithRetryNonRetryableError
+--- PASS: TestExecuteWithRetryNonRetryableError (0.00s)
+=== RUN   TestExecuteWithTimeout
+--- PASS: TestExecuteWithTimeout (0.05s)
+=== RUN   TestErrorHandlingChaining
+--- PASS: TestErrorHandlingChaining (0.00s)
+=== RUN   TestSlogAdapter_Creation
+--- PASS: TestSlogAdapter_Creation (0.00s)
+=== RUN   TestSlogAdapter_DebugLevel
+--- PASS: TestSlogAdapter_DebugLevel (0.00s)
+=== RUN   TestSlogAdapter_InfoLevel
+--- PASS: TestSlogAdapter_InfoLevel (0.00s)
+=== RUN   TestSlogAdapter_WarnLevel
+--- PASS: TestSlogAdapter_WarnLevel (0.00s)
+=== RUN   TestSlogAdapter_ErrorLevel
+--- PASS: TestSlogAdapter_ErrorLevel (0.00s)
+=== RUN   TestSlogAdapter_JSONHandler
+--- PASS: TestSlogAdapter_JSONHandler (0.00s)
+=== RUN   TestSlogAdapter_MultipleFields
+--- PASS: TestSlogAdapter_MultipleFields (0.00s)
+=== RUN   TestSlogAdapter_NoFields
+--- PASS: TestSlogAdapter_NoFields (0.00s)
+=== RUN   TestSlogAdapter_LevelFiltering
+--- PASS: TestSlogAdapter_LevelFiltering (0.00s)
+=== RUN   TestSlogAdapter_ContextPropagation
+--- PASS: TestSlogAdapter_ContextPropagation (0.00s)
+=== RUN   TestSlogAdapter_WithBuilder
+--- PASS: TestSlogAdapter_WithBuilder (0.00s)
+=== RUN   TestSlogAdapter_FieldTypes
+--- PASS: TestSlogAdapter_FieldTypes (0.00s)
+=== RUN   TestSlogAdapter_ConcurrentLogging
+--- PASS: TestSlogAdapter_ConcurrentLogging (0.00s)
+=== RUN   TestSlogAdapter_EmptyMessage
+--- PASS: TestSlogAdapter_EmptyMessage (0.00s)
+=== RUN   TestSlogAdapter_LargeFields
+--- PASS: TestSlogAdapter_LargeFields (0.00s)
+=== RUN   TestLogLevel
+=== RUN   TestLogLevel/NONE
+=== RUN   TestLogLevel/ERROR
+=== RUN   TestLogLevel/WARN
+=== RUN   TestLogLevel/INFO
+=== RUN   TestLogLevel/DEBUG
+=== RUN   TestLogLevel/UNKNOWN
+--- PASS: TestLogLevel (0.00s)
+    --- PASS: TestLogLevel/NONE (0.00s)
+    --- PASS: TestLogLevel/ERROR (0.00s)
+    --- PASS: TestLogLevel/WARN (0.00s)
+    --- PASS: TestLogLevel/INFO (0.00s)
+    --- PASS: TestLogLevel/DEBUG (0.00s)
+    --- PASS: TestLogLevel/UNKNOWN (0.00s)
+=== RUN   TestField
+--- PASS: TestField (0.00s)
+=== RUN   TestNoopLogger
+--- PASS: TestNoopLogger (0.00s)
+=== RUN   TestStdLoggerLevels
+=== RUN   TestStdLoggerLevels/None
+=== RUN   TestStdLoggerLevels/Error
+=== RUN   TestStdLoggerLevels/Warn
+=== RUN   TestStdLoggerLevels/Info
+=== RUN   TestStdLoggerLevels/Debug
+--- PASS: TestStdLoggerLevels (0.00s)
+    --- PASS: TestStdLoggerLevels/None (0.00s)
+    --- PASS: TestStdLoggerLevels/Error (0.00s)
+    --- PASS: TestStdLoggerLevels/Warn (0.00s)
+    --- PASS: TestStdLoggerLevels/Info (0.00s)
+    --- PASS: TestStdLoggerLevels/Debug (0.00s)
+=== RUN   TestStdLoggerFields
+--- PASS: TestStdLoggerFields (0.00s)
+=== RUN   TestStdLoggerNoFields
+--- PASS: TestStdLoggerNoFields (0.00s)
+=== RUN   TestWithLogger
+--- PASS: TestWithLogger (0.00s)
+=== RUN   TestWithDebugLogging
+--- PASS: TestWithDebugLogging (0.00s)
+=== RUN   TestWithInfoLogging
+--- PASS: TestWithInfoLogging (0.00s)
+=== RUN   TestGetLogger
+--- PASS: TestGetLogger (0.00s)
+=== RUN   TestLoggerChaining
+--- PASS: TestLoggerChaining (0.00s)
+=== RUN   TestCustomLogger
+--- PASS: TestCustomLogger (0.00s)
+=== RUN   TestLoggerContextPropagation
+--- PASS: TestLoggerContextPropagation (0.00s)
+=== RUN   TestLoggingIntegration
+=== RUN   TestLoggingIntegration/Ask_WithLogging
+=== RUN   TestLoggingIntegration/Stream_WithLogging
+=== RUN   TestLoggingIntegration/Cache_WithLogging
+=== RUN   TestLoggingIntegration/ClearCache_WithLogging
+=== RUN   TestLoggingIntegration/NoopLogger_NoOutput
+--- PASS: TestLoggingIntegration (0.72s)
+    --- PASS: TestLoggingIntegration/Ask_WithLogging (0.25s)
+    --- PASS: TestLoggingIntegration/Stream_WithLogging (0.26s)
+    --- PASS: TestLoggingIntegration/Cache_WithLogging (0.00s)
+    --- PASS: TestLoggingIntegration/ClearCache_WithLogging (0.00s)
+    --- PASS: TestLoggingIntegration/NoopLogger_NoOutput (0.21s)
+=== RUN   TestImageDetailConstants
+=== RUN   TestImageDetailConstants/Auto_detail
+=== RUN   TestImageDetailConstants/Low_detail
+=== RUN   TestImageDetailConstants/High_detail
+--- PASS: TestImageDetailConstants (0.00s)
+    --- PASS: TestImageDetailConstants/Auto_detail (0.00s)
+    --- PASS: TestImageDetailConstants/Low_detail (0.00s)
+    --- PASS: TestImageDetailConstants/High_detail (0.00s)
+=== RUN   TestWithImage
+--- PASS: TestWithImage (0.00s)
+=== RUN   TestWithImageURL
+=== RUN   TestWithImageURL/Low_detail
+=== RUN   TestWithImageURL/High_detail
+=== RUN   TestWithImageURL/Auto_detail
+--- PASS: TestWithImageURL (0.00s)
+    --- PASS: TestWithImageURL/Low_detail (0.00s)
+    --- PASS: TestWithImageURL/High_detail (0.00s)
+    --- PASS: TestWithImageURL/Auto_detail (0.00s)
+=== RUN   TestWithImageBase64
+--- PASS: TestWithImageBase64 (0.00s)
+=== RUN   TestMultipleImages
+--- PASS: TestMultipleImages (0.00s)
+=== RUN   TestClearImages
+--- PASS: TestClearImages (0.00s)
+=== RUN   TestDetectImageMimeType
+=== RUN   TestDetectImageMimeType/JPEG
+=== RUN   TestDetectImageMimeType/JPEG_uppercase
+=== RUN   TestDetectImageMimeType/PNG
+=== RUN   TestDetectImageMimeType/GIF
+=== RUN   TestDetectImageMimeType/WebP
+=== RUN   TestDetectImageMimeType/Unknown
+=== RUN   TestDetectImageMimeType/No_extension
+--- PASS: TestDetectImageMimeType (0.00s)
+    --- PASS: TestDetectImageMimeType/JPEG (0.00s)
+    --- PASS: TestDetectImageMimeType/JPEG_uppercase (0.00s)
+    --- PASS: TestDetectImageMimeType/PNG (0.00s)
+    --- PASS: TestDetectImageMimeType/GIF (0.00s)
+    --- PASS: TestDetectImageMimeType/WebP (0.00s)
+    --- PASS: TestDetectImageMimeType/Unknown (0.00s)
+    --- PASS: TestDetectImageMimeType/No_extension (0.00s)
+=== RUN   TestBuildContentPartsTextOnly
+--- PASS: TestBuildContentPartsTextOnly (0.00s)
+=== RUN   TestBuildContentPartsWithImages
+--- PASS: TestBuildContentPartsWithImages (0.00s)
+=== RUN   TestWithImageFileInvalidFile
+--- PASS: TestWithImageFileInvalidFile (0.00s)
+=== RUN   TestWithImageFileValidFile
+--- PASS: TestWithImageFileValidFile (0.00s)
+=== RUN   TestAskWithLastError
+--- PASS: TestAskWithLastError (0.00s)
+=== RUN   TestBuildMessagesClearsImagesLogic
+--- PASS: TestBuildMessagesClearsImagesLogic (0.00s)
+=== RUN   TestChainedMultimodalOperations
+--- PASS: TestChainedMultimodalOperations (0.00s)
+=== RUN   TestNewQdrantStore
+--- PASS: TestNewQdrantStore (0.00s)
+=== RUN   TestQdrantStoreWithMethods
+--- PASS: TestQdrantStoreWithMethods (0.00s)
+=== RUN   TestQdrantCreateCollection
+--- PASS: TestQdrantCreateCollection (0.00s)
+=== RUN   TestQdrantCreateCollectionDistanceMetrics
+=== RUN   TestQdrantCreateCollectionDistanceMetrics/Cosine
+=== RUN   TestQdrantCreateCollectionDistanceMetrics/Euclidean
+=== RUN   TestQdrantCreateCollectionDistanceMetrics/L2
+=== RUN   TestQdrantCreateCollectionDistanceMetrics/DotProduct
+=== RUN   TestQdrantCreateCollectionDistanceMetrics/IP
+--- PASS: TestQdrantCreateCollectionDistanceMetrics (0.00s)
+    --- PASS: TestQdrantCreateCollectionDistanceMetrics/Cosine (0.00s)
+    --- PASS: TestQdrantCreateCollectionDistanceMetrics/Euclidean (0.00s)
+    --- PASS: TestQdrantCreateCollectionDistanceMetrics/L2 (0.00s)
+    --- PASS: TestQdrantCreateCollectionDistanceMetrics/DotProduct (0.00s)
+    --- PASS: TestQdrantCreateCollectionDistanceMetrics/IP (0.00s)
+=== RUN   TestQdrantDeleteCollection
+--- PASS: TestQdrantDeleteCollection (0.00s)
+=== RUN   TestQdrantListCollections
+--- PASS: TestQdrantListCollections (0.00s)
+=== RUN   TestQdrantCollectionExists
+--- PASS: TestQdrantCollectionExists (0.00s)
+=== RUN   TestQdrantAdd
+--- PASS: TestQdrantAdd (0.00s)
+=== RUN   TestQdrantAddWithAutoEmbedding
+--- PASS: TestQdrantAddWithAutoEmbedding (0.00s)
+=== RUN   TestQdrantAddNoEmbedding
+--- PASS: TestQdrantAddNoEmbedding (0.00s)
+=== RUN   TestQdrantDelete
+--- PASS: TestQdrantDelete (0.00s)
+=== RUN   TestQdrantGet
+--- PASS: TestQdrantGet (0.00s)
+=== RUN   TestQdrantSearch
+--- PASS: TestQdrantSearch (0.00s)
+=== RUN   TestQdrantSearchWithFilter
+--- PASS: TestQdrantSearchWithFilter (0.00s)
+=== RUN   TestQdrantSearchByText
+--- PASS: TestQdrantSearchByText (0.00s)
+=== RUN   TestQdrantSearchByTextNoProvider
+--- PASS: TestQdrantSearchByTextNoProvider (0.00s)
+=== RUN   TestQdrantCount
+--- PASS: TestQdrantCount (0.00s)
+=== RUN   TestQdrantClear
+--- PASS: TestQdrantClear (0.00s)
+=== RUN   TestQdrantUpdate
+--- PASS: TestQdrantUpdate (0.00s)
+=== RUN   TestQdrantAPIKey
+--- PASS: TestQdrantAPIKey (0.00s)
+=== RUN   TestConvertFilterToQdrant
+--- PASS: TestConvertFilterToQdrant (0.00s)
+=== RUN   TestQdrantStoreImplementsVectorStore
+--- PASS: TestQdrantStoreImplementsVectorStore (0.00s)
+=== RUN   TestChunkDocument
+    rag_test.go:25: Created 3 chunks from text of length 90
+    rag_test.go:27: Chunk 0 (len=43): This is sentence one. This is sentence two.
+    rag_test.go:27: Chunk 1 (len=33): ence two. This is sentence three.
+    rag_test.go:27: Chunk 2 (len=32): ce three. This is sentence four.
+--- PASS: TestChunkDocument (0.00s)
+=== RUN   TestChunkDocumentEmpty
+--- PASS: TestChunkDocumentEmpty (0.00s)
+=== RUN   TestChunkDocumentLarge
+    rag_test.go:53: Large text (2790 chars) split into 20 chunks
+--- PASS: TestChunkDocumentLarge (0.00s)
+=== RUN   TestWithRAG
+--- PASS: TestWithRAG (0.00s)
+=== RUN   TestWithRAGDocuments
+--- PASS: TestWithRAGDocuments (0.00s)
+=== RUN   TestWithRAGTopK
+--- PASS: TestWithRAGTopK (0.00s)
+=== RUN   TestWithRAGChunkSize
+--- PASS: TestWithRAGChunkSize (0.00s)
+=== RUN   TestDefaultRAGConfig
+--- PASS: TestDefaultRAGConfig (0.00s)
+=== RUN   TestCalculateSimilarity
+=== RUN   TestCalculateSimilarity/Exact_match
+    rag_test.go:197: Score for 'Exact match': 1.000000
+=== RUN   TestCalculateSimilarity/Partial_match
+    rag_test.go:197: Score for 'Partial match': 0.455120
+=== RUN   TestCalculateSimilarity/No_match
+    rag_test.go:197: Score for 'No match': 0.000000
+--- PASS: TestCalculateSimilarity (0.00s)
+    --- PASS: TestCalculateSimilarity/Exact_match (0.00s)
+    --- PASS: TestCalculateSimilarity/Partial_match (0.00s)
+    --- PASS: TestCalculateSimilarity/No_match (0.00s)
+=== RUN   TestTokenize
+    rag_test.go:218: Tokens: [This test How you]
+--- PASS: TestTokenize (0.00s)
+=== RUN   TestRetrieveRelevantDocs
+    rag_test.go:250: Top result (score=0.91): Go is a programming language designed for building reliable and efficient software.
+--- PASS: TestRetrieveRelevantDocs (0.00s)
+=== RUN   TestBuildRAGContext
+    rag_test.go:277: Context: First document
+        
+        ---
+        
+        Second document
+--- PASS: TestBuildRAGContext (0.00s)
+=== RUN   TestBuildRAGContextWithScores
+    rag_test.go:296: Context with scores: [Document 1] (Relevance: 0.95)
+        Document 1
+        
+        ---
+        
+        [Document 2] (Relevance: 0.80)
+        Document 2
+--- PASS: TestBuildRAGContextWithScores (0.00s)
+=== RUN   TestWithRAGRetriever
+--- PASS: TestWithRAGRetriever (0.00s)
+=== RUN   TestClearRAG
+--- PASS: TestClearRAG (0.00s)
+=== RUN   TestGetLastRetrievedDocs
+--- PASS: TestGetLastRetrievedDocs (0.00s)
+=== RUN   TestRAGWithMinScore
+    rag_test.go:403: Retrieved 1 docs with min score 0.3
+--- PASS: TestRAGWithMinScore (0.00s)
+=== RUN   TestRAGChaining
+--- PASS: TestRAGChaining (0.00s)
+=== RUN   TestRAGWithConfig
+--- PASS: TestRAGWithConfig (0.00s)
+=== RUN   TestChunkOverlap
+    rag_test.go:465: Created 4 overlapping chunks
+    rag_test.go:467: Chunk 0: Word1 Word2 Word3 Wo
+    rag_test.go:467: Chunk 1: d3 Word4 Word5 Word6
+    rag_test.go:467: Chunk 2: Word6 Word7 Word8 Wo
+    rag_test.go:467: Chunk 3: d8 Word9 Word10
+--- PASS: TestChunkOverlap (0.00s)
+=== RUN   TestDocumentMetadata
+--- PASS: TestDocumentMetadata (0.00s)
+=== RUN   TestRAGIntegrationMock
+    rag_test.go:517: RAG retrieved 1 documents before API call
+--- PASS: TestRAGIntegrationMock (0.29s)
+=== RUN   TestNewTool
+--- PASS: TestNewTool (0.00s)
+=== RUN   TestAddParameter
+--- PASS: TestAddParameter (0.00s)
+=== RUN   TestAddParameterChaining
+--- PASS: TestAddParameterChaining (0.00s)
+=== RUN   TestWithHandler
+--- PASS: TestWithHandler (0.00s)
+=== RUN   TestToOpenAI
+--- PASS: TestToOpenAI (0.00s)
+=== RUN   TestStringParam
+--- PASS: TestStringParam (0.00s)
+=== RUN   TestNumberParam
+--- PASS: TestNumberParam (0.00s)
+=== RUN   TestBoolParam
+--- PASS: TestBoolParam (0.00s)
+=== RUN   TestArrayParam
+--- PASS: TestArrayParam (0.00s)
+=== RUN   TestEnumParam
+--- PASS: TestEnumParam (0.00s)
+=== RUN   TestToolComplexParameters
+--- PASS: TestToolComplexParameters (0.00s)
+=== RUN   TestToolHandlerWithJSON
+--- PASS: TestToolHandlerWithJSON (0.00s)
+=== RUN   TestToolNoParameters
+--- PASS: TestToolNoParameters (0.00s)
+=== RUN   TestMultipleToolsIndependence
+--- PASS: TestMultipleToolsIndependence (0.00s)
+=== RUN   TestBuilder_Ask
+=== RUN   TestBuilder_Ask/EmptyPrompt
+=== RUN   TestBuilder_Ask/NilContext
+    unit_test.go:32: Note: Ask with nil context didn't panic
+=== RUN   TestBuilder_Ask/MissingAPIKey
+=== RUN   TestBuilder_Ask/WithInvalidModel
+=== RUN   TestBuilder_Ask/WithContextCanceled
+--- PASS: TestBuilder_Ask (0.44s)
+    --- PASS: TestBuilder_Ask/EmptyPrompt (0.24s)
+    --- PASS: TestBuilder_Ask/NilContext (0.00s)
+    --- PASS: TestBuilder_Ask/MissingAPIKey (0.00s)
+    --- PASS: TestBuilder_Ask/WithInvalidModel (0.20s)
+    --- PASS: TestBuilder_Ask/WithContextCanceled (0.00s)
+=== RUN   TestBuilder_Stream
+=== RUN   TestBuilder_Stream/MissingAPIKey
+=== RUN   TestBuilder_Stream/WithCallback
+=== RUN   TestBuilder_Stream/EmptyPrompt
+--- PASS: TestBuilder_Stream (0.46s)
+    --- PASS: TestBuilder_Stream/MissingAPIKey (0.00s)
+    --- PASS: TestBuilder_Stream/WithCallback (0.22s)
+    --- PASS: TestBuilder_Stream/EmptyPrompt (0.24s)
+=== RUN   TestBuilder_AskMultiple
+=== RUN   TestBuilder_AskMultiple/SingleChoice
+=== RUN   TestBuilder_AskMultiple/MultipleChoices
+=== RUN   TestBuilder_AskMultiple/MissingAPIKey
+--- PASS: TestBuilder_AskMultiple (0.44s)
+    --- PASS: TestBuilder_AskMultiple/SingleChoice (0.24s)
+    --- PASS: TestBuilder_AskMultiple/MultipleChoices (0.20s)
+    --- PASS: TestBuilder_AskMultiple/MissingAPIKey (0.00s)
+=== RUN   TestBuilder_StreamPrint
+=== RUN   TestBuilder_StreamPrint/MissingAPIKey
+=== RUN   TestBuilder_StreamPrint/EmptyPrompt
+--- PASS: TestBuilder_StreamPrint (0.24s)
+    --- PASS: TestBuilder_StreamPrint/MissingAPIKey (0.00s)
+    --- PASS: TestBuilder_StreamPrint/EmptyPrompt (0.24s)
+=== RUN   TestBuilder_BuildParams
+=== RUN   TestBuilder_BuildParams/MinimalConfig
+=== RUN   TestBuilder_BuildParams/FullConfig
+=== RUN   TestBuilder_BuildParams/WithTools
+=== RUN   TestBuilder_BuildParams/WithJSONSchema
+=== RUN   TestBuilder_BuildParams/WithMemoryAndSystem
+    unit_test.go:293: Note: History was not updated as expected
+--- PASS: TestBuilder_BuildParams (1.56s)
+    --- PASS: TestBuilder_BuildParams/MinimalConfig (0.22s)
+    --- PASS: TestBuilder_BuildParams/FullConfig (0.22s)
+    --- PASS: TestBuilder_BuildParams/WithTools (0.30s)
+    --- PASS: TestBuilder_BuildParams/WithJSONSchema (0.25s)
+    --- PASS: TestBuilder_BuildParams/WithMemoryAndSystem (0.58s)
+=== RUN   TestBuilder_EnsureClient
+=== RUN   TestBuilder_EnsureClient/OpenAIClient
+=== RUN   TestBuilder_EnsureClient/OllamaClient
+=== RUN   TestBuilder_EnsureClient/CustomBaseURL
+--- PASS: TestBuilder_EnsureClient (0.75s)
+    --- PASS: TestBuilder_EnsureClient/OpenAIClient (0.47s)
+    --- PASS: TestBuilder_EnsureClient/OllamaClient (0.01s)
+    --- PASS: TestBuilder_EnsureClient/CustomBaseURL (0.27s)
+=== RUN   TestBuilder_ExecuteWithRetry
+=== RUN   TestBuilder_ExecuteWithRetry/WithRetry
+=== RUN   TestBuilder_ExecuteWithRetry/WithExponentialBackoff
+--- PASS: TestBuilder_ExecuteWithRetry (0.44s)
+    --- PASS: TestBuilder_ExecuteWithRetry/WithRetry (0.24s)
+    --- PASS: TestBuilder_ExecuteWithRetry/WithExponentialBackoff (0.20s)
+=== RUN   TestBuilder_ErrorWrapping
+=== RUN   TestBuilder_ErrorWrapping/IsAPIKeyError
+    unit_test.go:384: Error is not recognized as API key error (may be different error type)
+=== RUN   TestBuilder_ErrorWrapping/IsRateLimitError
+=== RUN   TestBuilder_ErrorWrapping/IsTimeoutError
+    unit_test.go:400: DeadlineExceeded not recognized as timeout
+--- PASS: TestBuilder_ErrorWrapping (0.00s)
+    --- PASS: TestBuilder_ErrorWrapping/IsAPIKeyError (0.00s)
+    --- PASS: TestBuilder_ErrorWrapping/IsRateLimitError (0.00s)
+    --- PASS: TestBuilder_ErrorWrapping/IsTimeoutError (0.00s)
+=== RUN   TestWithVectorRAG
+--- PASS: TestWithVectorRAG (0.00s)
+=== RUN   TestAddDocumentsToVector
+--- PASS: TestAddDocumentsToVector (0.00s)
+=== RUN   TestAddDocumentsToVectorNoProvider
+--- PASS: TestAddDocumentsToVectorNoProvider (0.00s)
+=== RUN   TestAddVectorDocuments
+--- PASS: TestAddVectorDocuments (0.00s)
+=== RUN   TestRetrieveFromVector
+--- PASS: TestRetrieveFromVector (0.00s)
+=== RUN   TestRetrieveRelevantDocsWithVector
+--- PASS: TestRetrieveRelevantDocsWithVector (0.00s)
+=== RUN   TestRetrieveRelevantDocsFallbackToTFIDF
+--- PASS: TestRetrieveRelevantDocsFallbackToTFIDF (0.00s)
+=== RUN   TestRetrieveRelevantDocsCustomRetriever
+--- PASS: TestRetrieveRelevantDocsCustomRetriever (0.00s)
+=== RUN   TestClearRAGClearsVectorStore
+--- PASS: TestClearRAGClearsVectorStore (0.00s)
+=== RUN   TestVectorRAGWithCustomConfig
+--- PASS: TestVectorRAGWithCustomConfig (0.00s)
+=== RUN   TestRetrieveFromVectorNoProvider
+--- PASS: TestRetrieveFromVectorNoProvider (0.00s)
+=== RUN   TestRetrieveFromVectorWithMinScore
+--- PASS: TestRetrieveFromVectorWithMinScore (0.00s)
+=== RUN   TestVectorDocumentCreation
+--- PASS: TestVectorDocumentCreation (0.00s)
+=== RUN   TestCollectionConfig
+--- PASS: TestCollectionConfig (0.00s)
+=== RUN   TestDistanceMetrics
+=== RUN   TestDistanceMetrics/cosine
+=== RUN   TestDistanceMetrics/euclidean
+=== RUN   TestDistanceMetrics/dot_product
+=== RUN   TestDistanceMetrics/l2
+=== RUN   TestDistanceMetrics/ip
+--- PASS: TestDistanceMetrics (0.00s)
+    --- PASS: TestDistanceMetrics/cosine (0.00s)
+    --- PASS: TestDistanceMetrics/euclidean (0.00s)
+    --- PASS: TestDistanceMetrics/dot_product (0.00s)
+    --- PASS: TestDistanceMetrics/l2 (0.00s)
+    --- PASS: TestDistanceMetrics/ip (0.00s)
+=== RUN   TestSearchRequestDefaults
+--- PASS: TestSearchRequestDefaults (0.00s)
+=== RUN   TestTextSearchRequestDefaults
+--- PASS: TestTextSearchRequestDefaults (0.00s)
+=== RUN   TestSearchResult
+--- PASS: TestSearchResult (0.00s)
+=== RUN   TestVectorStoreError
+--- PASS: TestVectorStoreError (0.00s)
+=== RUN   TestVectorStoreErrorUnwrap
+--- PASS: TestVectorStoreErrorUnwrap (0.00s)
+=== RUN   TestMockVectorStore
+--- PASS: TestMockVectorStore (0.00s)
+=== RUN   TestVectorStoreInterface
+--- PASS: TestVectorStoreInterface (0.00s)
+=== RUN   TestSearchRequestWithFilters
+--- PASS: TestSearchRequestWithFilters (0.00s)
+=== RUN   TestSearchResultRanking
+--- PASS: TestSearchResultRanking (0.00s)
+=== RUN   Example_withDebugLogging
+--- PASS: Example_withDebugLogging (0.00s)
+=== RUN   Example_withInfoLogging
+--- PASS: Example_withInfoLogging (0.00s)
+PASS
+ok  	github.com/taipm/go-deep-agent/agent	13.079s

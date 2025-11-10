@@ -169,7 +169,11 @@ func (b *Builder) executeOneTool(ctx context.Context, toolCall openai.ChatComple
 	}
 
 	if handler == nil {
-		return "", fmt.Errorf("no handler found for tool: %s", toolName)
+		return "", fmt.Errorf("no handler found for tool: %s\n\n"+
+			"Fix:\n"+
+			"  1. Register tool: .WithTool(agent.Tool{Name: \"%s\", ...})\n"+
+			"  2. Check tool name matches exactly (case-sensitive)\n"+
+			"  3. List available tools to verify registration\n", toolName, toolName)
 	}
 
 	// Apply timeout if configured
@@ -189,7 +193,12 @@ func (b *Builder) executeOneTool(ctx context.Context, toolCall openai.ChatComple
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				err = fmt.Errorf("tool panicked: %v", r)
+				err = fmt.Errorf("tool panicked: %v\n\n"+
+					"Fix:\n"+
+					"  1. Add error handling to tool function\n"+
+					"  2. Check for nil pointers before dereferencing\n"+
+					"  3. Validate input parameters\n"+
+					"  4. Enable debug mode: .WithDebug() to see panic details\n", r)
 			}
 			close(done)
 		}()
@@ -206,6 +215,11 @@ func (b *Builder) executeOneTool(ctx context.Context, toolCall openai.ChatComple
 	case <-done:
 		return result, err
 	case <-execCtx.Done():
-		return "", fmt.Errorf("tool execution timeout after %v", timeout)
+		return "", fmt.Errorf("tool execution timeout after %v\n\n"+
+			"Fix:\n"+
+			"  1. Increase timeout: .WithToolTimeout(60 * time.Second)\n"+
+			"  2. Optimize tool function (reduce complexity/duration)\n"+
+			"  3. Check external dependencies (API, database, network)\n"+
+			"  4. Consider making tool async if operation is very slow\n", timeout)
 	}
 }

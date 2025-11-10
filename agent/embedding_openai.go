@@ -33,7 +33,11 @@ func NewOpenAIEmbedding(model, apiKey string) (*OpenAIEmbedding, error) {
 	}
 
 	if apiKey == "" {
-		return nil, fmt.Errorf("OpenAI API key is required")
+		return nil, fmt.Errorf("OpenAI API key is required for embeddings\n\n" +
+			"Fix:\n" +
+			"  1. Set environment variable: export OPENAI_API_KEY=\"sk-...\"\n" +
+			"  2. Or pass to constructor: NewOpenAIEmbedding(model, \"sk-...\")\n" +
+			"  3. Get your key: https://platform.openai.com/api-keys")
 	}
 
 	client := openai.NewClient(option.WithAPIKey(apiKey))
@@ -67,7 +71,8 @@ func (e *OpenAIEmbedding) WithConfig(config *EmbeddingConfig) *OpenAIEmbedding {
 // Embed generates an embedding for a single text
 func (e *OpenAIEmbedding) Embed(ctx context.Context, text string) ([]float32, error) {
 	if text == "" {
-		return nil, fmt.Errorf("text cannot be empty")
+		return nil, fmt.Errorf("text cannot be empty\n\n" +
+			"Fix: Provide non-empty text to embed")
 	}
 
 	// Preprocess text
@@ -82,7 +87,12 @@ func (e *OpenAIEmbedding) Embed(ctx context.Context, text string) ([]float32, er
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate embedding: %w", err)
+		return nil, fmt.Errorf("failed to generate embedding: %w\n\n"+
+			"Possible causes:\n"+
+			"  - Network timeout (increase timeout with context deadline)\n"+
+			"  - Rate limit exceeded (add retry logic or use WithDefaults())\n"+
+			"  - Invalid API key (check OPENAI_API_KEY)\n"+
+			"  - Text too long (max ~8,000 tokens for most models)\n", err)
 	}
 
 	if len(response.Data) == 0 {
