@@ -376,13 +376,6 @@ func (b *Builder) WithTimeout(timeout time.Duration) *Builder {
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithRetry(3).
 //	    WithRetryDelay(2 * time.Second)
-func (b *Builder) WithRetry(maxRetries int) *Builder {
-	b.maxRetries = maxRetries
-	if b.retryDelay == 0 {
-		b.retryDelay = time.Second // Default 1s
-	}
-	return b
-}
 
 // WithRetryDelay sets the base delay between retry attempts.
 // Default is 1 second.
@@ -393,10 +386,6 @@ func (b *Builder) WithRetry(maxRetries int) *Builder {
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithRetry(3).
 //	    WithRetryDelay(2 * time.Second)
-func (b *Builder) WithRetryDelay(delay time.Duration) *Builder {
-	b.retryDelay = delay
-	return b
-}
 
 // WithExponentialBackoff enables exponential backoff for retries.
 // Delay doubles after each retry: 1s, 2s, 4s, 8s, etc.
@@ -407,13 +396,6 @@ func (b *Builder) WithRetryDelay(delay time.Duration) *Builder {
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithRetry(5).
 //	    WithExponentialBackoff()
-func (b *Builder) WithExponentialBackoff() *Builder {
-	b.useExpBackoff = true
-	if b.retryDelay == 0 {
-		b.retryDelay = time.Second // Default 1s base
-	}
-	return b
-}
 
 // WithTemperature sets the sampling temperature (0-2).
 // Higher values (e.g., 1.0+) make output more random and creative.
