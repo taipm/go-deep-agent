@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"context"
 	"time"
 	_ "unsafe" // For go:linkname
 
@@ -764,11 +763,6 @@ func (b *Builder) addMessage(message Message) {
 //	cache := agent.NewMemoryCache(1000, 5*time.Minute)
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithCache(cache)
-func (b *Builder) WithCache(cache Cache) *Builder {
-	b.cache = cache
-	b.cacheEnabled = true
-	return b
-}
 
 // WithMemoryCache enables in-memory caching with LRU eviction.
 //
@@ -780,11 +774,6 @@ func (b *Builder) WithCache(cache Cache) *Builder {
 //
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithMemoryCache(500, 10*time.Minute)
-func (b *Builder) WithMemoryCache(maxSize int, defaultTTL time.Duration) *Builder {
-	b.cache = NewMemoryCache(maxSize, defaultTTL)
-	b.cacheEnabled = true
-	return b
-}
 
 // WithRedisCache enables Redis-based caching with simple configuration.
 //
@@ -797,16 +786,6 @@ func (b *Builder) WithMemoryCache(maxSize int, defaultTTL time.Duration) *Builde
 //
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithRedisCache("localhost:6379", "", 0)
-func (b *Builder) WithRedisCache(addr, password string, db int) *Builder {
-	cache, err := NewRedisCache(addr, password, db, 5*time.Minute)
-	if err != nil {
-		// Log error but don't fail - fall back to no caching
-		return b
-	}
-	b.cache = cache
-	b.cacheEnabled = true
-	return b
-}
 
 // WithRedisCacheOptions enables Redis-based caching with advanced configuration.
 //
@@ -821,16 +800,6 @@ func (b *Builder) WithRedisCache(addr, password string, db int) *Builder {
 //	        KeyPrefix:  "my-app",
 //	        DefaultTTL: 10 * time.Minute,
 //	    })
-func (b *Builder) WithRedisCacheOptions(opts *RedisCacheOptions) *Builder {
-	cache, err := NewRedisCacheWithOptions(opts)
-	if err != nil {
-		// Log error but don't fail - fall back to no caching
-		return b
-	}
-	b.cache = cache
-	b.cacheEnabled = true
-	return b
-}
 
 // WithCacheTTL sets the TTL for the next cached response.
 // If not set, the cache's default TTL is used.
@@ -840,10 +809,6 @@ func (b *Builder) WithRedisCacheOptions(opts *RedisCacheOptions) *Builder {
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithMemoryCache(1000, 5*time.Minute).
 //	    WithCacheTTL(1*time.Hour)
-func (b *Builder) WithCacheTTL(ttl time.Duration) *Builder {
-	b.cacheTTL = ttl
-	return b
-}
 
 // DisableCache disables caching for this builder.
 //
@@ -852,10 +817,6 @@ func (b *Builder) WithCacheTTL(ttl time.Duration) *Builder {
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithMemoryCache(1000, 5*time.Minute).
 //	    DisableCache() // Temporarily disable
-func (b *Builder) DisableCache() *Builder {
-	b.cacheEnabled = false
-	return b
-}
 
 // EnableCache enables caching for this builder (if cache is set).
 //
@@ -865,12 +826,6 @@ func (b *Builder) DisableCache() *Builder {
 //	    WithMemoryCache(1000, 5*time.Minute).
 //	    DisableCache().
 //	    EnableCache() // Re-enable
-func (b *Builder) EnableCache() *Builder {
-	if b.cache != nil {
-		b.cacheEnabled = true
-	}
-	return b
-}
 
 // GetCacheStats returns cache statistics if caching is enabled.
 //
@@ -880,24 +835,6 @@ func (b *Builder) EnableCache() *Builder {
 //	fmt.Printf("Hits: %d, Misses: %d, Hit Rate: %.2f%%\n",
 //	    stats.Hits, stats.Misses,
 //	    float64(stats.Hits)/(float64(stats.Hits+stats.Misses))*100)
-func (b *Builder) GetCacheStats() CacheStats {
-	logger := b.getLogger()
-	if b.cache != nil {
-		stats := b.cache.Stats()
-		hitRate := 0.0
-		if stats.Hits+stats.Misses > 0 {
-			hitRate = float64(stats.Hits) / float64(stats.Hits+stats.Misses)
-		}
-		logger.Debug(context.Background(), "Cache stats retrieved",
-			F("hits", stats.Hits),
-			F("misses", stats.Misses),
-			F("size", stats.Size),
-			F("hit_rate", hitRate))
-		return stats
-	}
-	logger.Debug(context.Background(), "No cache configured")
-	return CacheStats{}
-}
 
 // ClearCache clears all cached responses.
 //
@@ -909,21 +846,6 @@ func (b *Builder) GetCacheStats() CacheStats {
 //	// ... use builder ...
 //
 //	builder.ClearCache(ctx) // Clear all cached responses
-func (b *Builder) ClearCache(ctx context.Context) error {
-	logger := b.getLogger()
-	if b.cache != nil {
-		logger.Info(ctx, "Clearing cache")
-		err := b.cache.Clear(ctx)
-		if err != nil {
-			logger.Error(ctx, "Failed to clear cache", F("error", err.Error()))
-			return err
-		}
-		logger.Info(ctx, "Cache cleared successfully")
-		return nil
-	}
-	logger.Debug(ctx, "No cache to clear")
-	return nil
-}
 
 // ===== Logging Methods =====
 
