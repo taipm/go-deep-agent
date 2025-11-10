@@ -1,0 +1,17 @@
+model: "gpt-4o-mini"
+temperature: 0.7
+max_tokens: 2000
+
+memory:
+  working_capacity: 20
+  episodic_enabled: true
+  episodic_threshold: 0.7
+
+retry:
+  max_attempts: 3
+  timeout: 30s
+  exponential_backoff: true
+
+system_prompt: |
+  You are a knowledgeable AI assistant.
+  Provide accurate and helpful responses.

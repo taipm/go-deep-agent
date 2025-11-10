@@ -1,0 +1,194 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/taipm/go-deep-agent/config/schema.json",
+  "title": "go-deep-agent Configuration",
+  "description": "Configuration schema for go-deep-agent - A powerful agent library for building LLM applications with hierarchical memory",
+  "type": "object",
+  "properties": {
+    "model": {
+      "type": "string",
+      "description": "LLM model name to use",
+      "examples": [
+        "gpt-4o-mini",
+        "gpt-4",
+        "gpt-4-turbo",
+        "gpt-3.5-turbo"
+      ],
+      "minLength": 1
+    },
+    "temperature": {
+      "type": "number",
+      "description": "Controls randomness in responses. 0 = deterministic, 2 = very creative",
+      "minimum": 0,
+      "maximum": 2,
+      "default": 0.7
+    },
+    "max_tokens": {
+      "type": "integer",
+      "description": "Maximum number of tokens to generate in the response",
+      "minimum": 1,
+      "maximum": 128000,
+      "default": 2000
+    },
+    "top_p": {
+      "type": "number",
+      "description": "Nucleus sampling parameter. Controls diversity via probability mass",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 1.0
+    },
+    "system_prompt": {
+      "type": "string",
+      "description": "System prompt that defines the agent's behavior and personality"
+    },
+    "memory": {
+      "type": "object",
+      "description": "Hierarchical memory system configuration",
+      "properties": {
+        "working_capacity": {
+          "type": "integer",
+          "description": "Number of recent messages to keep in working memory",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 20
+        },
+        "episodic_enabled": {
+          "type": "boolean",
+          "description": "Enable long-term episodic memory for important conversations",
+          "default": true
+        },
+        "episodic_threshold": {
+          "type": "number",
+          "description": "Importance threshold for storing in episodic memory (0.0 to 1.0)",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.7
+        },
+        "semantic_enabled": {
+          "type": "boolean",
+          "description": "Enable semantic fact storage (experimental)",
+          "default": false
+        },
+        "auto_compress": {
+          "type": "boolean",
+          "description": "Automatically compress old memories to save space",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "retry": {
+      "type": "object",
+      "description": "Retry and error handling configuration",
+      "properties": {
+        "max_attempts": {
+          "type": "integer",
+          "description": "Maximum number of retry attempts for failed requests",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 3
+        },
+        "timeout": {
+          "type": "string",
+          "description": "Timeout per request (e.g., '30s', '1m', '500ms')",
+          "pattern": "^[0-9]+(ns|us|µs|ms|s|m|h)$",
+          "default": "30s",
+          "examples": [
+            "30s",
+            "1m",
+            "500ms"
+          ]
+        },
+        "exponential_backoff": {
+          "type": "boolean",
+          "description": "Use exponential backoff strategy for retries",
+          "default": true
+        },
+        "backoff_multiplier": {
+          "type": "number",
+          "description": "Multiplier for exponential backoff (only if exponential_backoff is true)",
+          "minimum": 1,
+          "default": 2.0
+        },
+        "initial_delay": {
+          "type": "string",
+          "description": "Initial delay before first retry",
+          "pattern": "^[0-9]+(ns|us|µs|ms|s|m|h)$",
+          "default": "1s"
+        },
+        "max_delay": {
+          "type": "string",
+          "description": "Maximum delay between retries",
+          "pattern": "^[0-9]+(ns|us|µs|ms|s|m|h)$",
+          "default": "30s"
+        }
+      },
+      "additionalProperties": false
+    },
+    "tools": {
+      "type": "object",
+      "description": "Tool execution configuration",
+      "properties": {
+        "parallel_execution": {
+          "type": "boolean",
+          "description": "Execute multiple tools in parallel when possible",
+          "default": false
+        },
+        "max_workers": {
+          "type": "integer",
+          "description": "Maximum number of parallel tool workers (only if parallel_execution is true)",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 10
+        },
+        "timeout": {
+          "type": "string",
+          "description": "Timeout per tool execution",
+          "pattern": "^[0-9]+(ns|us|µs|ms|s|m|h)$",
+          "default": "30s"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "model"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "model": "gpt-4o-mini",
+      "temperature": 0.7,
+      "max_tokens": 2000,
+      "memory": {
+        "working_capacity": 20,
+        "episodic_enabled": true,
+        "episodic_threshold": 0.7
+      },
+      "retry": {
+        "max_attempts": 3,
+        "timeout": "30s",
+        "exponential_backoff": true
+      }
+    },
+    {
+      "model": "gpt-4-turbo",
+      "temperature": 0.3,
+      "max_tokens": 4000,
+      "system_prompt": "You are a helpful coding assistant",
+      "memory": {
+        "working_capacity": 50,
+        "episodic_enabled": true,
+        "episodic_threshold": 0.8
+      },
+      "retry": {
+        "max_attempts": 5,
+        "timeout": "60s"
+      },
+      "tools": {
+        "parallel_execution": true,
+        "max_workers": 20
+      }
+    }
+  ]
+}

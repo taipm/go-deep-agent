@@ -1,0 +1,40 @@
+# Example Configuration for go-deep-agent
+# This file demonstrates all available configuration options
+
+# Model configuration
+# Example Configuration for go-deep-agent
+# This file demonstrates all available configuration options
+
+# Model configuration
+model: "gpt-4o-mini"
+temperature: 0.7        # 0.0 (deterministic) to 2.0 (creative)
+max_tokens: 2000        # Maximum tokens in response
+top_p: 1.0              # Nucleus sampling (0.0 to 1.0)
+
+# System prompt (optional)
+system_prompt: |
+  You are a helpful AI assistant.
+  You provide accurate and concise responses.
+
+# Memory configuration
+memory:
+  working_capacity: 20           # Number of recent messages to keep
+  episodic_enabled: true         # Enable long-term episodic memory
+  episodic_threshold: 0.7        # Importance threshold (0.0 to 1.0)
+  semantic_enabled: false        # Enable semantic fact storage
+  auto_compress: true            # Automatically compress old memories
+
+# Retry configuration
+retry:
+  max_attempts: 3                # Maximum retry attempts
+  timeout: 30s                   # Timeout per request
+  exponential_backoff: true      # Use exponential backoff
+  backoff_multiplier: 2.0        # Backoff multiplier
+  initial_delay: 1s              # Initial retry delay
+  max_delay: 30s                 # Maximum retry delay
+
+# Tools configuration
+tools:
+  parallel_execution: false      # Execute tools in parallel
+  max_workers: 10                # Maximum parallel workers
+  timeout: 30s                   # Timeout per tool execution
