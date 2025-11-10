@@ -502,6 +502,97 @@ WithToolTimeout(timeout time.Duration)   // Set per-tool timeout (default: 30s)
 
 ---
 
+#### REFACTORING TASK: Builder.go Cleanup (Nov 10, 2025)
+
+**Status**: ✅ COMPLETED (Nov 10, 2025)
+
+**Context**: After Week 5, builder.go grew to 1,854 lines (too large for maintainability). Decided to refactor using **Option A: Horizontal Split by Feature**.
+
+**Completed Tasks**:
+
+- [x] Task 1: Create refactor/builder-split branch
+- [x] Task 2: Extract builder_execution.go (732 lines, 12 methods)
+- [x] Task 3: Extract builder_tools.go (91 lines, 9 methods)
+- [x] Task 4: Extract builder_memory.go (76 lines, 8 methods)
+- [x] Task 5: Extract builder_cache.go (96 lines, 9 methods)
+- [x] Task 6: Extract builder_llm.go (50 lines, 9 methods)
+- [x] Task 7: Extract builder_retry.go (30 lines, 3 methods)
+- [x] Task 8: Extract builder_callbacks.go (16 lines, 2 methods)
+- [x] Task 9: Extract builder_logging.go (30 lines, 4 methods)
+- [x] Task 10: Extract builder_messages.go (81 lines, 5 methods + cleanup 64 orphaned comment lines)
+
+**Verification & Merge Tasks** (Nov 10, 2025):
+
+- [x] Task 11.1: Verify compilation (go build ./agent) ✅
+- [x] Task 11.2: Static analysis (go vet ./agent) ✅
+- [x] Task 11.3: Run full test suite (go test ./agent -count=1) ✅
+- [x] Task 11.4: Count test cases (470+ tests verified) ✅
+- [x] Task 11.5: Check for failures/skips (0 failures, 1 skip) ✅
+- [x] Task 12: Verify test coverage (65.2% maintained) ✅
+- [x] Task 13: Run benchmarks (no performance regression) ✅
+- [x] Task 14: Test integration examples (7/7 compile) ✅
+- [x] Task 15: Calculate final metrics (61.1% reduction) ✅
+- [x] Task 16: Update BUILDER_REFACTORING_PROPOSAL.md ✅
+- [x] Task 17: Update README.md ✅
+- [x] Task 18: Create comprehensive PR description (PR_DESCRIPTION.md + MERGE_INSTRUCTIONS.md) ✅
+- [ ] Task 19: Merge to main (ready to execute)
+- [ ] Task 20: Create git tag v0.6.0
+
+**Final Result**:
+
+```
+ORIGINAL STATE:
+- builder.go: 1,854 lines (monolithic)
+- Total methods: 69 (all in one file)
+
+FINAL STATE (10 files):
+- builder.go: 720 lines (13 methods - constructors, core config)
+- builder_execution.go: 732 lines (12 methods - Ask, Stream, execution)
+- builder_tools.go: 91 lines (9 methods - tool configuration)
+- builder_memory.go: 76 lines (8 methods - memory systems)
+- builder_cache.go: 96 lines (9 methods - caching)
+- builder_llm.go: 50 lines (9 methods - LLM parameters)
+- builder_retry.go: 30 lines (3 methods - retry config)
+- builder_callbacks.go: 16 lines (2 methods - callbacks)
+- builder_logging.go: 30 lines (4 methods - logging)
+- builder_messages.go: 81 lines (5 methods - message/history)
+
+TOTAL: 69 methods across 10 files
+
+REDUCTION:
+- Original: 1,854 lines in builder.go
+- Current: 720 lines in builder.go
+- Extracted: 1,134 lines to 9 new files
+- Reduction: -61.1% ✨
+- Bonus: Removed 64 lines of orphaned comments
+
+QUALITY METRICS:
+- Test coverage: 65.2% (maintained, no regression) ✅
+- All 470+ tests passing ✅
+- Zero API changes (100% backward compatible) ✅
+- All 7 examples compile successfully ✅
+- Performance maintained (no regression) ✅
+- Benchmarks stable (Builder: 290ns, Memory: 0.3ns) ✅
+```
+
+**Deliverables**:
+
+- [x] `docs/BUILDER_REFACTORING_PROPOSAL.md` - Complete refactoring plan (700+ lines)
+- [x] 9 new builder_*.go files (1,202 lines total)
+- [x] builder.go reduced from 1,854 → 720 lines
+- [x] 9 git commits (one per extraction task)
+- [x] Integration tests for each extraction
+- [x] Final verification tests (Tasks 11-18 complete)
+- [x] Updated documentation (BUILDER_REFACTORING_PROPOSAL.md, README.md)
+- [x] PR_DESCRIPTION.md - Comprehensive PR description
+- [x] MERGE_INSTRUCTIONS.md - Merge guide with commands
+
+**Status**: ✅ **READY TO MERGE** - All verification complete, 18/20 tasks done!
+
+**Next Steps**: Execute Tasks 19-20 (merge to main + create v0.6.0 tag)
+
+---
+
 #### Week 6: Tool Fallbacks & Circuit Breaker (Jan 13-19, 2026)
 
 **Tasks**:
