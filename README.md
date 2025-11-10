@@ -948,9 +948,10 @@ func robustAsk(ctx context.Context, prompt string) (string, error) {
 ### Key Advantages
 
 - ✅ **Fluent API** - Method chaining reads like natural language
+- ✅ **Modular Architecture** - Builder split into 10 focused files (61% reduction, v0.6.0 refactoring)
 - ✅ **Automatic Features** - Memory, retry, error handling built-in
-- ✅ **Production-Ready** - 242 tests, 65.8% coverage, CI/CD
-- ✅ **Better DX** - IDE autocomplete, self-documenting code
+- ✅ **Production-Ready** - 470+ tests, 65.2% coverage, CI/CD, comprehensive benchmarks
+- ✅ **Better DX** - IDE autocomplete, self-documenting code, clear file organization
 - ✅ **All openai-go Features** - Plus high-level conveniences
 
 ## 🤝 Contributing
@@ -972,9 +973,10 @@ MIT License - see [LICENSE](LICENSE) for details
 - **[README.md](README.md)** - Main documentation (you are here)
 - **[COMPARISON.md](docs/COMPARISON.md)** - 🆚 Why go-deep-agent vs openai-go (with code examples)
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and migration guides
-- **[RAG_VECTOR_DATABASES.md](docs/RAG_VECTOR_DATABASES.md)** - 🆕 Complete Vector RAG guide (v0.5.0)
-- **[LOGGING_GUIDE.md](docs/LOGGING_GUIDE.md)** - 🆕 Comprehensive logging & observability guide (v0.5.2)
-- **[examples/](examples/)** - 15 example files with 69+ working examples
+- **[BUILDER_REFACTORING_PROPOSAL.md](docs/BUILDER_REFACTORING_PROPOSAL.md)** - 🆕 Builder refactoring details (v0.6.0)
+- **[RAG_VECTOR_DATABASES.md](docs/RAG_VECTOR_DATABASES.md)** - Complete Vector RAG guide (v0.5.0)
+- **[LOGGING_GUIDE.md](docs/LOGGING_GUIDE.md)** - Comprehensive logging & observability guide (v0.5.2)
+- **[examples/](examples/)** - 75+ working examples across 25+ files
 - **[agent/README.md](agent/README.md)** - Detailed API documentation
 - **[TODO.md](TODO.md)** - Roadmap and implementation progress
 - **[ROADMAP.md](ROADMAP.md)** - v0.5.0 Advanced RAG implementation plan

@@ -1,13 +1,10 @@
 package agent
 
 import (
-	"context"
-	"fmt"
 	"time"
 	_ "unsafe" // For go:linkname
 
 	"github.com/openai/openai-go/v3"
-	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/shared"
 	"github.com/openai/openai-go/v3/shared/constant"
 	"github.com/taipm/go-deep-agent/agent/memory"
@@ -205,119 +202,6 @@ func (b *Builder) WithSystem(prompt string) *Builder {
 	return b
 }
 
-// WithMemory enables automatic conversation memory.
-// When enabled, all user messages and assistant responses are automatically
-// stored in the conversation history for context.
-//
-// Example:
-//
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    WithMemory()
-//	builder.Ask(ctx, "My name is Alice") // Stored in memory
-//	builder.Ask(ctx, "What's my name?")  // Model remembers: "Alice"
-func (b *Builder) WithMemory() *Builder {
-	b.autoMemory = true
-	return b
-}
-
-// WithHierarchicalMemory enables hierarchical memory system with custom configuration.
-// By default, memory is already enabled with default config.
-//
-// Example:
-//
-//	config := memory.DefaultMemoryConfig()
-//	config.WorkingCapacity = 200
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    WithHierarchicalMemory(config)
-func (b *Builder) WithHierarchicalMemory(config memory.MemoryConfig) *Builder {
-	b.memory = memory.NewWithConfig(config)
-	b.memoryEnabled = true
-	return b
-}
-
-// DisableMemory disables the hierarchical memory system.
-//
-// Example:
-//
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    DisableMemory() // Use simple FIFO like v0.5.6
-func (b *Builder) DisableMemory() *Builder {
-	b.memoryEnabled = false
-	return b
-}
-
-// GetMemory returns the current memory system instance.
-// Useful for advanced memory operations or inspection.
-//
-// Example:
-//
-//	mem := builder.GetMemory()
-//	stats := mem.Stats(ctx)
-//	fmt.Printf("Total messages: %d\n", stats.TotalMessages)
-func (b *Builder) GetMemory() *memory.Memory {
-	return b.memory
-}
-
-// WithEpisodicMemory enables episodic memory with specified threshold.
-// Messages with importance >= threshold will be stored in episodic memory.
-//
-// Example:
-//
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    WithEpisodicMemory(0.7) // Store messages with importance >= 0.7
-func (b *Builder) WithEpisodicMemory(threshold float64) *Builder {
-	if b.memory == nil {
-		b.memory = memory.New()
-	}
-	config := b.memory.GetConfig()
-	config.EpisodicEnabled = true
-	config.EpisodicThreshold = threshold
-	config.ImportanceScoring = true
-	_ = b.memory.SetConfig(config) // Error only occurs if memory is nil, which we check above
-	b.memoryEnabled = true
-	return b
-}
-
-// WithImportanceWeights sets custom importance calculation weights.
-// This allows fine-tuning which types of messages are considered important.
-//
-// Example:
-//
-//	weights := memory.DefaultImportanceWeights()
-//	weights.ExplicitRemember = 2.0  // Double weight for "remember this"
-//	weights.PersonalInfo = 1.5      // Higher weight for personal info
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    WithImportanceWeights(weights)
-func (b *Builder) WithImportanceWeights(weights memory.ImportanceWeights) *Builder {
-	if b.memory == nil {
-		b.memory = memory.New()
-	}
-	config := b.memory.GetConfig()
-	config.ImportanceWeights = weights
-	config.ImportanceScoring = true
-	_ = b.memory.SetConfig(config)
-	b.memoryEnabled = true
-	return b
-}
-
-// WithWorkingMemorySize sets the working memory capacity.
-// Working memory holds the most recent messages in a FIFO buffer.
-//
-// Example:
-//
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    WithWorkingMemorySize(20) // Keep last 20 messages in working memory
-func (b *Builder) WithWorkingMemorySize(size int) *Builder {
-	if b.memory == nil {
-		b.memory = memory.New()
-	}
-	config := b.memory.GetConfig()
-	config.WorkingCapacity = size
-	_ = b.memory.SetConfig(config)
-	b.memoryEnabled = true
-	return b
-}
-
 // WithSemanticMemory enables semantic memory for fact storage.
 // Semantic memory stores and retrieves factual information by category.
 //
@@ -325,95 +209,13 @@ func (b *Builder) WithWorkingMemorySize(size int) *Builder {
 //
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithSemanticMemory()
-func (b *Builder) WithSemanticMemory() *Builder {
-	if b.memory == nil {
-		b.memory = memory.New()
-	}
-	config := b.memory.GetConfig()
-	config.SemanticEnabled = true
-	_ = b.memory.SetConfig(config)
-	b.memoryEnabled = true
-	return b
-}
 
 // WithMessages sets the conversation history directly.
 // Useful for continuing a previous conversation or providing few-shot examples.
-//
-// Example:
-//
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    WithMessages([]agent.Message{
-//	        agent.User("What is 2+2?"),
-//	        agent.Assistant("4"),
-//	        agent.User("What is 3+3?"),
-//	    })
-func (b *Builder) WithMessages(messages []Message) *Builder {
-	b.messages = messages
-	return b
-}
 
-// GetHistory returns a copy of the current conversation history.
-// The system prompt is not included in the returned messages.
-//
-// Example:
-//
-//	history := builder.GetHistory()
-//	fmt.Printf("Conversation has %d messages\n", len(history))
-func (b *Builder) GetHistory() []Message {
-	// Return a copy to prevent external modification
-	history := make([]Message, len(b.messages))
-	copy(history, b.messages)
-	return history
-}
 
-// SetHistory replaces the conversation history with the provided messages.
-// This is useful for restoring a previous conversation state.
-// The system prompt is preserved.
-//
-// Example:
-//
-//	// Save conversation
-//	history := builder.GetHistory()
-//
-//	// Later, restore it
-//	builder.SetHistory(history)
-func (b *Builder) SetHistory(messages []Message) *Builder {
-	b.messages = messages
-	return b
-}
 
-// Clear resets the conversation history while preserving the system prompt.
-// This is useful for starting a fresh conversation with the same configuration.
-//
-// Example:
-//
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    WithSystem("You are a helpful assistant").
-//	    WithMemory()
-//
-//	builder.Ask(ctx, "Hello")
-//	builder.Clear() // Start fresh, but keep system prompt
-//	builder.Ask(ctx, "Hi") // Model doesn't remember "Hello"
-func (b *Builder) Clear() *Builder {
-	b.messages = []Message{}
-	return b
-}
 
-// WithMaxHistory sets the maximum number of messages to keep in history.
-// When the limit is reached, old messages are automatically removed (FIFO).
-// The system prompt is always preserved and doesn't count toward the limit.
-// Set to 0 for unlimited history (default).
-//
-// Example:
-//
-//	// Keep only the last 10 messages
-//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
-//	    WithMemory().
-//	    WithMaxHistory(10)
-func (b *Builder) WithMaxHistory(max int) *Builder {
-	b.maxHistory = max
-	return b
-}
 
 // WithTimeout sets the request timeout.
 // If set, all API requests will be wrapped with a context timeout.
@@ -438,13 +240,6 @@ func (b *Builder) WithTimeout(timeout time.Duration) *Builder {
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithRetry(3).
 //	    WithRetryDelay(2 * time.Second)
-func (b *Builder) WithRetry(maxRetries int) *Builder {
-	b.maxRetries = maxRetries
-	if b.retryDelay == 0 {
-		b.retryDelay = time.Second // Default 1s
-	}
-	return b
-}
 
 // WithRetryDelay sets the base delay between retry attempts.
 // Default is 1 second.
@@ -455,10 +250,6 @@ func (b *Builder) WithRetry(maxRetries int) *Builder {
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithRetry(3).
 //	    WithRetryDelay(2 * time.Second)
-func (b *Builder) WithRetryDelay(delay time.Duration) *Builder {
-	b.retryDelay = delay
-	return b
-}
 
 // WithExponentialBackoff enables exponential backoff for retries.
 // Delay doubles after each retry: 1s, 2s, 4s, 8s, etc.
@@ -469,13 +260,6 @@ func (b *Builder) WithRetryDelay(delay time.Duration) *Builder {
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithRetry(5).
 //	    WithExponentialBackoff()
-func (b *Builder) WithExponentialBackoff() *Builder {
-	b.useExpBackoff = true
-	if b.retryDelay == 0 {
-		b.retryDelay = time.Second // Default 1s base
-	}
-	return b
-}
 
 // WithTemperature sets the sampling temperature (0-2).
 // Higher values (e.g., 1.0+) make output more random and creative.
@@ -489,10 +273,6 @@ func (b *Builder) WithExponentialBackoff() *Builder {
 //
 //	// Factual answers
 //	builder.WithTemperature(0.2)
-func (b *Builder) WithTemperature(temperature float64) *Builder {
-	b.temperature = &temperature
-	return b
-}
 
 // WithTopP sets nucleus sampling probability (0-1).
 // The model considers tokens with top_p probability mass.
@@ -502,10 +282,6 @@ func (b *Builder) WithTemperature(temperature float64) *Builder {
 // Example:
 //
 //	builder.WithTopP(0.9)
-func (b *Builder) WithTopP(topP float64) *Builder {
-	b.topP = &topP
-	return b
-}
 
 // WithMaxTokens sets the maximum number of tokens to generate.
 // Useful for controlling response length and costs.
@@ -514,10 +290,6 @@ func (b *Builder) WithTopP(topP float64) *Builder {
 //
 //	// Short responses only
 //	builder.WithMaxTokens(100)
-func (b *Builder) WithMaxTokens(maxTokens int64) *Builder {
-	b.maxTokens = &maxTokens
-	return b
-}
 
 // WithPresencePenalty penalizes tokens based on whether they appear in the text so far (-2.0 to 2.0).
 // Positive values encourage the model to talk about new topics.
@@ -527,10 +299,6 @@ func (b *Builder) WithMaxTokens(maxTokens int64) *Builder {
 //
 //	// Encourage diversity
 //	builder.WithPresencePenalty(0.6)
-func (b *Builder) WithPresencePenalty(penalty float64) *Builder {
-	b.presencePenalty = &penalty
-	return b
-}
 
 // WithFrequencyPenalty penalizes tokens based on their frequency in the text so far (-2.0 to 2.0).
 // Positive values reduce repetition.
@@ -540,10 +308,6 @@ func (b *Builder) WithPresencePenalty(penalty float64) *Builder {
 //
 //	// Reduce repetition
 //	builder.WithFrequencyPenalty(0.5)
-func (b *Builder) WithFrequencyPenalty(penalty float64) *Builder {
-	b.frequencyPenalty = &penalty
-	return b
-}
 
 // WithSeed sets a seed for deterministic sampling.
 // When set, the model will attempt to make repeat requests with the same parameters
@@ -553,10 +317,6 @@ func (b *Builder) WithFrequencyPenalty(penalty float64) *Builder {
 //
 //	// Reproducible outputs
 //	builder.WithSeed(42)
-func (b *Builder) WithSeed(seed int64) *Builder {
-	b.seed = &seed
-	return b
-}
 
 // WithLogprobs enables returning log probability information for output tokens.
 // This is useful for understanding the model's confidence in its predictions.
@@ -564,10 +324,6 @@ func (b *Builder) WithSeed(seed int64) *Builder {
 // Example:
 //
 //	builder.WithLogprobs(true).WithTopLogprobs(5)
-func (b *Builder) WithLogprobs(enable bool) *Builder {
-	b.logprobs = &enable
-	return b
-}
 
 // WithTopLogprobs sets the number of most likely tokens to return at each position (0-20).
 // Requires WithLogprobs(true) to be set.
@@ -575,10 +331,6 @@ func (b *Builder) WithLogprobs(enable bool) *Builder {
 // Example:
 //
 //	builder.WithLogprobs(true).WithTopLogprobs(5)
-func (b *Builder) WithTopLogprobs(n int64) *Builder {
-	b.topLogprobs = &n
-	return b
-}
 
 // WithMultipleChoices generates N different completion choices.
 // Use AskMultiple() to get all choices, or Ask() to get just the first one.
@@ -587,10 +339,6 @@ func (b *Builder) WithTopLogprobs(n int64) *Builder {
 //
 //	// Generate 3 different responses
 //	builder.WithMultipleChoices(3)
-func (b *Builder) WithMultipleChoices(n int64) *Builder {
-	b.n = &n
-	return b
-}
 
 // OnStream sets a callback function to receive streaming content chunks.
 // Use with Stream() method for real-time response streaming.
@@ -600,10 +348,6 @@ func (b *Builder) WithMultipleChoices(n int64) *Builder {
 //	builder.OnStream(func(content string) {
 //	    fmt.Print(content)
 //	})
-func (b *Builder) OnStream(callback func(string)) *Builder {
-	b.onStream = callback
-	return b
-}
 
 // OnToolCall sets a callback for when a tool call is detected during streaming.
 //
@@ -612,10 +356,6 @@ func (b *Builder) OnStream(callback func(string)) *Builder {
 //	builder.OnToolCall(func(tool openai.FinishedChatCompletionToolCall) {
 //	    fmt.Printf("Tool called: %s\n", tool.Function.Name)
 //	})
-func (b *Builder) OnToolCall(callback func(openai.FinishedChatCompletionToolCall)) *Builder {
-	b.onToolCall = callback
-	return b
-}
 
 // OnRefusal sets a callback for when the model refuses to respond.
 //
@@ -624,10 +364,6 @@ func (b *Builder) OnToolCall(callback func(openai.FinishedChatCompletionToolCall
 //	builder.OnRefusal(func(refusal string) {
 //	    fmt.Printf("Model refused: %s\n", refusal)
 //	})
-func (b *Builder) OnRefusal(callback func(string)) *Builder {
-	b.onRefusal = callback
-	return b
-}
 
 // WithTool adds a tool that the model can call.
 // Tools allow the model to execute functions and use the results.
@@ -640,20 +376,12 @@ func (b *Builder) OnRefusal(callback func(string)) *Builder {
 //	        return "Sunny, 25°C", nil
 //	    })
 //	builder.WithTool(tool)
-func (b *Builder) WithTool(tool *Tool) *Builder {
-	b.tools = append(b.tools, tool)
-	return b
-}
 
 // WithTools adds multiple tools at once.
 //
 // Example:
 //
 //	builder.WithTools(weatherTool, calculatorTool, searchTool)
-func (b *Builder) WithTools(tools ...*Tool) *Builder {
-	b.tools = append(b.tools, tools...)
-	return b
-}
 
 // WithAutoExecute enables automatic execution of tool calls.
 // When enabled, the builder will automatically call tool handlers and
@@ -665,13 +393,6 @@ func (b *Builder) WithTools(tools ...*Tool) *Builder {
 //	    WithAutoExecute(true).
 //	    Ask(ctx, "What's the weather in Paris?")
 //	// Automatically calls weatherTool and returns final answer
-func (b *Builder) WithAutoExecute(enable bool) *Builder {
-	b.autoExecute = enable
-	if b.maxToolRounds == 0 {
-		b.maxToolRounds = 5 // Default max rounds
-	}
-	return b
-}
 
 // WithMaxToolRounds sets the maximum number of tool execution rounds.
 // Prevents infinite loops. Default is 5.
@@ -679,10 +400,6 @@ func (b *Builder) WithAutoExecute(enable bool) *Builder {
 // Example:
 //
 //	builder.WithAutoExecute(true).WithMaxToolRounds(3)
-func (b *Builder) WithMaxToolRounds(max int) *Builder {
-	b.maxToolRounds = max
-	return b
-}
 
 // WithParallelTools enables parallel execution of independent tools.
 // Tools without dependencies run concurrently, respecting worker pool limits.
@@ -694,16 +411,6 @@ func (b *Builder) WithMaxToolRounds(max int) *Builder {
 //	    WithAutoExecute(true).
 //	    WithParallelTools(true).  // Execute tools in parallel
 //	    Ask(ctx, "Analyze this data")
-func (b *Builder) WithParallelTools(enable bool) *Builder {
-	b.enableParallel = enable
-	if b.maxWorkers == 0 {
-		b.maxWorkers = 10 // Default worker pool size
-	}
-	if b.toolTimeout == 0 {
-		b.toolTimeout = 30 * time.Second // Default timeout
-	}
-	return b
-}
 
 // WithMaxWorkers sets the maximum number of concurrent tool workers.
 // Only applies when parallel tool execution is enabled.
@@ -713,10 +420,6 @@ func (b *Builder) WithParallelTools(enable bool) *Builder {
 //
 //	builder.WithParallelTools(true).
 //	    WithMaxWorkers(5)  // Max 5 tools running concurrently
-func (b *Builder) WithMaxWorkers(max int) *Builder {
-	b.maxWorkers = max
-	return b
-}
 
 // WithToolTimeout sets the timeout for individual tool executions.
 // Only applies when parallel tool execution is enabled.
@@ -726,10 +429,6 @@ func (b *Builder) WithMaxWorkers(max int) *Builder {
 //
 //	builder.WithParallelTools(true).
 //	    WithToolTimeout(60 * time.Second)  // 60s timeout per tool
-func (b *Builder) WithToolTimeout(timeout time.Duration) *Builder {
-	b.toolTimeout = timeout
-	return b
-}
 
 // WithJSONMode enables JSON object response format.
 // This is an older method of generating JSON responses.
@@ -808,302 +507,8 @@ func (b *Builder) WithResponseFormat(format *openai.ChatCompletionNewParamsRespo
 //
 //	response := builder.Ask(ctx, "What is the capital of France?")
 //	fmt.Println(response) // "Paris is the capital of France."
-func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
-	start := time.Now()
-	logger := b.getLogger()
-
-	logger.Debug(ctx, "Ask request started",
-		F("model", b.model),
-		F("message_length", len(message)),
-		F("has_cache", b.cacheEnabled),
-		F("has_tools", len(b.tools) > 0),
-		F("has_rag", b.ragEnabled))
-
-	// Check for multimodal errors
-	if b.lastError != nil {
-		err := b.lastError
-		b.lastError = nil // Clear error
-		logger.Error(ctx, "Multimodal error detected", F("error", err.Error()))
-		return "", err
-	}
-
-	// Ensure client is initialized
-	if err := b.ensureClient(); err != nil {
-		logger.Error(ctx, "Failed to initialize client", F("error", err.Error()))
-		return "", fmt.Errorf("failed to initialize client: %w", err)
-	}
-
-	// Check cache first if enabled
-	if b.cacheEnabled && b.cache != nil {
-		cacheStart := time.Now()
-		temp := 0.0
-		if b.temperature != nil {
-			temp = *b.temperature
-		}
-		cacheKey := GenerateCacheKey(b.model, message, temp, b.systemPrompt)
-		if cached, found, err := b.cache.Get(ctx, cacheKey); err == nil && found {
-			cacheDuration := time.Since(cacheStart)
-			logger.Info(ctx, "Cache hit",
-				F("cache_key", cacheKey),
-				F("duration_ms", cacheDuration.Milliseconds()))
-			return cached, nil
-		} else {
-			cacheDuration := time.Since(cacheStart)
-			logger.Debug(ctx, "Cache miss",
-				F("cache_key", cacheKey),
-				F("duration_ms", cacheDuration.Milliseconds()))
-		}
-	}
-
-	// If auto-execute is enabled and we have tools, use tool execution loop
-	if b.autoExecute && len(b.tools) > 0 {
-		logger.Debug(ctx, "Using tool execution loop", F("tool_count", len(b.tools)))
-		return b.askWithToolExecution(ctx, message)
-	}
-
-	// RAG: Retrieve and inject relevant context if enabled
-	if b.ragEnabled {
-		ragStart := time.Now()
-		docs, err := b.retrieveRelevantDocs(ctx, message)
-		if err != nil {
-			logger.Error(ctx, "RAG retrieval failed", F("error", err.Error()))
-			return "", fmt.Errorf("RAG retrieval failed: %w", err)
-		}
-
-		b.lastRetrievedDocs = docs
-		ragDuration := time.Since(ragStart)
-
-		if len(docs) > 0 {
-			logger.Debug(ctx, "RAG documents retrieved",
-				F("doc_count", len(docs)),
-				F("duration_ms", ragDuration.Milliseconds()))
-			// Inject context into the message
-			ragContext := b.buildRAGContext(docs)
-			message = fmt.Sprintf("Context:\n%s\n\nQuestion: %s", ragContext, message)
-		} else {
-			logger.Debug(ctx, "No RAG documents found", F("duration_ms", ragDuration.Milliseconds()))
-		}
-	}
-
-	// Build messages array (includes multimodal content if images added)
-	messages := b.buildMessages(message)
-
-	// Clear pending images after building messages
-	b.pendingImages = nil
-
-	// Execute request
-	requestStart := time.Now()
-	completion, err := b.executeSyncRaw(ctx, messages)
-	if err != nil {
-		requestDuration := time.Since(requestStart)
-		logger.Error(ctx, "Request failed",
-			F("error", err.Error()),
-			F("duration_ms", requestDuration.Milliseconds()))
-		return "", err
-	}
-	requestDuration := time.Since(requestStart)
-
-	result := completion.Choices[0].Message.Content
-
-	// Store in cache if enabled
-	if b.cacheEnabled && b.cache != nil {
-		temp := 0.0
-		if b.temperature != nil {
-			temp = *b.temperature
-		}
-		cacheKey := GenerateCacheKey(b.model, message, temp, b.systemPrompt)
-		ttl := b.cacheTTL
-		if ttl <= 0 {
-			ttl = 5 * time.Minute // Default TTL
-		}
-		_ = b.cache.Set(ctx, cacheKey, result, ttl)
-		logger.Debug(ctx, "Response cached", F("cache_key", cacheKey), F("ttl_seconds", ttl.Seconds()))
-	}
-
-	// Track token usage
-	b.lastUsage = TokenUsage{
-		PromptTokens:     int(completion.Usage.PromptTokens),
-		CompletionTokens: int(completion.Usage.CompletionTokens),
-		TotalTokens:      int(completion.Usage.TotalTokens),
-	}
-
-	totalDuration := time.Since(start)
-	logger.Info(ctx, "Ask request completed",
-		F("duration_ms", totalDuration.Milliseconds()),
-		F("request_ms", requestDuration.Milliseconds()),
-		F("prompt_tokens", b.lastUsage.PromptTokens),
-		F("completion_tokens", b.lastUsage.CompletionTokens),
-		F("total_tokens", b.lastUsage.TotalTokens),
-		F("response_length", len(result)))
-
-	// Hierarchical memory: store messages in memory system
-	if b.memoryEnabled && b.memory != nil {
-		memStart := time.Now()
-
-		// Store user message
-		userMsg := memory.Message{
-			Role:      "user",
-			Content:   message,
-			Timestamp: time.Now(),
-			Metadata: map[string]interface{}{
-				"model":      b.model,
-				"has_images": len(b.pendingImages) > 0,
-				"has_rag":    b.ragEnabled,
-			},
-		}
-		if err := b.memory.Add(ctx, userMsg); err != nil {
-			logger.Warn(ctx, "Failed to add user message to memory", F("error", err.Error()))
-		}
-
-		// Store assistant response
-		assistantMsg := memory.Message{
-			Role:      "assistant",
-			Content:   result,
-			Timestamp: time.Now(),
-			Metadata: map[string]interface{}{
-				"prompt_tokens":     b.lastUsage.PromptTokens,
-				"completion_tokens": b.lastUsage.CompletionTokens,
-				"total_tokens":      b.lastUsage.TotalTokens,
-			},
-		}
-		if err := b.memory.Add(ctx, assistantMsg); err != nil {
-			logger.Warn(ctx, "Failed to add assistant message to memory", F("error", err.Error()))
-		}
-
-		memDuration := time.Since(memStart)
-		logger.Debug(ctx, "Messages stored in memory",
-			F("duration_ms", memDuration.Milliseconds()))
-	}
-
-	// Auto-memory: store this conversation turn (legacy FIFO)
-	if b.autoMemory {
-		b.addMessage(User(message))
-		b.addMessage(Assistant(result))
-	}
-
-	return result, nil
-}
 
 // askWithToolExecution handles the tool execution loop.
-func (b *Builder) askWithToolExecution(ctx context.Context, message string) (string, error) {
-	logger := b.getLogger()
-	logger.Debug(ctx, "Tool execution loop started", F("max_rounds", b.maxToolRounds))
-
-	// Build messages array (includes multimodal content if images added)
-	messages := b.buildMessages(message)
-
-	// Clear pending images after building messages
-	b.pendingImages = nil
-
-	// Tool execution loop
-	for round := 0; round < b.maxToolRounds; round++ {
-		logger.Debug(ctx, "Tool execution round", F("round", round+1))
-
-		// Build params with tools
-		params := b.buildParams(messages)
-
-		// Execute request
-		completion, err := b.client.Chat.Completions.New(ctx, params)
-		if err != nil {
-			logger.Error(ctx, "Chat completion failed in tool loop",
-				F("round", round+1),
-				F("error", err.Error()))
-			return "", fmt.Errorf("chat completion failed: %w", err)
-		}
-
-		if len(completion.Choices) == 0 {
-			logger.Error(ctx, "No response choices returned", F("round", round+1))
-			return "", fmt.Errorf("no response choices returned")
-		}
-
-		choice := completion.Choices[0]
-
-		// Check if there are tool calls
-		if len(choice.Message.ToolCalls) == 0 {
-			// No tool calls, return the final response
-			result := choice.Message.Content
-			logger.Info(ctx, "Tool execution completed",
-				F("rounds", round+1),
-				F("response_length", len(result)))
-
-			// Hierarchical memory: store messages in memory system
-			if b.memoryEnabled && b.memory != nil {
-				// Store user message
-				userMsg := memory.Message{
-					Role:      "user",
-					Content:   message,
-					Timestamp: time.Now(),
-					Metadata: map[string]interface{}{
-						"tool_execution": true,
-						"rounds":         round + 1,
-					},
-				}
-				_ = b.memory.Add(ctx, userMsg)
-
-				// Store assistant response
-				assistantMsg := memory.Message{
-					Role:      "assistant",
-					Content:   result,
-					Timestamp: time.Now(),
-					Metadata: map[string]interface{}{
-						"tool_execution": true,
-						"rounds":         round + 1,
-					},
-				}
-				_ = b.memory.Add(ctx, assistantMsg)
-			}
-
-			// Auto-memory: store conversation
-			if b.autoMemory {
-				b.addMessage(User(message))
-				b.addMessage(Assistant(result))
-			}
-
-			return result, nil
-		}
-
-		logger.Debug(ctx, "Tool calls received",
-			F("round", round+1),
-			F("tool_call_count", len(choice.Message.ToolCalls)))
-
-		// Execute tool calls
-		// Convert tool calls to param format
-		toolCallParams := make([]openai.ChatCompletionMessageToolCallUnionParam, len(choice.Message.ToolCalls))
-		for i, tc := range choice.Message.ToolCalls {
-			toolCallParams[i] = tc.ToParam()
-		}
-
-		// Add assistant message with tool calls
-		assistantParam := openai.ChatCompletionAssistantMessageParam{
-			ToolCalls: toolCallParams,
-		}
-		messages = append(messages, openai.ChatCompletionMessageParamUnion{
-			OfAssistant: &assistantParam,
-		})
-
-		// Execute tools (parallel or sequential based on config)
-		var toolResults []openai.ChatCompletionMessageParamUnion
-		var toolErr error
-
-		if b.enableParallel && len(choice.Message.ToolCalls) > 1 {
-			// Parallel execution for multiple tools
-			toolResults, toolErr = b.executeToolsParallel(ctx, choice.Message.ToolCalls)
-		} else {
-			// Sequential execution (default or single tool)
-			toolResults, toolErr = b.executeToolsSequential(ctx, choice.Message.ToolCalls)
-		}
-
-		if toolErr != nil {
-			return "", fmt.Errorf("tool execution failed: %w", toolErr)
-		}
-
-		// Append all tool results to messages
-		messages = append(messages, toolResults...)
-	}
-
-	logger.Warn(ctx, "Max tool rounds exceeded", F("max_rounds", b.maxToolRounds))
-	return "", fmt.Errorf("max tool rounds (%d) exceeded", b.maxToolRounds)
-} // AskMultiple sends a message and returns multiple completion choices.
 // Use WithMultipleChoices(n) to set the number of choices.
 //
 // Example:
@@ -1113,35 +518,6 @@ func (b *Builder) askWithToolExecution(ctx context.Context, message string) (str
 //	for i, choice := range choices {
 //	    fmt.Printf("Choice %d: %s\n", i+1, choice)
 //	}
-func (b *Builder) AskMultiple(ctx context.Context, message string) ([]string, error) {
-	// Ensure client is initialized
-	if err := b.ensureClient(); err != nil {
-		return nil, fmt.Errorf("failed to initialize client: %w", err)
-	}
-
-	// Build messages array
-	messages := b.buildMessages(message)
-
-	// Execute request
-	completion, err := b.executeSyncRaw(ctx, messages)
-	if err != nil {
-		return nil, err
-	}
-
-	// Extract all choices
-	results := make([]string, len(completion.Choices))
-	for i, choice := range completion.Choices {
-		results[i] = choice.Message.Content
-	}
-
-	// Auto-memory: store first choice only
-	if b.autoMemory && len(results) > 0 {
-		b.addMessage(User(message))
-		b.addMessage(Assistant(results[0]))
-	}
-
-	return results, nil
-}
 
 // Stream sends a message and streams the response using the registered callbacks.
 // Returns the complete response text after streaming finishes.
@@ -1152,131 +528,6 @@ func (b *Builder) AskMultiple(ctx context.Context, message string) ([]string, er
 //	response, err := builder.OnStream(func(content string) {
 //	    fmt.Print(content)
 //	}).Stream(ctx, "Tell me a story")
-func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
-	start := time.Now()
-	logger := b.getLogger()
-
-	logger.Debug(ctx, "Stream request started",
-		F("model", b.model),
-		F("message_length", len(message)))
-
-	// Check for multimodal errors
-	if b.lastError != nil {
-		err := b.lastError
-		b.lastError = nil // Clear error
-		logger.Error(ctx, "Multimodal error detected in stream", F("error", err.Error()))
-		return "", err
-	}
-
-	// Ensure client is initialized
-	if err := b.ensureClient(); err != nil {
-		logger.Error(ctx, "Failed to initialize client for stream", F("error", err.Error()))
-		return "", fmt.Errorf("failed to initialize client: %w", err)
-	}
-
-	// Build messages array (includes multimodal content if images added)
-	messages := b.buildMessages(message)
-
-	// Clear pending images after building messages
-	b.pendingImages = nil
-
-	// Build params
-	params := b.buildParams(messages)
-
-	// Create streaming request
-	logger.Debug(ctx, "Starting stream")
-	stream := b.client.Chat.Completions.NewStreaming(ctx, params)
-
-	// Use ChatCompletionAccumulator for full feature support
-	acc := openai.ChatCompletionAccumulator{}
-	var fullContent string
-	chunkCount := 0
-
-	for stream.Next() {
-		chunk := stream.Current()
-		acc.AddChunk(chunk)
-		chunkCount++
-
-		// Check if content just finished
-		if content, ok := acc.JustFinishedContent(); ok {
-			fullContent = content
-			logger.Debug(ctx, "Stream content finished", F("content_length", len(content)))
-		}
-
-		// Check if a tool call just finished
-		if toolCall, ok := acc.JustFinishedToolCall(); ok {
-			logger.Debug(ctx, "Stream tool call finished", F("tool_index", toolCall.Index))
-			if b.onToolCall != nil {
-				b.onToolCall(toolCall)
-			}
-		}
-
-		// Check if refusal just finished
-		if refusal, ok := acc.JustFinishedRefusal(); ok {
-			logger.Warn(ctx, "Stream refusal received", F("refusal", refusal))
-			if b.onRefusal != nil {
-				b.onRefusal(refusal)
-			}
-		}
-
-		// Stream delta content in real-time
-		if b.onStream != nil && len(chunk.Choices) > 0 && chunk.Choices[0].Delta.Content != "" {
-			deltaContent := chunk.Choices[0].Delta.Content
-			b.onStream(deltaContent)
-			// Accumulate content for memory (fallback if JustFinishedContent doesn't work)
-			fullContent += deltaContent
-		}
-	}
-
-	if err := stream.Err(); err != nil {
-		duration := time.Since(start)
-		logger.Error(ctx, "Stream error",
-			F("error", err.Error()),
-			F("chunks_received", chunkCount),
-			F("duration_ms", duration.Milliseconds()))
-		return "", fmt.Errorf("stream error: %w", err)
-	}
-
-	duration := time.Since(start)
-	logger.Info(ctx, "Stream completed",
-		F("duration_ms", duration.Milliseconds()),
-		F("chunks", chunkCount),
-		F("response_length", len(fullContent)))
-
-	// Hierarchical memory: store messages in memory system
-	if b.memoryEnabled && b.memory != nil && fullContent != "" {
-		// Store user message
-		userMsg := memory.Message{
-			Role:      "user",
-			Content:   message,
-			Timestamp: time.Now(),
-			Metadata: map[string]interface{}{
-				"streaming": true,
-			},
-		}
-		_ = b.memory.Add(ctx, userMsg)
-
-		// Store assistant response
-		assistantMsg := memory.Message{
-			Role:      "assistant",
-			Content:   fullContent,
-			Timestamp: time.Now(),
-			Metadata: map[string]interface{}{
-				"streaming": true,
-				"chunks":    chunkCount,
-			},
-		}
-		_ = b.memory.Add(ctx, assistantMsg)
-	}
-
-	// Auto-memory: store conversation (legacy FIFO)
-	if b.autoMemory && fullContent != "" {
-		b.addMessage(User(message))
-		b.addMessage(Assistant(fullContent))
-	}
-
-	return fullContent, nil
-}
 
 // StreamPrint is a convenience method that streams and prints the response to stdout.
 // Returns the complete response text.
@@ -1284,273 +535,16 @@ func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
 // Example:
 //
 //	response, err := builder.StreamPrint(ctx, "Tell me a joke")
-func (b *Builder) StreamPrint(ctx context.Context, message string) (string, error) {
-	return b.OnStream(func(content string) {
-		fmt.Print(content)
-	}).Stream(ctx, message)
-} // ensureClient initializes the OpenAI client if not already initialized.
-func (b *Builder) ensureClient() error {
-	if b.client != nil {
-		return nil
-	}
-
-	switch b.provider {
-	case ProviderOpenAI:
-		if b.apiKey == "" {
-			return fmt.Errorf("API key is required for OpenAI")
-		}
-		client := openai.NewClient(option.WithAPIKey(b.apiKey))
-		b.client = &client
-
-	case ProviderOllama:
-		if b.baseURL == "" {
-			b.baseURL = "http://localhost:11434/v1"
-		}
-		client := openai.NewClient(
-			option.WithBaseURL(b.baseURL),
-			option.WithAPIKey("ollama"), // Ollama doesn't require a real key
-		)
-		b.client = &client
-
-	default:
-		return fmt.Errorf("unsupported provider: %s", b.provider)
-	}
-
-	return nil
-}
 
 // buildMessages constructs the full message array for the request.
-func (b *Builder) buildMessages(userMessage string) []openai.ChatCompletionMessageParamUnion {
-	result := []openai.ChatCompletionMessageParamUnion{}
-
-	// Add system prompt if set
-	if b.systemPrompt != "" {
-		result = append(result, openai.SystemMessage(b.systemPrompt))
-	}
-
-	// Add conversation history (convert existing messages)
-	result = append(result, convertMessages(b.messages)...)
-
-	// Add current user message with multimodal support
-	contentParts := b.buildContentParts(userMessage)
-
-	// Check if we have multimodal content (array) or simple text (string)
-	switch content := contentParts.(type) {
-	case string:
-		// Simple text message
-		result = append(result, openai.UserMessage(content))
-	case []openai.ChatCompletionContentPartUnionParam:
-		// Multimodal message with images
-		userMsg := openai.ChatCompletionUserMessageParam{
-			Content: openai.ChatCompletionUserMessageParamContentUnion{
-				OfArrayOfContentParts: content,
-			},
-			Role: "user",
-		}
-		result = append(result, openai.ChatCompletionMessageParamUnion{
-			OfUser: &userMsg,
-		})
-	}
-
-	return result
-}
 
 // buildParams builds ChatCompletionNewParams with all configured options.
-func (b *Builder) buildParams(messages []openai.ChatCompletionMessageParamUnion) openai.ChatCompletionNewParams {
-	params := openai.ChatCompletionNewParams{
-		Model:    openai.ChatModel(b.model),
-		Messages: messages,
-	}
-
-	// Apply all advanced parameters
-	if b.temperature != nil {
-		params.Temperature = openai.Float(*b.temperature)
-	}
-	if b.topP != nil {
-		params.TopP = openai.Float(*b.topP)
-	}
-	if b.maxTokens != nil {
-		params.MaxTokens = openai.Int(*b.maxTokens)
-	}
-	if b.presencePenalty != nil {
-		params.PresencePenalty = openai.Float(*b.presencePenalty)
-	}
-	if b.frequencyPenalty != nil {
-		params.FrequencyPenalty = openai.Float(*b.frequencyPenalty)
-	}
-	if b.seed != nil {
-		params.Seed = openai.Int(*b.seed)
-	}
-	if b.logprobs != nil {
-		params.Logprobs = openai.Bool(*b.logprobs)
-	}
-	if b.topLogprobs != nil {
-		params.TopLogprobs = openai.Int(*b.topLogprobs)
-	}
-	if b.n != nil {
-		params.N = openai.Int(*b.n)
-	}
-
-	// Add tools if any
-	if len(b.tools) > 0 {
-		toolParams := make([]openai.ChatCompletionToolUnionParam, len(b.tools))
-		for i, tool := range b.tools {
-			toolParams[i] = tool.toOpenAI()
-		}
-		params.Tools = toolParams
-	}
-
-	// Add response format if set
-	if b.responseFormat != nil {
-		params.ResponseFormat = *b.responseFormat
-	}
-
-	return params
-} // executeSyncRaw executes a synchronous (non-streaming) chat completion request and returns the full completion.
-func (b *Builder) executeSyncRaw(ctx context.Context, messages []openai.ChatCompletionMessageParamUnion) (*openai.ChatCompletion, error) {
-	// Use centralized param building to ensure all features (tools, responseFormat, etc.) are included
-	params := b.buildParams(messages)
-
-	completion, err := b.client.Chat.Completions.New(ctx, params)
-	if err != nil {
-		return nil, fmt.Errorf("chat completion failed: %w", err)
-	}
-
-	if len(completion.Choices) == 0 {
-		return nil, fmt.Errorf("no response choices returned")
-	}
-
-	return completion, nil
-}
 
 // executeWithRetry wraps an operation with retry logic and timeout handling
-func (b *Builder) executeWithRetry(ctx context.Context, operation func(context.Context) error) error {
-	logger := b.getLogger()
-
-	// Apply timeout if configured
-	if b.timeout > 0 {
-		logger.Debug(ctx, "Applying timeout", F("timeout_seconds", b.timeout.Seconds()))
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, b.timeout)
-		defer cancel()
-	}
-
-	// No retries configured, execute once
-	if b.maxRetries == 0 {
-		err := operation(ctx)
-		if err != nil && ctx.Err() == context.DeadlineExceeded {
-			logger.Error(ctx, "Operation timed out", F("timeout", b.timeout.Seconds()))
-			return WrapTimeout(err)
-		}
-		return err
-	}
-
-	logger.Debug(ctx, "Retry enabled", F("max_retries", b.maxRetries))
-
-	// Execute with retries
-	var lastErr error
-	for attempt := 0; attempt <= b.maxRetries; attempt++ {
-		if attempt > 0 {
-			logger.Debug(ctx, "Retry attempt", F("attempt", attempt+1), F("max", b.maxRetries+1))
-		}
-
-		// Execute operation
-		err := operation(ctx)
-
-		// Success
-		if err == nil {
-			if attempt > 0 {
-				logger.Info(ctx, "Retry succeeded", F("attempt", attempt+1))
-			}
-			return nil
-		}
-
-		lastErr = err
-
-		// Check if error is timeout
-		if ctx.Err() == context.DeadlineExceeded {
-			logger.Error(ctx, "Operation timed out during retry",
-				F("attempt", attempt+1),
-				F("timeout", b.timeout.Seconds()))
-			return WrapTimeout(err)
-		}
-
-		// Check if error is retryable
-		if !b.isRetryable(err) {
-			logger.Debug(ctx, "Error is not retryable",
-				F("attempt", attempt+1),
-				F("error", err.Error()))
-			return err
-		}
-
-		// Last attempt failed
-		if attempt == b.maxRetries {
-			logger.Warn(ctx, "Max retries reached",
-				F("attempts", attempt+1),
-				F("error", err.Error()))
-			break
-		}
-
-		// Calculate delay
-		delay := b.calculateRetryDelay(attempt)
-		logger.Debug(ctx, "Waiting before retry",
-			F("attempt", attempt+1),
-			F("delay_seconds", delay.Seconds()),
-			F("error", err.Error()))
-
-		// Wait before retry
-		select {
-		case <-time.After(delay):
-			// Continue to next attempt
-		case <-ctx.Done():
-			logger.Error(ctx, "Context cancelled during retry wait", F("attempt", attempt+1))
-			return WrapTimeout(ctx.Err())
-		}
-	}
-
-	return WrapMaxRetries(b.maxRetries+1, lastErr)
-}
 
 // isRetryable checks if an error is retryable
-func (b *Builder) isRetryable(err error) bool {
-	// Retry on rate limit errors
-	if IsRateLimitError(err) {
-		return true
-	}
-
-	// Retry on timeout errors (if not from our timeout)
-	if IsTimeoutError(err) {
-		return true
-	}
-
-	// Don't retry on API key errors
-	if IsAPIKeyError(err) {
-		return false
-	}
-
-	// Don't retry on refusal errors
-	if IsRefusalError(err) {
-		return false
-	}
-
-	// Don't retry on invalid response errors
-	if IsInvalidResponseError(err) {
-		return false
-	}
-
-	// Default: don't retry
-	return false
-}
 
 // calculateRetryDelay calculates the delay before next retry
-func (b *Builder) calculateRetryDelay(attempt int) time.Duration {
-	if b.useExpBackoff {
-		// Exponential backoff: delay * 2^attempt
-		return b.retryDelay * (1 << uint(attempt))
-	}
-	// Fixed delay
-	return b.retryDelay
-}
 
 // addMessage adds a message to the conversation history.
 func (b *Builder) addMessage(message Message) {
@@ -1571,11 +565,6 @@ func (b *Builder) addMessage(message Message) {
 //	cache := agent.NewMemoryCache(1000, 5*time.Minute)
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithCache(cache)
-func (b *Builder) WithCache(cache Cache) *Builder {
-	b.cache = cache
-	b.cacheEnabled = true
-	return b
-}
 
 // WithMemoryCache enables in-memory caching with LRU eviction.
 //
@@ -1587,11 +576,6 @@ func (b *Builder) WithCache(cache Cache) *Builder {
 //
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithMemoryCache(500, 10*time.Minute)
-func (b *Builder) WithMemoryCache(maxSize int, defaultTTL time.Duration) *Builder {
-	b.cache = NewMemoryCache(maxSize, defaultTTL)
-	b.cacheEnabled = true
-	return b
-}
 
 // WithRedisCache enables Redis-based caching with simple configuration.
 //
@@ -1604,16 +588,6 @@ func (b *Builder) WithMemoryCache(maxSize int, defaultTTL time.Duration) *Builde
 //
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithRedisCache("localhost:6379", "", 0)
-func (b *Builder) WithRedisCache(addr, password string, db int) *Builder {
-	cache, err := NewRedisCache(addr, password, db, 5*time.Minute)
-	if err != nil {
-		// Log error but don't fail - fall back to no caching
-		return b
-	}
-	b.cache = cache
-	b.cacheEnabled = true
-	return b
-}
 
 // WithRedisCacheOptions enables Redis-based caching with advanced configuration.
 //
@@ -1628,16 +602,6 @@ func (b *Builder) WithRedisCache(addr, password string, db int) *Builder {
 //	        KeyPrefix:  "my-app",
 //	        DefaultTTL: 10 * time.Minute,
 //	    })
-func (b *Builder) WithRedisCacheOptions(opts *RedisCacheOptions) *Builder {
-	cache, err := NewRedisCacheWithOptions(opts)
-	if err != nil {
-		// Log error but don't fail - fall back to no caching
-		return b
-	}
-	b.cache = cache
-	b.cacheEnabled = true
-	return b
-}
 
 // WithCacheTTL sets the TTL for the next cached response.
 // If not set, the cache's default TTL is used.
@@ -1647,10 +611,6 @@ func (b *Builder) WithRedisCacheOptions(opts *RedisCacheOptions) *Builder {
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithMemoryCache(1000, 5*time.Minute).
 //	    WithCacheTTL(1*time.Hour)
-func (b *Builder) WithCacheTTL(ttl time.Duration) *Builder {
-	b.cacheTTL = ttl
-	return b
-}
 
 // DisableCache disables caching for this builder.
 //
@@ -1659,10 +619,6 @@ func (b *Builder) WithCacheTTL(ttl time.Duration) *Builder {
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithMemoryCache(1000, 5*time.Minute).
 //	    DisableCache() // Temporarily disable
-func (b *Builder) DisableCache() *Builder {
-	b.cacheEnabled = false
-	return b
-}
 
 // EnableCache enables caching for this builder (if cache is set).
 //
@@ -1672,12 +628,6 @@ func (b *Builder) DisableCache() *Builder {
 //	    WithMemoryCache(1000, 5*time.Minute).
 //	    DisableCache().
 //	    EnableCache() // Re-enable
-func (b *Builder) EnableCache() *Builder {
-	if b.cache != nil {
-		b.cacheEnabled = true
-	}
-	return b
-}
 
 // GetCacheStats returns cache statistics if caching is enabled.
 //
@@ -1687,24 +637,6 @@ func (b *Builder) EnableCache() *Builder {
 //	fmt.Printf("Hits: %d, Misses: %d, Hit Rate: %.2f%%\n",
 //	    stats.Hits, stats.Misses,
 //	    float64(stats.Hits)/(float64(stats.Hits+stats.Misses))*100)
-func (b *Builder) GetCacheStats() CacheStats {
-	logger := b.getLogger()
-	if b.cache != nil {
-		stats := b.cache.Stats()
-		hitRate := 0.0
-		if stats.Hits+stats.Misses > 0 {
-			hitRate = float64(stats.Hits) / float64(stats.Hits+stats.Misses)
-		}
-		logger.Debug(context.Background(), "Cache stats retrieved",
-			F("hits", stats.Hits),
-			F("misses", stats.Misses),
-			F("size", stats.Size),
-			F("hit_rate", hitRate))
-		return stats
-	}
-	logger.Debug(context.Background(), "No cache configured")
-	return CacheStats{}
-}
 
 // ClearCache clears all cached responses.
 //
@@ -1716,21 +648,6 @@ func (b *Builder) GetCacheStats() CacheStats {
 //	// ... use builder ...
 //
 //	builder.ClearCache(ctx) // Clear all cached responses
-func (b *Builder) ClearCache(ctx context.Context) error {
-	logger := b.getLogger()
-	if b.cache != nil {
-		logger.Info(ctx, "Clearing cache")
-		err := b.cache.Clear(ctx)
-		if err != nil {
-			logger.Error(ctx, "Failed to clear cache", F("error", err.Error()))
-			return err
-		}
-		logger.Info(ctx, "Cache cleared successfully")
-		return nil
-	}
-	logger.Debug(ctx, "No cache to clear")
-	return nil
-}
 
 // ===== Logging Methods =====
 
@@ -1757,11 +674,6 @@ func (b *Builder) ClearCache(ctx context.Context) error {
 //	logger := slog.Default()
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).
 //	    WithLogger(agent.NewSlogAdapter(logger))
-func (b *Builder) WithLogger(logger Logger) *Builder {
-	b.logger = logger
-	b.injectLoggerToTools() // Propagate logger to built-in tools
-	return b
-}
 
 // WithDebugLogging enables debug-level logging using the standard library logger.
 // This is useful for development and troubleshooting.
@@ -1782,11 +694,6 @@ func (b *Builder) WithLogger(logger Logger) *Builder {
 //	// [2025-01-15 10:30:45.123] DEBUG: Starting request | model=gpt-4o-mini message_length=50
 //	// [2025-01-15 10:30:45.124] DEBUG: Cache miss | cache_key=abc123
 //	// [2025-01-15 10:30:46.456] INFO: Request completed | duration_ms=1332 tokens_prompt=12
-func (b *Builder) WithDebugLogging() *Builder {
-	b.logger = NewStdLogger(LogLevelDebug)
-	b.injectLoggerToTools() // Propagate logger to built-in tools
-	return b
-}
 
 // WithInfoLogging enables info-level logging using the standard library logger.
 // This is recommended for production use.
@@ -1805,50 +712,9 @@ func (b *Builder) WithDebugLogging() *Builder {
 //	// Output example:
 //	// [2025-01-15 10:30:46.456] INFO: Request completed | duration_ms=1332 tokens_prompt=12 tokens_completion=45
 //	// [2025-01-15 10:30:47.789] INFO: Cache hit | cache_key=abc123
-func (b *Builder) WithInfoLogging() *Builder {
-	b.logger = NewStdLogger(LogLevelInfo)
-	b.injectLoggerToTools() // Propagate logger to built-in tools
-	return b
-}
 
 // getLogger returns the configured logger or NoopLogger if none is set.
 // This ensures zero overhead when logging is not enabled.
-func (b *Builder) getLogger() Logger {
-	if b.logger == nil {
-		return &NoopLogger{}
-	}
-	return b.logger
-}
 
 // injectLoggerToTools propagates the Builder's logger to the tools package
 // using a callback function via go:linkname to avoid import cycles.
-func (b *Builder) injectLoggerToTools() {
-	// TODO: Fix go:linkname relocation issue in tests
-	// Temporarily disabled to allow tests to run
-	/*
-		logger := b.getLogger()
-
-		// Inject callback function to tools package via go:linkname
-		toolsSetLogFunc(func(level, msg string, fields map[string]interface{}) {
-			ctx := context.Background() // Tools don't have context, use background
-
-			// Convert map[string]interface{} to []Field
-			logFields := make([]Field, 0, len(fields))
-			for k, v := range fields {
-				logFields = append(logFields, F(k, v))
-			}
-
-			// Route to appropriate log level
-			switch level {
-			case "DEBUG":
-				logger.Debug(ctx, msg, logFields...)
-			case "INFO":
-				logger.Info(ctx, msg, logFields...)
-			case "WARN":
-				logger.Warn(ctx, msg, logFields...)
-			case "ERROR":
-				logger.Error(ctx, msg, logFields...)
-			}
-		})
-	*/
-}
