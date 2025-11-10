@@ -109,6 +109,9 @@ type Builder struct {
 	memory        *memory.Memory // Hierarchical memory system (default: enabled)
 	memoryEnabled bool           // Whether memory system is enabled
 
+	// Persona (Behavioral configuration)
+	persona *Persona // Active persona configuration
+
 	// OpenAI client (lazy initialized)
 	client *openai.Client
 

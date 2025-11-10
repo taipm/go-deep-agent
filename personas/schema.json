@@ -1,0 +1,265 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/taipm/go-deep-agent/persona-schema.json",
+  "title": "AI Agent Persona Configuration",
+  "description": "Schema for defining AI agent personas in go-deep-agent",
+  "type": "object",
+  "required": ["name", "role", "goal", "personality"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique identifier for the persona",
+      "minLength": 1,
+      "examples": ["CustomerSupportSpecialist", "CodeReviewer"]
+    },
+    "version": {
+      "type": "string",
+      "description": "Persona version (semantic versioning recommended)",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+      "examples": ["1.0.0", "2.1"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of what this persona does"
+    },
+    "role": {
+      "type": "string",
+      "description": "The agent's role or job title",
+      "minLength": 1,
+      "examples": ["Customer Support Agent", "Senior Software Engineer"]
+    },
+    "goal": {
+      "type": "string",
+      "description": "What the agent aims to accomplish",
+      "minLength": 1,
+      "examples": ["Help customers resolve issues quickly"]
+    },
+    "backstory": {
+      "type": "string",
+      "description": "Background and experience of the persona"
+    },
+    "personality": {
+      "type": "object",
+      "description": "Personality and communication style",
+      "required": ["tone"],
+      "properties": {
+        "tone": {
+          "type": "string",
+          "description": "Overall communication tone",
+          "examples": ["friendly and professional", "technical but approachable"]
+        },
+        "traits": {
+          "type": "array",
+          "description": "List of personality traits",
+          "items": {
+            "type": "string"
+          },
+          "examples": [["empathetic", "patient", "solution-oriented"]]
+        },
+        "style": {
+          "type": "string",
+          "description": "Communication style",
+          "examples": ["conversational", "formal", "direct"]
+        }
+      }
+    },
+    "guidelines": {
+      "type": "array",
+      "description": "What the agent should do",
+      "items": {
+        "type": "string"
+      },
+      "examples": [
+        [
+          "Always greet customers warmly",
+          "Provide step-by-step solutions"
+        ]
+      ]
+    },
+    "constraints": {
+      "type": "array",
+      "description": "What the agent should NOT do",
+      "items": {
+        "type": "string"
+      },
+      "examples": [
+        [
+          "Never promise features that don't exist",
+          "Don't share customer private data"
+        ]
+      ]
+    },
+    "knowledge_areas": {
+      "type": "array",
+      "description": "Areas of expertise",
+      "items": {
+        "type": "string"
+      },
+      "examples": [
+        [
+          "Product features",
+          "Troubleshooting",
+          "Billing"
+        ]
+      ]
+    },
+    "examples": {
+      "type": "array",
+      "description": "Example scenarios and responses",
+      "items": {
+        "type": "object",
+        "required": ["scenario", "response"],
+        "properties": {
+          "scenario": {
+            "type": "string",
+            "description": "Example scenario or user input"
+          },
+          "response": {
+            "type": "string",
+            "description": "Expected response from the persona"
+          }
+        }
+      }
+    },
+    "technical_config": {
+      "type": "object",
+      "description": "Optional technical configuration overrides",
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "LLM model to use",
+          "examples": ["gpt-4o-mini", "gpt-4"]
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Sampling temperature (0=deterministic, 2=creative)"
+        },
+        "max_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum tokens to generate"
+        },
+        "top_p": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Nucleus sampling parameter"
+        },
+        "memory": {
+          "type": "object",
+          "properties": {
+            "working_capacity": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Number of recent messages to keep in working memory"
+            },
+            "episodic_enabled": {
+              "type": "boolean",
+              "description": "Enable long-term episodic memory"
+            },
+            "episodic_threshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Importance threshold for episodic memory"
+            },
+            "semantic_enabled": {
+              "type": "boolean",
+              "description": "Enable semantic fact storage"
+            },
+            "auto_compress": {
+              "type": "boolean",
+              "description": "Automatically compress old memories"
+            }
+          }
+        },
+        "retry": {
+          "type": "object",
+          "properties": {
+            "max_attempts": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10,
+              "description": "Maximum retry attempts"
+            },
+            "timeout": {
+              "type": "string",
+              "pattern": "^[0-9]+(ns|us|µs|ms|s|m|h)$",
+              "description": "Timeout per request (e.g., '30s', '1m')"
+            },
+            "exponential_backoff": {
+              "type": "boolean",
+              "description": "Use exponential backoff"
+            },
+            "backoff_multiplier": {
+              "type": "number",
+              "minimum": 1,
+              "description": "Backoff multiplier for exponential backoff"
+            },
+            "initial_delay": {
+              "type": "string",
+              "pattern": "^[0-9]+(ns|us|µs|ms|s|m|h)$",
+              "description": "Initial retry delay"
+            },
+            "max_delay": {
+              "type": "string",
+              "pattern": "^[0-9]+(ns|us|µs|ms|s|m|h)$",
+              "description": "Maximum retry delay"
+            }
+          }
+        },
+        "tools": {
+          "type": "object",
+          "properties": {
+            "parallel_execution": {
+              "type": "boolean",
+              "description": "Execute tools in parallel"
+            },
+            "max_workers": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Maximum parallel workers"
+            },
+            "timeout": {
+              "type": "string",
+              "pattern": "^[0-9]+(ns|us|µs|ms|s|m|h)$",
+              "description": "Timeout per tool execution"
+            }
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "CustomerSupportSpecialist",
+      "version": "1.0.0",
+      "role": "Senior Customer Support Agent",
+      "goal": "Help customers resolve issues quickly and professionally",
+      "personality": {
+        "tone": "friendly and professional",
+        "traits": ["empathetic", "patient"],
+        "style": "conversational"
+      },
+      "guidelines": [
+        "Always greet customers warmly",
+        "Listen actively before solving"
+      ],
+      "constraints": [
+        "Never promise features that don't exist"
+      ],
+      "technical_config": {
+        "model": "gpt-4o-mini",
+        "temperature": 0.7,
+        "memory": {
+          "working_capacity": 50,
+          "episodic_enabled": true
+        }
+      }
+    }
+  ]
+}
