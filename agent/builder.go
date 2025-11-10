@@ -427,10 +427,6 @@ func (b *Builder) WithExponentialBackoff() *Builder {
 //
 //	// Factual answers
 //	builder.WithTemperature(0.2)
-func (b *Builder) WithTemperature(temperature float64) *Builder {
-	b.temperature = &temperature
-	return b
-}
 
 // WithTopP sets nucleus sampling probability (0-1).
 // The model considers tokens with top_p probability mass.
@@ -440,10 +436,6 @@ func (b *Builder) WithTemperature(temperature float64) *Builder {
 // Example:
 //
 //	builder.WithTopP(0.9)
-func (b *Builder) WithTopP(topP float64) *Builder {
-	b.topP = &topP
-	return b
-}
 
 // WithMaxTokens sets the maximum number of tokens to generate.
 // Useful for controlling response length and costs.
@@ -452,10 +444,6 @@ func (b *Builder) WithTopP(topP float64) *Builder {
 //
 //	// Short responses only
 //	builder.WithMaxTokens(100)
-func (b *Builder) WithMaxTokens(maxTokens int64) *Builder {
-	b.maxTokens = &maxTokens
-	return b
-}
 
 // WithPresencePenalty penalizes tokens based on whether they appear in the text so far (-2.0 to 2.0).
 // Positive values encourage the model to talk about new topics.
@@ -465,10 +453,6 @@ func (b *Builder) WithMaxTokens(maxTokens int64) *Builder {
 //
 //	// Encourage diversity
 //	builder.WithPresencePenalty(0.6)
-func (b *Builder) WithPresencePenalty(penalty float64) *Builder {
-	b.presencePenalty = &penalty
-	return b
-}
 
 // WithFrequencyPenalty penalizes tokens based on their frequency in the text so far (-2.0 to 2.0).
 // Positive values reduce repetition.
@@ -478,10 +462,6 @@ func (b *Builder) WithPresencePenalty(penalty float64) *Builder {
 //
 //	// Reduce repetition
 //	builder.WithFrequencyPenalty(0.5)
-func (b *Builder) WithFrequencyPenalty(penalty float64) *Builder {
-	b.frequencyPenalty = &penalty
-	return b
-}
 
 // WithSeed sets a seed for deterministic sampling.
 // When set, the model will attempt to make repeat requests with the same parameters
@@ -491,10 +471,6 @@ func (b *Builder) WithFrequencyPenalty(penalty float64) *Builder {
 //
 //	// Reproducible outputs
 //	builder.WithSeed(42)
-func (b *Builder) WithSeed(seed int64) *Builder {
-	b.seed = &seed
-	return b
-}
 
 // WithLogprobs enables returning log probability information for output tokens.
 // This is useful for understanding the model's confidence in its predictions.
@@ -502,10 +478,6 @@ func (b *Builder) WithSeed(seed int64) *Builder {
 // Example:
 //
 //	builder.WithLogprobs(true).WithTopLogprobs(5)
-func (b *Builder) WithLogprobs(enable bool) *Builder {
-	b.logprobs = &enable
-	return b
-}
 
 // WithTopLogprobs sets the number of most likely tokens to return at each position (0-20).
 // Requires WithLogprobs(true) to be set.
@@ -513,10 +485,6 @@ func (b *Builder) WithLogprobs(enable bool) *Builder {
 // Example:
 //
 //	builder.WithLogprobs(true).WithTopLogprobs(5)
-func (b *Builder) WithTopLogprobs(n int64) *Builder {
-	b.topLogprobs = &n
-	return b
-}
 
 // WithMultipleChoices generates N different completion choices.
 // Use AskMultiple() to get all choices, or Ask() to get just the first one.
@@ -525,10 +493,6 @@ func (b *Builder) WithTopLogprobs(n int64) *Builder {
 //
 //	// Generate 3 different responses
 //	builder.WithMultipleChoices(3)
-func (b *Builder) WithMultipleChoices(n int64) *Builder {
-	b.n = &n
-	return b
-}
 
 // OnStream sets a callback function to receive streaming content chunks.
 // Use with Stream() method for real-time response streaming.
