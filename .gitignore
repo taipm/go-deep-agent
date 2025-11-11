@@ -28,11 +28,37 @@ go.work.sum
 
 # env file
 .env
+.env.*
+*.env
 
 # Editor/IDE
 # .idea/
 # .vscode/
 mynotes.txt
+
+# Working documents (planning/analysis)
+ANALYSIS_INDEX.md
+CODEBASE_ANALYSIS.md
+PLANNING_LAYER_IMPLEMENTATION_PLAN.md
+QUICK_SUMMARY.md
+REACT_IMPLEMENTATION_PLAN.md
+STRUCTURE_OVERVIEW.txt
+LEAN_ROADMAP_V0.7.md
+
+# Obsolete/draft documentation
+RELEASE_NOTES_v0.6.1.md
+docs/AGENT_THINKING_ANALYSIS.md
+docs/FEWSHOT_PHASE2_PLAN.md
+docs/FEWSHOT_PHASE3_ANALYSIS.md
+docs/REACT_IMPLEMENTATION_PLAN.md
+docs/WHY_REACT.md
+
+# Obsolete example directories
+react_advanced/
+react_error_recovery/
+react_research/
+react_simple/
+react_streaming/
 
 # Compiled binaries
 cache_redis_example
@@ -42,3 +68,8 @@ examples/chatbot_cli
 logger_example
 qdrant_example
 vector_rag_example
+react_advanced
+react_error_recovery
+react_research
+react_simple
+react_streaming
