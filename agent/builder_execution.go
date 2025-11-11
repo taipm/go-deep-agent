@@ -388,7 +388,7 @@ func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
 		// Apply rate limiting
 		rateLimitStart := time.Now()
 		key := b.rateLimitKey // Empty string for global rate limiting
-		
+
 		if err := b.rateLimiter.Wait(ctx, key); err != nil {
 			rateLimitDuration := time.Since(rateLimitStart)
 			logger.Error(ctx, "Rate limit wait failed in stream",
@@ -808,6 +808,11 @@ func (b *Builder) calculateRetryDelay(attempt int) time.Duration {
 
 // ensureRateLimiter initializes the rate limiter if not already initialized
 func (b *Builder) ensureRateLimiter() error {
+	// Don't create rate limiter if not enabled
+	if !b.rateLimitEnabled {
+		return nil
+	}
+
 	if b.rateLimiter != nil {
 		return nil
 	}

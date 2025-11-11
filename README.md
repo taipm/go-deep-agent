@@ -31,6 +31,7 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 - 🎓 **Few-Shot Learning** - Teach agents with examples (inline or YAML personas) (v0.6.5 🆕)
 - 🤔 **ReAct Pattern** - Thought → Action → Observation loop for autonomous multi-step reasoning (v0.7.0 🆕)
 - 🧩 **Planning Layer** - Goal decomposition, parallel execution, adaptive strategies for complex workflows (v0.7.1 🆕)
+- 🚦 **Rate Limiting** - Token bucket algorithm with per-key limits and burst capacity (v0.7.3 🆕)
 - ✅ **Well Tested** - 1012+ tests, 71%+ coverage, 75+ working examples
 
 ## 📦 Installation
@@ -249,7 +250,48 @@ if err != nil {
 }
 ```
 
-### 7. Using Ollama (Local LLM)
+### 7. Rate Limiting (v0.7.3 🆕)
+
+**Control request rates to comply with API limits and manage costs:**
+
+```go
+// Simple rate limiting: 10 requests/second, burst of 20
+ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithRateLimit(10.0, 20).
+    WithMemory()
+
+// Make requests - automatically throttled
+for i := 0; i < 100; i++ {
+    ai.Ask(ctx, fmt.Sprintf("Question %d", i))
+    // First 20 requests use burst capacity (immediate)
+    // Remaining requests throttled to 10/second
+}
+```
+
+**Per-user rate limiting for multi-tenant applications:**
+
+```go
+config := agent.RateLimitConfig{
+    Enabled:           true,
+    RequestsPerSecond: 5.0,
+    BurstSize:         10,
+    PerKey:            true,  // Independent limits per key
+    KeyTimeout:        5 * time.Minute,
+}
+
+// Different users get independent rate limits
+aiUser1 := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithRateLimitConfig(config).
+    WithRateLimitKey("user-123")  // User 1's quota
+
+aiUser2 := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithRateLimitConfig(config).
+    WithRateLimitKey("user-456")  // User 2's quota (independent)
+```
+
+**[📖 Rate Limiting Guide](docs/RATE_LIMITING_GUIDE.md)** - Algorithms, best practices, Redis backend
+
+### 8. Using Ollama (Local LLM)
 
 ```go
 // Simple usage - default base URL is http://localhost:11434/v1
@@ -264,7 +306,7 @@ response, err := agent.NewOllama("qwen2.5:3b").
     Ask(ctx, "Explain goroutines")
 ```
 
-### 8. ReAct Pattern - Autonomous Multi-Step Reasoning (v0.7.0 🆕)
+### 9. ReAct Pattern - Autonomous Multi-Step Reasoning (v0.7.0 🆕)
 
 **ReAct (Reasoning + Acting)** enables agents to think, act, and observe iteratively:
 
@@ -1163,7 +1205,44 @@ Contributions are welcome! Please:
 
 MIT License - see [LICENSE](LICENSE) for details
 
-## 📚 Documentation
+## � Security
+
+**Overall Grade: B+ (82/100)** - Good security foundation with areas for improvement
+
+### Current Security Features
+
+✅ **Input Validation** - 30+ Validate() methods across configs  
+✅ **Secret Redaction** - 6 regex patterns for API keys/tokens in debug logs  
+✅ **Path Traversal Prevention** - Blocks ".." in filesystem tool  
+✅ **Timeout Protection** - 30s default for HTTP/tools/requests  
+✅ **Structured Error Handling** - Security context tracking  
+
+### Security Best Practices
+
+```go
+// ✅ Use environment variables for API keys
+apiKey := os.Getenv("OPENAI_API_KEY")
+if apiKey == "" {
+    log.Fatal("OPENAI_API_KEY not set")
+}
+
+// ✅ Only enable safe tools
+ai := tools.WithDefaults(agent.NewOpenAI("gpt-4o", apiKey))
+
+// ✅ Set timeouts and retries
+ai := ai.WithTimeout(30 * time.Second).WithMaxRetries(3)
+
+// ✅ Disable debug in production
+debug := os.Getenv("ENV") != "production"
+ai := ai.WithDebug(debug)
+```
+
+### Security Documentation
+
+- **[SECURITY_SUMMARY.md](docs/SECURITY_SUMMARY.md)** - 🔒 Quick reference for security (v0.5.9 🆕)
+- **[SECURITY_ANALYSIS.md](docs/SECURITY_ANALYSIS.md)** - 🔒 Comprehensive security assessment (v0.5.9 🆕)
+
+## �📚 Documentation
 
 - **[README.md](README.md)** - Main documentation (you are here)
 - **[COMPARISON.md](docs/COMPARISON.md)** - 🆚 Why go-deep-agent vs openai-go (with code examples)
