@@ -2,7 +2,9 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/openai/openai-go/v3"
 )
@@ -131,12 +133,214 @@ func (b *Builder) executeReActNative(ctx context.Context, task string) (*ReActRe
 			result.Timeline.AddEvent("iteration_start", fmt.Sprintf("Iteration %d started", iteration+1), 0, nil)
 		}
 
+		if b.reactConfig.EnableMetrics {
+			result.Metrics.TotalIterations = iteration + 1
+		}
+
 		// Call LLM with meta-tools
-		// TODO: Implement LLM call with tools (Task 6)
-		// For now, return error
-		result.Success = false
-		result.Error = fmt.Errorf("executeReActNative not fully implemented yet")
-		return result, result.Error
+		completion, err := b.callLLMWithMetaTools(ctx, messages, metaTools)
+		if err != nil {
+			result.Success = false
+			result.Error = fmt.Errorf("LLM call failed at iteration %d: %w", iteration+1, err)
+
+			if b.reactConfig.EnableTimeline {
+				result.Timeline.AddEvent("error", fmt.Sprintf("LLM error: %v", err), 0, nil)
+			}
+
+			// Callback: onError
+			if b.reactConfig.Callback != nil {
+				b.reactConfig.Callback.OnError(result.Error)
+			}
+
+			return result, result.Error
+		}
+
+		// Check if LLM made any tool calls
+		if len(completion.Choices) == 0 {
+			result.Success = false
+			result.Error = fmt.Errorf("no response choices at iteration %d", iteration+1)
+			return result, result.Error
+		}
+
+		choice := completion.Choices[0]
+
+		// If no tool calls, this is an error (LLM should always use meta-tools)
+		if len(choice.Message.ToolCalls) == 0 {
+			// LLM didn't use any tools - treat as implicit final answer
+			content := choice.Message.Content
+			result.Answer = content
+			result.Success = true
+			result.Iterations = iteration + 1
+
+			// Add implicit final step
+			step := ReActStep{
+				Type:      StepTypeFinal,
+				Content:   content,
+				Timestamp: time.Now(),
+			}
+			result.Steps = append(result.Steps, step)
+
+			if b.reactConfig.EnableTimeline {
+				result.Timeline.AddEvent("final_implicit", "Implicit final answer", 0, nil)
+			}
+
+			return result, nil
+		}
+
+		// Process tool calls
+		for _, toolCall := range choice.Message.ToolCalls {
+			funcName := toolCall.Function.Name
+			funcArgs := toolCall.Function.Arguments
+
+			// Handle each meta-tool
+			switch funcName {
+			case "think":
+				// Parse reasoning from arguments
+				var args struct {
+					Reasoning string `json:"reasoning"`
+				}
+				if err := json.Unmarshal([]byte(funcArgs), &args); err != nil {
+					result.Success = false
+					result.Error = fmt.Errorf("failed to parse think() arguments: %w", err)
+					return result, result.Error
+				}
+
+				// Record THOUGHT step
+				step := ReActStep{
+					Type:      StepTypeThought,
+					Content:   args.Reasoning,
+					Timestamp: time.Now(),
+				}
+				result.Steps = append(result.Steps, step)
+
+				if b.reactConfig.EnableTimeline {
+					result.Timeline.AddEvent("thought", args.Reasoning, 0, nil)
+				}
+
+				// Callback: onStep
+				if b.reactConfig.Callback != nil {
+					b.reactConfig.Callback.OnStep(step)
+				}
+
+				// Add assistant's tool call to conversation
+				messages = append(messages, Assistant(fmt.Sprintf("THOUGHT: %s", args.Reasoning)))
+
+			case "use_tool":
+				// Parse tool name and arguments
+				var args struct {
+					ToolName      string                 `json:"tool_name"`
+					ToolArguments map[string]interface{} `json:"tool_arguments"`
+				}
+				if err := json.Unmarshal([]byte(funcArgs), &args); err != nil {
+					result.Success = false
+					result.Error = fmt.Errorf("failed to parse use_tool() arguments: %w", err)
+					return result, result.Error
+				}
+
+				// Record ACTION step
+				actionStep := ReActStep{
+					Type:      StepTypeAction,
+					Content:   fmt.Sprintf("%s(%v)", args.ToolName, args.ToolArguments),
+					Tool:      args.ToolName,
+					Args:      args.ToolArguments,
+					Timestamp: time.Now(),
+				}
+				result.Steps = append(result.Steps, actionStep)
+
+				if b.reactConfig.EnableMetrics {
+					result.Metrics.ToolCalls++
+				}
+
+				if b.reactConfig.EnableTimeline {
+					result.Timeline.AddEvent("action", fmt.Sprintf("Tool: %s", args.ToolName), 0, nil)
+				}
+
+				// Callback: onStep
+				if b.reactConfig.Callback != nil {
+					b.reactConfig.Callback.OnStep(actionStep)
+				}
+
+				// Execute the actual tool
+				toolResult, toolErr := b.executeTool(ctx, args.ToolName, args.ToolArguments)
+
+				// Record OBSERVATION step
+				obsContent := toolResult
+				if toolErr != nil {
+					obsContent = fmt.Sprintf("ERROR: %v", toolErr)
+					if b.reactConfig.EnableMetrics {
+						result.Metrics.Errors++
+					}
+				}
+
+				obsStep := ReActStep{
+					Type:      StepTypeObservation,
+					Content:   obsContent,
+					Tool:      args.ToolName,
+					Timestamp: time.Now(),
+					Error:     toolErr,
+				}
+				result.Steps = append(result.Steps, obsStep)
+
+				if b.reactConfig.EnableTimeline {
+					result.Timeline.AddEvent("observation", obsContent, 0, nil)
+				}
+
+				// Callback: onStep
+				if b.reactConfig.Callback != nil {
+					b.reactConfig.Callback.OnStep(obsStep)
+				}
+
+				// Add tool execution to conversation
+				messages = append(messages, Assistant(fmt.Sprintf("ACTION: %s(%v)", args.ToolName, args.ToolArguments)))
+				messages = append(messages, User(fmt.Sprintf("OBSERVATION: %s", obsContent)))
+
+			case "final_answer":
+				// Parse final answer
+				var args struct {
+					Answer     string   `json:"answer"`
+					Confidence *float64 `json:"confidence,omitempty"`
+				}
+				if err := json.Unmarshal([]byte(funcArgs), &args); err != nil {
+					result.Success = false
+					result.Error = fmt.Errorf("failed to parse final_answer() arguments: %w", err)
+					return result, result.Error
+				}
+
+				// Record FINAL step
+				step := ReActStep{
+					Type:      StepTypeFinal,
+					Content:   args.Answer,
+					Timestamp: time.Now(),
+				}
+				result.Steps = append(result.Steps, step)
+
+				if b.reactConfig.EnableTimeline {
+					confidenceStr := ""
+					if args.Confidence != nil {
+						confidenceStr = fmt.Sprintf(" (confidence: %.2f)", *args.Confidence)
+					}
+					result.Timeline.AddEvent("final", fmt.Sprintf("Final answer%s", confidenceStr), 0, nil)
+				}
+
+				// Callback: onStep
+				if b.reactConfig.Callback != nil {
+					b.reactConfig.Callback.OnStep(step)
+				}
+
+				// Set result
+				result.Answer = args.Answer
+				result.Success = true
+				result.Iterations = iteration + 1
+
+				return result, nil
+
+			default:
+				// Unknown meta-tool
+				result.Success = false
+				result.Error = fmt.Errorf("unknown meta-tool called: %s", funcName)
+				return result, result.Error
+			}
+		}
 	}
 
 	// If we reach here, max iterations exceeded without final_answer
@@ -150,9 +354,75 @@ func (b *Builder) executeReActNative(ctx context.Context, task string) (*ReActRe
 	return result, result.Error
 }
 
+// callLLMWithMetaTools calls the LLM with meta-tools and returns the completion.
+// This is a helper for executeReActNative() to keep the main loop cleaner.
+func (b *Builder) callLLMWithMetaTools(ctx context.Context, messages []Message, metaTools []openai.ChatCompletionToolUnionParam) (*openai.ChatCompletion, error) {
+	// Ensure client is initialized
+	if err := b.ensureClient(); err != nil {
+		return nil, fmt.Errorf("failed to initialize client: %w", err)
+	}
+
+	// Convert messages to OpenAI format
+	openaiMessages := convertMessages(messages)
+
+	// Build params with meta-tools
+	params := openai.ChatCompletionNewParams{
+		Model:    openai.ChatModel(b.model),
+		Messages: openaiMessages,
+		Tools:    metaTools,
+	}
+
+	// Apply temperature if set
+	if b.temperature != nil {
+		params.Temperature = openai.Float(*b.temperature)
+	}
+
+	// Execute request
+	completion, err := b.client.Chat.Completions.New(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("chat completion failed: %w", err)
+	}
+
+	return completion, nil
+}
+
 // buildReActNativeSystemPrompt creates the system prompt for native ReAct mode.
 // This prompt explains how to use the meta-tools effectively.
 func (b *Builder) buildReActNativeSystemPrompt() string {
-	// TODO: Implement comprehensive system prompt (Phase 5)
-	return "You are a helpful assistant. Use the provided tools to think, execute actions, and provide answers."
+	toolCount := len(b.tools)
+	toolsList := ""
+	if toolCount > 0 {
+		names := b.getToolNames()
+		toolsList = fmt.Sprintf("Available tools: %v", names)
+	} else {
+		toolsList = "No tools available."
+	}
+
+	return fmt.Sprintf(`You are an intelligent assistant that uses structured function calling to solve problems step-by-step.
+
+AVAILABLE FUNCTIONS:
+- think(reasoning): Express your step-by-step reasoning before taking action
+- use_tool(tool_name, tool_arguments): Execute one of the registered tools (only if tools available)
+- final_answer(answer, confidence): Provide your final response with optional confidence (0.0-1.0)
+
+%s
+
+WORKFLOW:
+1. Start by calling think() to reason about the problem
+2. If you need information or computation, use use_tool() to execute appropriate tools
+3. Continue thinking and using tools as needed
+4. End with final_answer() when you have a complete response
+
+IMPORTANT RULES:
+- Always use think() before taking any action
+- Only use tools that are actually registered and available
+- For tool arguments, follow each tool's expected parameter structure
+- Use final_answer() to conclude - this ends the conversation
+- Be thorough in your reasoning but concise in your answers
+
+Example flow:
+1. think("I need to understand what the user is asking...")
+2. use_tool("search", {"query": "..."}) [if search tool available]
+3. think("Based on the results, I can now provide...")
+4. final_answer("Here is the answer...", 0.9)`, toolsList)
 }

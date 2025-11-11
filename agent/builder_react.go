@@ -27,6 +27,52 @@ func (b *Builder) WithReActMode(enabled bool) *Builder {
 	return b
 }
 
+// WithReActNativeMode enables native function calling mode for ReAct.
+// This is the recommended mode as it's more reliable and language-agnostic.
+// Uses structured output via meta-tools: think(), use_tool(), final_answer().
+//
+// Advantages:
+//   - No text parsing (more reliable)
+//   - Language-agnostic (works with any language)
+//   - Better error handling
+//   - Structured data (easier to process)
+//
+// Example:
+//
+//	ai := agent.New().
+//	    WithOpenAI(apiKey).
+//	    WithReActMode(true).
+//	    WithReActNativeMode().  // Use function calling (recommended)
+//	    Build()
+func (b *Builder) WithReActNativeMode() *Builder {
+	if b.reactConfig == nil {
+		b.reactConfig = NewReActConfig()
+	}
+	b.reactConfig.Mode = ReActModeNative
+	return b
+}
+
+// WithReActTextMode enables legacy text parsing mode for ReAct.
+// Uses regex patterns to parse THOUGHT:, ACTION:, FINAL: format.
+// This mode is maintained for backward compatibility.
+//
+// Deprecated: Use WithReActNativeMode() for new applications.
+//
+// Example:
+//
+//	ai := agent.New().
+//	    WithOpenAI(apiKey).
+//	    WithReActMode(true).
+//	    WithReActTextMode().  // Legacy mode (backward compatibility)
+//	    Build()
+func (b *Builder) WithReActTextMode() *Builder {
+	if b.reactConfig == nil {
+		b.reactConfig = NewReActConfig()
+	}
+	b.reactConfig.Mode = ReActModeText
+	return b
+}
+
 // WithReActMaxIterations sets the maximum number of reasoning loops.
 // Each iteration consists of: THOUGHT → ACTION → OBSERVATION.
 // When exceeded, execution stops and returns ErrMaxIterationsReached.
@@ -251,8 +297,26 @@ func (b *Builder) Execute(ctx context.Context, task string) (*ReActResult, error
 		}, nil
 	}
 
-	// ReAct execution - delegate to core loop
-	return b.executeReAct(ctx, task)
+	// Route based on ReAct mode
+	switch b.reactConfig.Mode {
+	case ReActModeNative:
+		// Use native function calling (recommended)
+		return b.executeReActNative(ctx, task)
+	case ReActModeText:
+		// Use legacy text parsing (backward compatibility)
+		return b.executeReAct(ctx, task)
+	case ReActModeHybrid:
+		// Try native first, fallback to text on error (future)
+		result, err := b.executeReActNative(ctx, task)
+		if err != nil {
+			// Fallback to text mode
+			return b.executeReAct(ctx, task)
+		}
+		return result, nil
+	default:
+		// Default to native mode
+		return b.executeReActNative(ctx, task)
+	}
 }
 
 // executeReAct implements the core ReAct reasoning + acting loop.
