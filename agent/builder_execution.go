@@ -23,7 +23,36 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 		F("message_length", len(message)),
 		F("has_cache", b.cacheEnabled),
 		F("has_tools", len(b.tools) > 0),
-		F("has_rag", b.ragEnabled))
+		F("has_rag", b.ragEnabled),
+		F("rate_limit_enabled", b.rateLimitEnabled))
+
+	// Initialize and check rate limiting if enabled
+	if b.rateLimitEnabled {
+		if err := b.ensureRateLimiter(); err != nil {
+			logger.Error(ctx, "Failed to initialize rate limiter", F("error", err.Error()))
+			return "", fmt.Errorf("rate limiter initialization failed: %w", err)
+		}
+
+		// Apply rate limiting
+		rateLimitStart := time.Now()
+		key := b.rateLimitKey // Empty string for global rate limiting
+
+		if err := b.rateLimiter.Wait(ctx, key); err != nil {
+			rateLimitDuration := time.Since(rateLimitStart)
+			logger.Error(ctx, "Rate limit wait failed",
+				F("error", err.Error()),
+				F("duration_ms", rateLimitDuration.Milliseconds()),
+				F("rate_limit_key", key))
+			return "", fmt.Errorf("rate limit exceeded: %w", err)
+		}
+
+		rateLimitDuration := time.Since(rateLimitStart)
+		if rateLimitDuration > 0 {
+			logger.Debug(ctx, "Rate limit wait completed",
+				F("duration_ms", rateLimitDuration.Milliseconds()),
+				F("rate_limit_key", key))
+		}
+	}
 
 	// Check for multimodal errors
 	if b.lastError != nil {
@@ -346,7 +375,36 @@ func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
 
 	logger.Debug(ctx, "Stream request started",
 		F("model", b.model),
-		F("message_length", len(message)))
+		F("message_length", len(message)),
+		F("rate_limit_enabled", b.rateLimitEnabled))
+
+	// Initialize and check rate limiting if enabled
+	if b.rateLimitEnabled {
+		if err := b.ensureRateLimiter(); err != nil {
+			logger.Error(ctx, "Failed to initialize rate limiter", F("error", err.Error()))
+			return "", fmt.Errorf("rate limiter initialization failed: %w", err)
+		}
+
+		// Apply rate limiting
+		rateLimitStart := time.Now()
+		key := b.rateLimitKey // Empty string for global rate limiting
+		
+		if err := b.rateLimiter.Wait(ctx, key); err != nil {
+			rateLimitDuration := time.Since(rateLimitStart)
+			logger.Error(ctx, "Rate limit wait failed in stream",
+				F("error", err.Error()),
+				F("duration_ms", rateLimitDuration.Milliseconds()),
+				F("rate_limit_key", key))
+			return "", fmt.Errorf("rate limit exceeded: %w", err)
+		}
+
+		rateLimitDuration := time.Since(rateLimitStart)
+		if rateLimitDuration > 0 {
+			logger.Debug(ctx, "Rate limit wait completed in stream",
+				F("duration_ms", rateLimitDuration.Milliseconds()),
+				F("rate_limit_key", key))
+		}
+	}
 
 	// Check for multimodal errors
 	if b.lastError != nil {
@@ -746,4 +804,20 @@ func (b *Builder) calculateRetryDelay(attempt int) time.Duration {
 	}
 	// Fixed delay
 	return b.retryDelay
+}
+
+// ensureRateLimiter initializes the rate limiter if not already initialized
+func (b *Builder) ensureRateLimiter() error {
+	if b.rateLimiter != nil {
+		return nil
+	}
+
+	// Initialize rate limiter with configuration
+	limiter, err := NewRateLimiter(b.rateLimitConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create rate limiter: %w", err)
+	}
+
+	b.rateLimiter = limiter
+	return nil
 }

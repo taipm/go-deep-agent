@@ -23,6 +23,9 @@ type AgentConfig struct {
 	// Tools configuration
 	Tools ToolsConfig `yaml:"tools" json:"tools"`
 
+	// Rate limiting configuration
+	RateLimit RateLimitConfig `yaml:"rate_limit" json:"rate_limit"`
+
 	// System prompt (for backward compatibility)
 	SystemPrompt string `yaml:"system_prompt" json:"system_prompt"`
 }
@@ -83,6 +86,8 @@ func DefaultAgentConfig() *AgentConfig {
 			MaxWorkers:        10,
 			Timeout:           30 * time.Second,
 		},
+
+		RateLimit: DefaultRateLimitConfig(),
 	}
 }
 
@@ -143,6 +148,28 @@ func (c *AgentConfig) Validate() error {
 
 		if c.Tools.Timeout < 0 {
 			return fmt.Errorf("tools.timeout must be non-negative, got: %v", c.Tools.Timeout)
+		}
+	}
+
+	// Validate rate limit configuration if enabled
+	if c.RateLimit.Enabled {
+		if c.RateLimit.RequestsPerSecond <= 0 {
+			return fmt.Errorf("rate_limit.requests_per_second must be positive, got: %f",
+				c.RateLimit.RequestsPerSecond)
+		}
+
+		if c.RateLimit.BurstSize < 1 {
+			return fmt.Errorf("rate_limit.burst_size must be >= 1, got: %d", c.RateLimit.BurstSize)
+		}
+
+		if c.RateLimit.KeyTimeout < 0 {
+			return fmt.Errorf("rate_limit.key_timeout must be non-negative, got: %v",
+				c.RateLimit.KeyTimeout)
+		}
+
+		if c.RateLimit.WaitTimeout < 0 {
+			return fmt.Errorf("rate_limit.wait_timeout must be non-negative, got: %v",
+				c.RateLimit.WaitTimeout)
 		}
 	}
 

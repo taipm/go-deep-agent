@@ -118,6 +118,12 @@ type Builder struct {
 	// ReAct (Reasoning + Acting)
 	reactConfig *ReActConfig // ReAct pattern configuration
 
+	// Rate Limiting
+	rateLimiter      RateLimiter     // Rate limiter instance
+	rateLimitConfig  RateLimitConfig // Rate limit configuration
+	rateLimitEnabled bool            // Whether rate limiting is enabled
+	rateLimitKey     string          // Key for per-key rate limiting
+
 	// OpenAI client (lazy initialized)
 	client *openai.Client
 

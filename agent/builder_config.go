@@ -1,6 +1,8 @@
 package agent
 
 import (
+	"time"
+
 	"github.com/taipm/go-deep-agent/agent/memory"
 )
 
@@ -59,6 +61,11 @@ func (b *Builder) WithAgentConfig(config *AgentConfig) *Builder {
 		}
 	}
 
+	// Rate limiting settings
+	if config.RateLimit.Enabled {
+		b.WithRateLimitConfig(config.RateLimit)
+	}
+
 	return b
 }
 
@@ -109,6 +116,13 @@ func (b *Builder) ToAgentConfig() *AgentConfig {
 	config.Tools.ParallelExecution = b.enableParallel
 	config.Tools.MaxWorkers = b.maxWorkers
 	config.Tools.Timeout = b.toolTimeout
+
+	// Rate limiting settings
+	if b.rateLimitEnabled {
+		config.RateLimit = b.rateLimitConfig
+	} else {
+		config.RateLimit = DefaultRateLimitConfig()
+	}
 
 	return config
 }
@@ -284,4 +298,61 @@ func (b *Builder) ToAgentSettings() *AgentSettings {
 	}
 
 	return settings
+}
+
+// WithRateLimit enables rate limiting with simple configuration.
+// This is the basic method for enabling rate limiting with sensible defaults.
+//
+// Parameters:
+//   - requestsPerSecond: sustained rate of requests allowed (e.g., 10.0 = 10 requests/sec)
+//   - burstSize: maximum burst of requests (e.g., 20 = allow 20 requests at once)
+//
+// Example:
+//
+//	builder := agent.NewOpenAI("gpt-4", apiKey).
+//	    WithRateLimit(10.0, 20) // 10 req/s, burst of 20
+func (b *Builder) WithRateLimit(requestsPerSecond float64, burstSize int) *Builder {
+	b.rateLimitConfig = RateLimitConfig{
+		Enabled:           true,
+		RequestsPerSecond: requestsPerSecond,
+		BurstSize:         burstSize,
+		PerKey:            false,
+		KeyTimeout:        5 * time.Minute,
+		WaitTimeout:       30 * time.Second,
+	}
+	b.rateLimitEnabled = true
+	return b
+}
+
+// WithRateLimitConfig enables rate limiting with advanced configuration.
+// Use this for more control over rate limiting behavior (per-key, timeouts, etc.).
+//
+// Example:
+//
+//	config := agent.RateLimitConfig{
+//	    Enabled:           true,
+//	    RequestsPerSecond: 10.0,
+//	    BurstSize:         20,
+//	    PerKey:            true,  // Enable per-key rate limiting
+//	    KeyTimeout:        5 * time.Minute,
+//	}
+//	builder := agent.NewOpenAI("gpt-4", apiKey).
+//	    WithRateLimitConfig(config)
+func (b *Builder) WithRateLimitConfig(config RateLimitConfig) *Builder {
+	b.rateLimitConfig = config
+	b.rateLimitEnabled = config.Enabled
+	return b
+}
+
+// WithRateLimitKey sets the key for per-key rate limiting.
+// This is useful for implementing per-user or per-API-key rate limits.
+//
+// Example:
+//
+//	builder := agent.NewOpenAI("gpt-4", apiKey).
+//	    WithRateLimit(10.0, 20).
+//	    WithRateLimitKey("user-123") // Different limit per user
+func (b *Builder) WithRateLimitKey(key string) *Builder {
+	b.rateLimitKey = key
+	return b
 }
