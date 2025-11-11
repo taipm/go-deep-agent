@@ -5,6 +5,29 @@ import (
 	"time"
 )
 
+// ReActMode defines the execution mode for ReAct pattern.
+// Determines whether to use function calling (native) or text parsing.
+type ReActMode string
+
+const (
+	// ReActModeNative uses OpenAI's function calling with meta-tools.
+	// This is the recommended mode as it's more reliable and language-agnostic.
+	// Uses structured output: think(), use_tool(), final_answer()
+	// Advantages: no text parsing, fewer errors, better multilingual support
+	ReActModeNative ReActMode = "native"
+
+	// ReActModeText uses text parsing with regex patterns (legacy).
+	// Expects format: THOUGHT: ... ACTION: tool(args) FINAL: ...
+	// This mode is maintained for backward compatibility.
+	// Deprecated: Use ReActModeNative for new applications.
+	ReActModeText ReActMode = "text"
+
+	// ReActModeHybrid tries native mode first, falls back to text mode.
+	// Useful during migration or when dealing with unpredictable LLM behavior.
+	// Not implemented yet - reserved for future use.
+	ReActModeHybrid ReActMode = "hybrid"
+)
+
 // Default configuration values for ReAct pattern
 const (
 	// DefaultReActMaxIterations is the default maximum number of reasoning loops
@@ -18,6 +41,10 @@ const (
 	// DefaultReActStrict is the default strict mode setting
 	// false means graceful fallback on parse errors (recommended for production)
 	DefaultReActStrict = false
+
+	// DefaultReActMode is the default execution mode
+	// Native mode is preferred for reliability and language support
+	DefaultReActMode = ReActModeNative
 )
 
 // ReActConfig holds configuration for ReAct pattern execution.
@@ -33,6 +60,13 @@ type ReActConfig struct {
 	// Enabled determines whether ReAct mode is active
 	// If false, Execute() will behave like Ask()
 	Enabled bool
+
+	// Mode determines the execution strategy
+	// ReActModeNative: Use function calling (recommended)
+	// ReActModeText: Use text parsing (legacy)
+	// ReActModeHybrid: Try native, fallback to text (future)
+	// Default: ReActModeNative
+	Mode ReActMode
 
 	// MaxIterations limits the number of reasoning loops
 	// Each iteration consists of: THOUGHT → ACTION → OBSERVATION
@@ -85,7 +119,8 @@ type ReActConfig struct {
 // NewReActConfig creates a new ReActConfig with default values.
 func NewReActConfig() *ReActConfig {
 	return &ReActConfig{
-		Enabled:        false, // Must be explicitly enabled
+		Enabled:        false,            // Must be explicitly enabled
+		Mode:           DefaultReActMode, // Native mode by default
 		MaxIterations:  DefaultReActMaxIterations,
 		Timeout:        DefaultReActTimeout,
 		Strict:         DefaultReActStrict,
@@ -100,6 +135,18 @@ func NewReActConfig() *ReActConfig {
 // Validate checks if the configuration is valid.
 // Returns an error if any setting is invalid.
 func (c *ReActConfig) Validate() error {
+	// Validate Mode
+	switch c.Mode {
+	case ReActModeNative, ReActModeText:
+		// Valid modes
+	case ReActModeHybrid:
+		return fmt.Errorf("ReActModeHybrid not implemented yet")
+	case "":
+		return fmt.Errorf("Mode cannot be empty, must be one of: native, text")
+	default:
+		return fmt.Errorf("invalid ReActMode: %q, must be one of: native, text", c.Mode)
+	}
+
 	if c.MaxIterations < 1 {
 		return fmt.Errorf("MaxIterations must be >= 1, got %d", c.MaxIterations)
 	}
@@ -135,6 +182,7 @@ func (c *ReActConfig) Clone() *ReActConfig {
 
 	return &ReActConfig{
 		Enabled:        c.Enabled,
+		Mode:           c.Mode,
 		MaxIterations:  c.MaxIterations,
 		Timeout:        c.Timeout,
 		Strict:         c.Strict,

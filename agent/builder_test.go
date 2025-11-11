@@ -192,3 +192,50 @@ func TestBuilder_BuildMessages(t *testing.T) {
 		t.Errorf("buildMessages() returned %d messages, want 4", len(messages))
 	}
 }
+
+func TestBuilder_getToolNames(t *testing.T) {
+	t.Run("no tools registered", func(t *testing.T) {
+		builder := New(ProviderOpenAI, "gpt-4o-mini")
+		names := builder.getToolNames()
+
+		if len(names) != 0 {
+			t.Errorf("getToolNames() returned %d names, expected 0", len(names))
+		}
+	})
+
+	t.Run("single tool", func(t *testing.T) {
+		builder := New(ProviderOpenAI, "gpt-4o-mini")
+		builder.tools = []*Tool{
+			{Name: "math", Description: "Math tool"},
+		}
+		names := builder.getToolNames()
+
+		if len(names) != 1 {
+			t.Errorf("getToolNames() returned %d names, expected 1", len(names))
+		}
+		if names[0] != "math" {
+			t.Errorf("getToolNames()[0] = %q, expected %q", names[0], "math")
+		}
+	})
+
+	t.Run("multiple tools", func(t *testing.T) {
+		builder := New(ProviderOpenAI, "gpt-4o-mini")
+		builder.tools = []*Tool{
+			{Name: "math", Description: "Math tool"},
+			{Name: "datetime", Description: "DateTime tool"},
+			{Name: "filesystem", Description: "FileSystem tool"},
+		}
+		names := builder.getToolNames()
+
+		expected := []string{"math", "datetime", "filesystem"}
+		if len(names) != len(expected) {
+			t.Errorf("getToolNames() returned %d names, expected %d", len(names), len(expected))
+		}
+
+		for i, exp := range expected {
+			if names[i] != exp {
+				t.Errorf("getToolNames()[%d] = %q, expected %q", i, names[i], exp)
+			}
+		}
+	})
+}

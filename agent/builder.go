@@ -727,3 +727,26 @@ func (b *Builder) addMessage(message Message) {
 //	// Output example:
 //	// [2025-01-15 10:30:46.456] INFO: Request completed | duration_ms=1332 tokens_prompt=12 tokens_completion=45
 //	// [2025-01-15 10:30:47.789] INFO: Cache hit | cache_key=abc123
+
+// getToolNames extracts the names of all registered tools as a string slice.
+// Used internally for building enum schemas in native ReAct mode.
+// Returns empty slice if no tools registered.
+//
+// Example:
+//
+//	builder.tools = []*Tool{
+//	    NewMathTool(),
+//	    NewDateTimeTool(),
+//	}
+//	names := builder.getToolNames()  // Returns: ["math", "datetime"]
+func (b *Builder) getToolNames() []string {
+	if len(b.tools) == 0 {
+		return []string{}
+	}
+
+	names := make([]string, len(b.tools))
+	for i, tool := range b.tools {
+		names[i] = tool.Name
+	}
+	return names
+}
