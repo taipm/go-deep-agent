@@ -1,5 +1,4 @@
 package tools
-package tools
 
 import (
 	"os"
@@ -15,7 +14,7 @@ func TestFileSystemTool(t *testing.T) {
 	t.Run("WriteFile", func(t *testing.T) {
 		tool := NewFileSystemTool()
 		args := `{"operation": "write_file", "path": "` + filepath.Join(tempDir, "test.txt") + `", "content": "Hello World"}`
-		
+
 		result, err := tool.Handler(args)
 		if err != nil {
 			t.Fatalf("WriteFile failed: %v", err)
@@ -32,7 +31,7 @@ func TestFileSystemTool(t *testing.T) {
 
 		tool := NewFileSystemTool()
 		args := `{"operation": "read_file", "path": "` + testFile + `"}`
-		
+
 		result, err := tool.Handler(args)
 		if err != nil {
 			t.Fatalf("ReadFile failed: %v", err)
@@ -48,7 +47,7 @@ func TestFileSystemTool(t *testing.T) {
 
 		tool := NewFileSystemTool()
 		args := `{"operation": "append_file", "path": "` + testFile + `", "content": "Line 2\n"}`
-		
+
 		result, err := tool.Handler(args)
 		if err != nil {
 			t.Fatalf("AppendFile failed: %v", err)
@@ -71,7 +70,7 @@ func TestFileSystemTool(t *testing.T) {
 
 		tool := NewFileSystemTool()
 		args := `{"operation": "list_directory", "path": "` + tempDir + `"}`
-		
+
 		result, err := tool.Handler(args)
 		if err != nil {
 			t.Fatalf("ListDirectory failed: %v", err)
@@ -87,7 +86,7 @@ func TestFileSystemTool(t *testing.T) {
 
 		tool := NewFileSystemTool()
 		args := `{"operation": "file_exists", "path": "` + testFile + `"}`
-		
+
 		result, err := tool.Handler(args)
 		if err != nil {
 			t.Fatalf("FileExists failed: %v", err)
@@ -102,7 +101,7 @@ func TestFileSystemTool(t *testing.T) {
 
 		tool := NewFileSystemTool()
 		args := `{"operation": "create_directory", "path": "` + newDir + `"}`
-		
+
 		result, err := tool.Handler(args)
 		if err != nil {
 			t.Fatalf("CreateDirectory failed: %v", err)
@@ -123,7 +122,7 @@ func TestFileSystemTool(t *testing.T) {
 
 		tool := NewFileSystemTool()
 		args := `{"operation": "delete_file", "path": "` + testFile + `"}`
-		
+
 		result, err := tool.Handler(args)
 		if err != nil {
 			t.Fatalf("DeleteFile failed: %v", err)
@@ -141,7 +140,7 @@ func TestFileSystemTool(t *testing.T) {
 	t.Run("PathTraversalPrevention", func(t *testing.T) {
 		tool := NewFileSystemTool()
 		args := `{"operation": "read_file", "path": "../../../etc/passwd"}`
-		
+
 		_, err := tool.Handler(args)
 		if err == nil {
 			t.Error("Expected error for path traversal attempt")
@@ -154,7 +153,7 @@ func TestFileSystemTool(t *testing.T) {
 	t.Run("InvalidOperation", func(t *testing.T) {
 		tool := NewFileSystemTool()
 		args := `{"operation": "invalid_op", "path": "/tmp/test.txt"}`
-		
+
 		_, err := tool.Handler(args)
 		if err == nil {
 			t.Error("Expected error for invalid operation")
@@ -164,7 +163,7 @@ func TestFileSystemTool(t *testing.T) {
 	t.Run("EmptyPath", func(t *testing.T) {
 		tool := NewFileSystemTool()
 		args := `{"operation": "read_file", "path": ""}`
-		
+
 		_, err := tool.Handler(args)
 		if err == nil {
 			t.Error("Expected error for empty path")
