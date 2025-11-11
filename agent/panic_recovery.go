@@ -135,3 +135,37 @@ func GetStackTrace(err error) string {
 	}
 	return ""
 }
+
+// LogFields converts PanicError to structured log fields.
+// This enables seamless integration with structured logging libraries.
+//
+// Example:
+//
+//	if panicErr, ok := err.(*agent.PanicError); ok {
+//	    logger.Error(ctx, "Panic recovered", panicErr.LogFields()...)
+//	}
+func (e *PanicError) LogFields() []Field {
+	fields := []Field{
+		{Key: "error_type", Value: "panic"},
+		{Key: "panic_value", Value: fmt.Sprintf("%v", e.Value)},
+	}
+
+	// Add truncated stack trace (first 500 chars for readability)
+	if len(e.StackTrace) > 500 {
+		fields = append(fields, Field{
+			Key:   "stack_trace",
+			Value: e.StackTrace[:500] + "...",
+		})
+		fields = append(fields, Field{
+			Key:   "stack_trace_full_length",
+			Value: len(e.StackTrace),
+		})
+	} else if e.StackTrace != "" {
+		fields = append(fields, Field{
+			Key:   "stack_trace",
+			Value: e.StackTrace,
+		})
+	}
+
+	return fields
+}

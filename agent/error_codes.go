@@ -169,3 +169,26 @@ func IsRetryable(err error) bool {
 		return false
 	}
 }
+
+// LogFields converts CodedError to structured log fields.
+// This enables seamless integration with structured logging libraries.
+//
+// Example:
+//
+//	if codedErr, ok := err.(*agent.CodedError); ok {
+//	    logger.Error(ctx, "Request failed", codedErr.LogFields()...)
+//	}
+func (e *CodedError) LogFields() []Field {
+	fields := []Field{
+		{Key: "error_code", Value: e.Code},
+		{Key: "error_message", Value: e.Message},
+		{Key: "retryable", Value: IsRetryable(e)},
+	}
+
+	// Add underlying error if present
+	if e.Err != nil {
+		fields = append(fields, Field{Key: "underlying_error", Value: e.Err.Error()})
+	}
+
+	return fields
+}

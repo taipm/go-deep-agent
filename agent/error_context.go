@@ -83,6 +83,34 @@ func IsErrorContext(err error) bool {
 	return ok
 }
 
+// LogFields converts ErrorContext to structured log fields.
+// This enables seamless integration with structured logging libraries (slog, zap, logrus, etc.)
+//
+// Example with agent.Logger:
+//
+//	if err != nil {
+//	    logger.Error(ctx, "Operation failed", errCtx.LogFields()...)
+//	}
+//
+// Example with slog:
+//
+//	if errCtx := agent.GetErrorContext(err); errCtx != nil {
+//	    slog.Error("Operation failed", errCtx.LogFields()...)
+//	}
+func (e *ErrorContext) LogFields() []Field {
+	fields := []Field{
+		{Key: "error", Value: e.Err.Error()},
+		{Key: "operation", Value: e.Operation},
+	}
+
+	// Add all details as separate fields
+	for k, v := range e.Details {
+		fields = append(fields, Field{Key: k, Value: v})
+	}
+
+	return fields
+}
+
 // ErrorChain represents a chain of errors with context at each level.
 // Useful for tracking errors through multiple layers of the application.
 type ErrorChain struct {
@@ -261,4 +289,108 @@ func SummarizeError(err error) *ErrorSummary {
 	}
 
 	return summary
+}
+
+// ExtractLogFields extracts structured log fields from any error type.
+// This is the universal helper that works with all error types in go-deep-agent.
+// It intelligently detects the error type and returns appropriate fields.
+//
+// Supported error types:
+//   - *CodedError: Returns error_code, error_message, retryable
+//   - *PanicError: Returns error_type, panic_value, stack_trace
+//   - *ErrorContext: Returns operation, all details, and underlying error fields
+//   - Other errors: Returns basic error field
+//
+// Example with agent.Logger:
+//
+//	if err != nil {
+//	    fields := agent.ExtractLogFields(err)
+//	    logger.Error(ctx, "Operation failed", fields...)
+//	}
+//
+// Example with slog:
+//
+//	import "log/slog"
+//	if err != nil {
+//	    fields := agent.ExtractLogFields(err)
+//	    slog.Error("Operation failed", toSlogAttrs(fields)...)
+//	}
+//
+// Example with zap:
+//
+//	import "go.uber.org/zap"
+//	if err != nil {
+//	    fields := agent.ExtractLogFields(err)
+//	    logger.Error("Operation failed", toZapFields(fields)...)
+//	}
+func ExtractLogFields(err error) []Field {
+	if err == nil {
+		return []Field{}
+	}
+
+	// Check for PanicError first (most specific)
+	if panicErr, ok := err.(*PanicError); ok {
+		return panicErr.LogFields()
+	}
+
+	// Check for CodedError
+	if codedErr, ok := err.(*CodedError); ok {
+		return codedErr.LogFields()
+	}
+
+	// Check for ErrorContext
+	if errCtx, ok := err.(*ErrorContext); ok {
+		return errCtx.LogFields()
+	}
+
+	// Fallback: basic error field
+	return []Field{
+		{Key: "error", Value: err.Error()},
+	}
+}
+
+// ExtractLogFieldsWithSummary extracts log fields and adds error summary information.
+// This is useful for monitoring systems that need categorization and retry information.
+//
+// Example:
+//
+//	if err != nil {
+//	    fields := agent.ExtractLogFieldsWithSummary(err)
+//	    logger.Error(ctx, "Request failed", fields...)
+//	    // Fields include: error, error_type, error_code, retryable, etc.
+//	}
+func ExtractLogFieldsWithSummary(err error) []Field {
+	if err == nil {
+		return []Field{}
+	}
+
+	// Start with base fields
+	fields := ExtractLogFields(err)
+
+	// Add summary information
+	summary := SummarizeError(err)
+	if summary != nil {
+		fields = append(fields, Field{Key: "error_type", Value: summary.Type})
+		if summary.Code != "" {
+			fields = append(fields, Field{Key: "error_code", Value: summary.Code})
+		}
+		fields = append(fields, Field{Key: "retryable", Value: summary.Retryable})
+
+		// Add context from summary if available
+		for k, v := range summary.Context {
+			// Avoid duplicates (base fields take precedence)
+			isDuplicate := false
+			for _, f := range fields {
+				if f.Key == k {
+					isDuplicate = true
+					break
+				}
+			}
+			if !isDuplicate {
+				fields = append(fields, Field{Key: k, Value: v})
+			}
+		}
+	}
+
+	return fields
 }

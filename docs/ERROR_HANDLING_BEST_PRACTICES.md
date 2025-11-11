@@ -9,6 +9,7 @@ Comprehensive guide for error handling in go-deep-agent.
 - [Debug Mode](#debug-mode)
 - [Panic Recovery](#panic-recovery)
 - [Error Context](#error-context)
+- [Structured Logging](#structured-logging)
 - [Production Patterns](#production-patterns)
 - [Common Mistakes](#common-mistakes)
 
@@ -455,6 +456,31 @@ if chain.HasErrors() {
     return chain
 }
 ```
+
+
+## Structured Logging
+
+### Overview
+
+go-deep-agent provides seamless integration with structured logging libraries through the `LogFields()` methods and universal helpers.
+
+**Supported Integrations:**
+- `agent.Logger` (built-in)
+- `log/slog` (Go 1.21+ standard library)
+- `go.uber.org/zap`
+- `github.com/sirupsen/logrus`
+
+### Quick Example
+
+```go
+// Any error type
+if err != nil {
+    fields := agent.ExtractLogFields(err)
+    logger.Error(ctx, "Operation failed", fields...)
+}
+```
+
+See `examples/structured_logging_example.go` for complete examples with slog, zap, and agent.Logger.
 
 ## Production Patterns
 
