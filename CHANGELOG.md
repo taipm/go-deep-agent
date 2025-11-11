@@ -7,7 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.7.1] - 2025-11-11 🧩 Planning Layer - Goal-Oriented Workflows
+## [0.7.2] - 2025-11-11 🔧 Hotfix - Module Publishing Fix
+
+**Hotfix Release** - Fixes module publishing issue caused by invalid file name in v0.7.1.
+
+### 🐛 Fixed
+
+- **Module Publishing Error**: Removed invalid file `"Quality\n"` that prevented Go module proxy from creating zip
+- **Version Retraction**: Added `retract v0.7.1` directive in go.mod to prevent usage of broken version
+- **Go Proxy Compatibility**: v0.7.2 is now properly accessible via `go get github.com/taipm/go-deep-agent@v0.7.2`
+
+### 📝 Technical Details
+
+**Problem**: Tag v0.7.1 contained a file with malformed name (`"Quality\n"` with quotes and newline character) causing:
+```
+not found: create zip: Quality
+: malformed file path "Quality\n": invalid char '\n'
+```
+
+**Solution**:
+1. Deleted problematic tag v0.7.1 from local and remote
+2. Added retraction directive to go.mod
+3. Created clean tag v0.7.2 without invalid files
+4. Updated documentation and changelog
+
+### 🔄 Migration from v0.7.1
+
+v0.7.1 is **retracted** and should not be used. Use v0.7.2 instead:
+
+```bash
+# Update to v0.7.2
+go get github.com/taipm/go-deep-agent@v0.7.2
+
+# Or use GOPROXY=direct to bypass cached errors
+GOPROXY=direct go get github.com/taipm/go-deep-agent@latest
+```
+
+**Note**: All features from v0.7.1 are included in v0.7.2. This is purely a publishing fix with no functional changes.
+
+### ✅ Verification
+
+```bash
+# Verify version is accessible
+go list -m github.com/taipm/go-deep-agent@v0.7.2
+# Output: github.com/taipm/go-deep-agent v0.7.2
+
+# Check available versions (using direct to bypass proxy cache)
+GOPROXY=direct go list -m -versions github.com/taipm/go-deep-agent
+# Output: v0.3.0 v0.5.0 ... v0.7.0 v0.7.2
+```
+
+---
+
+## [0.7.1] - 2025-11-11 🧩 Planning Layer - Goal-Oriented Workflows [RETRACTED]
+
+**⚠️ This version is RETRACTED due to module publishing issue. Use v0.7.2 instead.**
 
 **Major Feature Release** - Adding intelligent planning capabilities with automatic task decomposition, dependency management, and adaptive execution strategies. Intelligence progression: 2.8 → 3.5/5.0.
 
