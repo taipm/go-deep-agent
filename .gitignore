@@ -60,11 +60,20 @@ react_research/
 react_simple/
 react_streaming/
 
-# Compiled binaries
+# Compiled binaries - root level
+builder_advanced
+builder_basic
+builder_conversation
+builder_errors
+builder_json_schema
+builder_memory_integration
+builder_multimodal
+builder_parallel
+builder_streaming
+builder_tools
 cache_redis_example
 chroma_example
 embedding_example
-examples/chatbot_cli
 logger_example
 qdrant_example
 vector_rag_example
@@ -73,3 +82,18 @@ react_error_recovery
 react_research
 react_simple
 react_streaming
+
+# Compiled binaries - examples/
+examples/builder_advanced
+examples/builder_basic
+examples/builder_conversation
+examples/builder_errors
+examples/builder_json_schema
+examples/builder_multimodal
+examples/builder_streaming
+examples/builder_tools
+examples/chatbot_cli
+examples/ollama_example
+examples/config_basic/config_basic
+examples/planner_adaptive/planner_adaptive
+examples/planner_parallel/planner_parallel
