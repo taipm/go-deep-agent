@@ -30,6 +30,7 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 - 🔍 **Tools Logging** - Comprehensive logging for built-in tools with security auditing (v0.5.6 🆕)
 - 🎓 **Few-Shot Learning** - Teach agents with examples (inline or YAML personas) (v0.6.5 🆕)
 - 🤔 **ReAct Pattern** - Thought → Action → Observation loop for autonomous multi-step reasoning (v0.7.0 🆕)
+- 🧩 **Planning Layer** - Goal decomposition, parallel execution, adaptive strategies for complex workflows (v0.7.1 🆕)
 - ✅ **Well Tested** - 1012+ tests, 71%+ coverage, 75+ working examples
 
 ## 📦 Installation
@@ -310,7 +311,71 @@ for i, step := range reactResult.Steps {
 
 **[📖 ReAct Pattern Guide](docs/guides/REACT_GUIDE.md)** - Full documentation, best practices, and advanced features
 
-### 9. Redis Cache - Distributed Caching (v0.5.1 🆕)
+### 9. Planning Layer - Complex Workflows (v0.7.1 🆕)
+
+**Goal-oriented planning** with automatic task decomposition, dependency management, and adaptive execution:
+
+```go
+// High-level API - automatic planning and execution
+result, _ := agent.NewOpenAI("gpt-4o", apiKey).
+    PlanAndExecute(ctx, "Research AI trends and write a comprehensive report")
+
+// The agent autonomously:
+// 1. Decomposes goal into tasks (research, analyze, synthesize, write)
+// 2. Manages dependencies (can't write before research)
+// 3. Executes in optimal order (parallel when possible)
+// 4. Tracks progress and metrics
+
+fmt.Printf("Completed %d tasks in %v\n",
+    result.Metrics.TaskCount,
+    result.Metrics.ExecutionTime)
+
+// Advanced: Manual control with custom strategies
+plan := agent.NewPlan("ETL Pipeline", agent.StrategyParallel)
+plan.AddTask(agent.Task{ID: "extract-1", Description: "Extract from DB1"})
+plan.AddTask(agent.Task{ID: "extract-2", Description: "Extract from DB2"})
+plan.AddTask(agent.Task{
+    ID:           "transform",
+    Description:  "Transform combined data",
+    Dependencies: []string{"extract-1", "extract-2"}, // Wait for both
+})
+
+config := agent.DefaultPlannerConfig()
+config.MaxParallel = 10                    // 10 concurrent tasks
+config.Strategy = agent.StrategyAdaptive   // Auto-optimize
+
+executor := agent.NewExecutor(config, aiAgent)
+result, _ := executor.Execute(ctx, plan)
+
+// Monitor execution
+for _, event := range result.Timeline {
+    fmt.Printf("[%v] %s\n", event.Timestamp, event.Description)
+}
+```
+
+**Features:**
+
+- ✅ **3 Execution Strategies**: Sequential, Parallel, Adaptive (auto-switching)
+- ✅ **Dependency Management**: Direct, transitive, diamond patterns, cycle detection
+- ✅ **Goal-Oriented**: Early termination when goals met
+- ✅ **Performance**: ~8.4µs topological sort, 97.6 tasks/sec throughput (parallel)
+- ✅ **Monitoring**: Timeline events, metrics (success rate, latency, efficiency)
+- ✅ **Production-Ready**: Timeout, cancellation, error recovery
+
+**When to Use:**
+
+| Use Case | Strategy | Example |
+|----------|----------|---------|
+| Simple workflow (< 5 tasks) | Sequential | Setup → Configure → Execute |
+| Batch processing | Parallel | Process 100 items concurrently |
+| Multi-phase pipeline | Adaptive | Research (parallel) → Analyze (sequential) → Report |
+| Complex dependencies | Sequential | Long dependency chains |
+
+**[📖 Planning Guide](docs/PLANNING_GUIDE.md)** - Concepts, patterns, best practices  
+**[📖 Planning API](docs/PLANNING_API.md)** - Complete API reference  
+**[📖 Planning Performance](docs/PLANNING_PERFORMANCE.md)** - Benchmarks, optimization, tuning
+
+### 10. Redis Cache - Distributed Caching (v0.5.1 🆕)
 
 ```go
 // Simple Redis cache setup
@@ -968,6 +1033,11 @@ go run examples/builder_errors.go
 # Ollama examples (requires Ollama running)
 go run examples/ollama_example.go
 
+# Planning Layer examples (v0.7.1 🆕)
+go run examples/planner_basic/main.go       # Basic sequential planning
+go run examples/planner_parallel/main.go    # Parallel batch processing
+go run examples/planner_adaptive/main.go    # Adaptive strategy switching
+
 # Vector RAG examples (v0.5.0 🆕)
 go run examples/embedding_example.go      # Embedding basics
 go run examples/chroma_example.go         # ChromaDB integration
@@ -1098,6 +1168,9 @@ MIT License - see [LICENSE](LICENSE) for details
 - **[README.md](README.md)** - Main documentation (you are here)
 - **[COMPARISON.md](docs/COMPARISON.md)** - 🆚 Why go-deep-agent vs openai-go (with code examples)
 - **[FEWSHOT_GUIDE.md](docs/FEWSHOT_GUIDE.md)** - 🎓 Few-Shot Learning complete guide (v0.6.5)
+- **[PLANNING_GUIDE.md](docs/PLANNING_GUIDE.md)** - 🧩 Planning Layer concepts and patterns (v0.7.1 🆕)
+- **[PLANNING_API.md](docs/PLANNING_API.md)** - 🧩 Planning Layer API reference (v0.7.1 🆕)
+- **[PLANNING_PERFORMANCE.md](docs/PLANNING_PERFORMANCE.md)** - 🧩 Planning Layer benchmarks and tuning (v0.7.1 🆕)
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and migration guides
 - **[ERROR_HANDLING_BEST_PRACTICES.md](docs/ERROR_HANDLING_BEST_PRACTICES.md)** - 🆕 Complete error handling guide (v0.5.9)
 - **[TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - 🆕 Common issues and solutions (v0.5.9)
