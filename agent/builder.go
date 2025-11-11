@@ -115,6 +115,9 @@ type Builder struct {
 	// Few-shot Learning
 	fewshotConfig *FewShotConfig // Few-shot examples configuration
 
+	// ReAct (Reasoning + Acting)
+	reactConfig *ReActConfig // ReAct pattern configuration
+
 	// OpenAI client (lazy initialized)
 	client *openai.Client
 

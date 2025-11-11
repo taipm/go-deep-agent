@@ -29,6 +29,7 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 - 🛠️ **Built-in Tools** - FileSystem, HTTP, DateTime, Math tools (v0.5.5 🆕 convenient loading)
 - 🔍 **Tools Logging** - Comprehensive logging for built-in tools with security auditing (v0.5.6 🆕)
 - 🎓 **Few-Shot Learning** - Teach agents with examples (inline or YAML personas) (v0.6.5 🆕)
+- 🤔 **ReAct Pattern** - Thought → Action → Observation loop for autonomous multi-step reasoning (v0.7.0 🆕)
 - ✅ **Well Tested** - 1012+ tests, 71%+ coverage, 75+ working examples
 
 ## 📦 Installation
@@ -262,7 +263,54 @@ response, err := agent.NewOllama("qwen2.5:3b").
     Ask(ctx, "Explain goroutines")
 ```
 
-### 8. Redis Cache - Distributed Caching (v0.5.1 🆕)
+### 8. ReAct Pattern - Autonomous Multi-Step Reasoning (v0.7.0 🆕)
+
+**ReAct (Reasoning + Acting)** enables agents to think, act, and observe iteratively:
+
+```go
+// Define tools
+calculator := agent.NewTool("calculator", "Perform calculations").
+    WithHandler(calcHandler)
+search := agent.NewTool("search", "Search the web").
+    WithHandler(searchHandler)
+
+// Enable ReAct mode
+ai := agent.NewOpenAI("gpt-4o", apiKey).
+    WithTools(calculator, search).
+    WithReActMode(true).         // Enable thought → action → observation loop
+    WithReActMaxIterations(7)    // Allow up to 7 reasoning steps
+
+// Execute complex multi-step task
+result, _ := ai.Ask(ctx, "What is 15 * 7 and what's the weather in Paris?")
+
+// The agent autonomously:
+// 1. Thought: "First I'll calculate 15 * 7"
+// 2. Action: calculator("15 * 7")
+// 3. Observation: "105"
+// 4. Thought: "Now I need Paris weather"
+// 5. Action: search("Paris weather")
+// 6. Observation: "15°C, Cloudy"
+// 7. Answer: "15 * 7 = 105. Weather in Paris is 15°C and cloudy."
+
+// Access full reasoning trace
+reactResult := result.Metadata["react_result"].(*agent.ReActResult)
+for i, step := range reactResult.Steps {
+    fmt.Printf("[Step %d] %s: %s\n", i+1, step.Type, step.Content)
+}
+```
+
+**Features:**
+
+- ✅ Autonomous multi-step reasoning
+- ✅ Tool orchestration (chains multiple tools naturally)
+- ✅ Error recovery with retry logic
+- ✅ Transparent reasoning (full trace of thoughts and actions)
+- ✅ Streaming support for real-time progress
+- ✅ Few-shot examples to guide behavior
+
+**[📖 ReAct Pattern Guide](docs/guides/REACT_GUIDE.md)** - Full documentation, best practices, and advanced features
+
+### 9. Redis Cache - Distributed Caching (v0.5.1 🆕)
 
 ```go
 // Simple Redis cache setup
@@ -313,7 +361,7 @@ opts := &agent.RedisCacheOptions{
 - Distributed locking (prevents cache stampede)
 - Scalable with Redis Cluster
 
-### 9. Logging & Observability (v0.5.2 🆕)
+### 10. Logging & Observability (v0.5.2 🆕)
 
 ```go
 // Debug logging for development
@@ -362,7 +410,7 @@ builder := agent.NewOpenAI("gpt-4o-mini", apiKey)
 
 📖 **[Complete Logging Guide](docs/LOGGING_GUIDE.md)** - Custom loggers, slog integration, production best practices
 
-### 10. Built-in Tools (v0.5.5 🆕 Convenient Loading)
+### 11. Built-in Tools (v0.5.5 🆕 Convenient Loading)
 
 go-deep-agent provides 4 production-ready built-in tools. **v0.5.5** introduces convenient helpers for easy loading:
 
@@ -507,7 +555,7 @@ ai.Ask(ctx, "Pick a random number from 1 to 100")
 📖 **[View builtin_tools_demo.go](examples/builtin_tools_demo.go)** - Complete examples  
 📖 **[View test_with_defaults.go](examples/test_with_defaults.go)** - v0.5.5 WithDefaults() usage
 
-### 11. History Management
+### 12. History Management
 
 ```go
 builder := agent.NewOpenAI("gpt-4o-mini", apiKey).WithMemory()
@@ -528,7 +576,7 @@ savedHistory := builder.GetHistory()
 builder.SetHistory(savedHistory)
 ```
 
-### 12. Multimodal - Vision (GPT-4 Vision)
+### 13. Multimodal - Vision (GPT-4 Vision)
 
 ```go
 // Analyze image from URL
@@ -554,7 +602,7 @@ builder.WithImage("https://example.com/photo.jpg").
 builder.Ask(ctx, "What colors are prominent?") // Remembers the image
 ```
 
-### 13. Vector RAG - Semantic Search (v0.5.0 🆕)
+### 14. Vector RAG - Semantic Search (v0.5.0 🆕)
 
 ```go
 // Setup vector database and embeddings
@@ -599,7 +647,7 @@ for _, doc := range retrieved {
 }
 ```
 
-### 14. Advanced Vector RAG with Metadata
+### 15. Advanced Vector RAG with Metadata
 
 ```go
 // Add documents with rich metadata
@@ -646,7 +694,7 @@ for _, doc := range docs {
 }
 ```
 
-### 14. Switch Vector Databases - ChromaDB vs Qdrant
+### 16. Switch Vector Databases - ChromaDB vs Qdrant
 
 ```go
 // Development: Use ChromaDB (easy setup)
