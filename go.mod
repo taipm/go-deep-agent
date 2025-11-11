@@ -2,6 +2,9 @@ module github.com/taipm/go-deep-agent
 
 go 1.25.2
 
+// Retract v0.7.1 due to invalid file name causing module proxy errors
+retract v0.7.1
+
 require (
 	github.com/Knetic/govaluate v3.0.0+incompatible
 	github.com/alicebob/miniredis/v2 v2.35.0
