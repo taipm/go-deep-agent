@@ -7,6 +7,133 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.3] - 2025-11-11 🚦 Rate Limiting
+
+**New Feature Release** - Comprehensive rate limiting support with token bucket algorithm.
+
+### ✨ Added
+
+- **Rate Limiting System** (`agent/rate_limiter.go`, `agent/rate_limiter_token_bucket.go`)
+  - Token bucket algorithm using `golang.org/x/time/rate`
+  - `RateLimiter` interface with `Allow`, `Wait`, `Reserve`, `Stats` methods
+  - Configurable requests per second and burst capacity
+  - Automatic token refill based on configured rate
+
+- **Per-Key Rate Limiting** 
+  - Independent rate limits per key (e.g., per-user, per-API-key)
+  - Automatic cleanup of unused per-key limiters
+  - Configurable cleanup timeout (default: 5 minutes)
+
+- **Builder Integration** (`agent/builder_config.go`)
+  - `WithRateLimit(requestsPerSecond, burstSize)` - Simple configuration
+  - `WithRateLimitConfig(config)` - Advanced configuration
+  - `WithRateLimitKey(key)` - Set key for per-key limiting
+  - Integrated into `Ask()` and `Stream()` methods
+
+- **AgentConfig Integration** (`agent/agent_config.go`)
+  - Added `RateLimitConfig` field to `AgentConfig`
+  - Validation for rate limit parameters
+  - YAML/JSON serialization support
+
+- **Statistics Tracking**
+  - Track allowed, denied, and waited requests
+  - Total wait time accumulation
+  - Available tokens monitoring
+  - Active keys count (for per-key mode)
+
+### 🧪 Testing
+
+- **21 Test Cases** - 100% passing
+  - 8 unit tests (core rate limiter functionality)
+  - 12 integration tests (builder integration, concurrency)
+  - 1 configuration test (default values)
+- **Coverage**: 73.7% of statements in agent package
+
+### 📚 Documentation
+
+- **Examples**
+  - `examples/rate_limit_basic` - Simple rate limiting, burst capacity
+  - `examples/rate_limit_advanced` - Per-key limits, concurrent requests
+  
+- **README Updates**
+  - Added rate limiting to Features list
+  - New section with usage examples
+  - Link to comprehensive Rate Limiting Guide
+
+- **Comprehensive Guide** (`docs/RATE_LIMITING_GUIDE.md`)
+  - 957 lines covering algorithms, best practices
+  - Comparison of 4 rate limiting algorithms
+  - Implementation details and design decisions
+
+### 📖 Usage Examples
+
+**Simple Rate Limiting**:
+```go
+ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithRateLimit(10.0, 20) // 10 req/s, burst of 20
+
+// Automatically throttled
+for i := 0; i < 100; i++ {
+    ai.Ask(ctx, fmt.Sprintf("Question %d", i))
+}
+```
+
+**Per-Key Rate Limiting**:
+```go
+config := agent.RateLimitConfig{
+    Enabled:           true,
+    RequestsPerSecond: 5.0,
+    BurstSize:         10,
+    PerKey:            true, // Enable per-key limits
+}
+
+// Different users get independent rate limits
+aiUser1 := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithRateLimitConfig(config).
+    WithRateLimitKey("user-123")
+```
+
+### 🔧 Configuration Options
+
+```go
+type RateLimitConfig struct {
+    Enabled           bool          // Enable/disable rate limiting
+    RequestsPerSecond float64       // Sustained request rate
+    BurstSize         int           // Maximum burst requests
+    PerKey            bool          // Enable per-key rate limiting
+    KeyTimeout        time.Duration // Cleanup timeout for unused keys
+    WaitTimeout       time.Duration // Max wait time per request
+}
+```
+
+### 🔄 Migration
+
+Rate limiting is **disabled by default** for backward compatibility:
+
+```go
+// No changes needed for existing code
+ai := agent.NewOpenAI("gpt-4o-mini", apiKey)
+ai.Ask(ctx, "Hello") // Works as before
+
+// Enable rate limiting when needed
+ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithRateLimit(10.0, 20) // Now rate limited
+```
+
+### 📊 Dependencies
+
+- Added `golang.org/x/time v0.14.0` for token bucket implementation
+
+### 🎯 Key Benefits
+
+- **API Compliance**: Stay within provider rate limits
+- **Cost Control**: Prevent accidental quota exhaustion
+- **Fair Usage**: Implement per-user quotas in multi-tenant apps
+- **Burst Handling**: Allow temporary spikes while maintaining sustained rate
+- **Zero Overhead**: Disabled by default, no performance impact when not used
+
+---
+
 ## [0.7.2] - 2025-11-11 🔧 Hotfix - Module Publishing Fix
 
 **Hotfix Release** - Fixes module publishing issue caused by invalid file name in v0.7.1.
