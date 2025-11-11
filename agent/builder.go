@@ -721,9 +721,3 @@ func (b *Builder) addMessage(message Message) {
 //	// Output example:
 //	// [2025-01-15 10:30:46.456] INFO: Request completed | duration_ms=1332 tokens_prompt=12 tokens_completion=45
 //	// [2025-01-15 10:30:47.789] INFO: Cache hit | cache_key=abc123
-
-// getLogger returns the configured logger or NoopLogger if none is set.
-// This ensures zero overhead when logging is not enabled.
-
-// injectLoggerToTools propagates the Builder's logger to the tools package
-// using a callback function via go:linkname to avoid import cycles.

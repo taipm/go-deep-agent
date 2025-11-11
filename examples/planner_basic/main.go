@@ -1,4 +1,3 @@
-package plannerbasic
 // Package main demonstrates basic planning capabilities of go-deep-agent.
 // This example shows how to use PlanAndExecute to decompose and execute complex goals.
 package main

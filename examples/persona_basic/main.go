@@ -1,4 +1,3 @@
-package personabasic
 package main
 
 import (
