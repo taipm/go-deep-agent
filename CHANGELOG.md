@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.4] - 2025-11-12 📚 Examples Enhancement
+
+**Examples Release** - Added professional ReAct + MathTool example and cleaned up duplicates.
+
+### ✨ Added
+
+- **ReAct + MathTool Example** (`examples/react_math/`)
+  - Comprehensive demonstration of ReAct pattern with built-in `tools.NewMathTool()`
+  - 5 complete examples: calculation, statistics, multi-step reasoning, unit conversion, full trace
+  - Shows ReAct auto-executes tools (no `WithAutoExecute` needed)
+  - Addresses common misconceptions about ReAct + tools integration
+  - Professional math operations powered by `govaluate` and `gonum`
+
+- **Examples Documentation** (`examples/CLEANUP_SUMMARY.md`)
+  - Complete inventory of 50+ examples by category
+  - Cleanup rationale and impact assessment
+  - Recommendations for future consolidation
+
+### 🧹 Removed
+
+- **Duplicate Example** - Removed `examples/openai_tool_test.go`
+  - Was identical to `examples/openai_tools_demo.go` (169 lines)
+  - Kept the more descriptively named version
+
+### 📖 Documentation
+
+- **react_math/README.md** - Comprehensive guide showing:
+  - MathTool capabilities (evaluate, statistics, solve, convert, random)
+  - Comparison: custom calculator vs built-in MathTool
+  - Why ReAct doesn't need `WithAutoExecute(true)`
+  - Expected output for all examples
+
+### 🎯 Impact
+
+- Clarifies ReAct pattern usage with built-in tools
+- Demonstrates professional approach vs custom tool implementations
+- Improves developer understanding of tool execution in ReAct mode
+
 ## [0.7.3] - 2025-11-11 🚦 Rate Limiting
 
 **New Feature Release** - Comprehensive rate limiting support with token bucket algorithm.
