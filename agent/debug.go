@@ -303,3 +303,64 @@ func sanitizeForLogging(content string, redactSecrets bool, maxLength int) strin
 
 	return result
 }
+
+// logReActIteration logs a ReAct iteration with tree-style formatting.
+// Added in v0.7.7 for improved debug experience.
+//
+// Example output:
+//
+//	[DEBUG] ReAct Iteration 1/5
+//	[DEBUG] ├─ THOUGHT: I need to calculate 500000 + (500000 * 0.5)
+//	[DEBUG] ├─ ACTION: math(operation="evaluate", expression="500000+(500000*0.5)")
+//	[DEBUG] ├─ OBSERVATION: 750000.000000
+//	[DEBUG] └─ Duration: 1.2s
+func (d *debugLogger) logReActIteration(iteration, maxIterations int, thought, action, observation string, duration time.Duration) {
+	if !d.isEnabled() || !d.config.LogToolExecutions {
+		return
+	}
+
+	ctx := context.Background()
+
+	// Log iteration header
+	d.logger.Info(ctx, fmt.Sprintf("[DEBUG] ReAct Iteration %d/%d", iteration, maxIterations))
+
+	// Log thought (if present)
+	if thought != "" {
+		thoughtMsg := d.truncate(thought)
+		d.logger.Info(ctx, fmt.Sprintf("[DEBUG] ├─ THOUGHT: %s", thoughtMsg))
+	}
+
+	// Log action (if present)
+	if action != "" {
+		actionMsg := d.truncate(action)
+		d.logger.Info(ctx, fmt.Sprintf("[DEBUG] ├─ ACTION: %s", actionMsg))
+	}
+
+	// Log observation (if present)
+	if observation != "" {
+		obsMsg := d.truncate(observation)
+		d.logger.Info(ctx, fmt.Sprintf("[DEBUG] ├─ OBSERVATION: %s", obsMsg))
+	}
+
+	// Log duration (final line with └─)
+	d.logger.Info(ctx, fmt.Sprintf("[DEBUG] └─ Duration: %s", formatDuration(duration)))
+}
+
+// logReActFinalAnswer logs the final answer from ReAct execution with tree-style formatting.
+// Added in v0.7.7.
+//
+// Example output:
+//
+//	[DEBUG] ReAct Iteration 2/5
+//	[DEBUG] └─ FINAL ANSWER: The result is $750,000
+func (d *debugLogger) logReActFinalAnswer(iteration, maxIterations int, answer string) {
+	if !d.isEnabled() || !d.config.LogToolExecutions {
+		return
+	}
+
+	ctx := context.Background()
+	d.logger.Info(ctx, fmt.Sprintf("[DEBUG] ReAct Iteration %d/%d", iteration, maxIterations))
+
+	answerMsg := d.truncate(answer)
+	d.logger.Info(ctx, fmt.Sprintf("[DEBUG] └─ FINAL ANSWER: %s", answerMsg))
+}

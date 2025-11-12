@@ -459,3 +459,153 @@ func TestReActError(t *testing.T) {
 		}
 	})
 }
+
+// TestToolError tests the ToolError type and its methods (v0.7.7)
+func TestToolError(t *testing.T) {
+	t.Run("NewRichToolError creates correct structure", func(t *testing.T) {
+		err := NewRichToolError(
+			"MathTool",
+			"Missing required parameter 'operation'",
+			"operation: \"evaluate\" | \"statistics\" | \"solve\"",
+			"math(operation=\"evaluate\", expression=\"100+200\")",
+			"https://github.com/taipm/go-deep-agent#mathtool",
+		)
+
+		if err.Tool != "MathTool" {
+			t.Errorf("Expected Tool='MathTool', got '%s'", err.Tool)
+		}
+
+		if err.Message != "Missing required parameter 'operation'" {
+			t.Errorf("Expected Message='Missing required parameter 'operation'', got '%s'", err.Message)
+		}
+
+		if err.Parameter != "operation: \"evaluate\" | \"statistics\" | \"solve\"" {
+			t.Errorf("Expected Parameter spec, got '%s'", err.Parameter)
+		}
+
+		if err.Example != "math(operation=\"evaluate\", expression=\"100+200\")" {
+			t.Errorf("Expected Example, got '%s'", err.Example)
+		}
+
+		if err.DocsURL != "https://github.com/taipm/go-deep-agent#mathtool" {
+			t.Errorf("Expected DocsURL, got '%s'", err.DocsURL)
+		}
+
+		if !errors.Is(err, ErrToolExecution) {
+			t.Error("Expected ToolError to wrap ErrToolExecution")
+		}
+	})
+
+	t.Run("NewToolParameterError creates correct structure", func(t *testing.T) {
+		err := NewToolParameterError(
+			"MathTool",
+			"operation",
+			"\"evaluate\" | \"statistics\" | \"solve\"",
+			"math(operation=\"evaluate\", expression=\"100+200\")",
+		)
+
+		if err.Tool != "MathTool" {
+			t.Errorf("Expected Tool='MathTool', got '%s'", err.Tool)
+		}
+
+		expectedMsg := "Missing or invalid parameter 'operation'"
+		if err.Message != expectedMsg {
+			t.Errorf("Expected Message='%s', got '%s'", expectedMsg, err.Message)
+		}
+
+		expectedParam := "operation: \"evaluate\" | \"statistics\" | \"solve\""
+		if err.Parameter != expectedParam {
+			t.Errorf("Expected Parameter='%s', got '%s'", expectedParam, err.Parameter)
+		}
+
+		if err.DocsURL == "" {
+			t.Error("Expected DocsURL to be set by default")
+		}
+	})
+
+	t.Run("ToolError.Error() formats correctly", func(t *testing.T) {
+		err := NewRichToolError(
+			"MathTool",
+			"Missing required parameter 'operation'",
+			"operation: \"evaluate\" | \"statistics\" | \"solve\"",
+			"math(operation=\"evaluate\", expression=\"100+200\")",
+			"https://github.com/taipm/go-deep-agent#mathtool",
+		)
+
+		errMsg := err.Error()
+
+		// Check that error message contains all components
+		expectedComponents := []string{
+			"MathTool Error",
+			"Missing required parameter 'operation'",
+			"Required parameter:",
+			"operation: \"evaluate\" | \"statistics\" | \"solve\"",
+			"Example:",
+			"math(operation=\"evaluate\", expression=\"100+200\")",
+			"Docs:",
+			"https://github.com/taipm/go-deep-agent#mathtool",
+		}
+
+		for _, component := range expectedComponents {
+			if !contains(errMsg, component) {
+				t.Errorf("Expected error message to contain '%s'\nGot: %s", component, errMsg)
+			}
+		}
+	})
+
+	t.Run("ToolError.Error() handles optional fields", func(t *testing.T) {
+		// Test with minimal fields
+		err := NewRichToolError(
+			"TestTool",
+			"Something went wrong",
+			"", // No parameter
+			"", // No example
+			"", // No docs
+		)
+
+		errMsg := err.Error()
+
+		// Should still format correctly
+		if !contains(errMsg, "TestTool Error") {
+			t.Error("Expected tool name in error message")
+		}
+
+		if !contains(errMsg, "Something went wrong") {
+			t.Error("Expected error description in message")
+		}
+
+		// Optional fields should not appear
+		if contains(errMsg, "Required parameter:") {
+			t.Error("Expected no parameter section when Parameter is empty")
+		}
+
+		if contains(errMsg, "Example:") {
+			t.Error("Expected no example section when Example is empty")
+		}
+
+		if contains(errMsg, "Docs:") {
+			t.Error("Expected no docs section when DocsURL is empty")
+		}
+	})
+
+	t.Run("IsToolError checks correctly", func(t *testing.T) {
+		toolErr := NewToolParameterError("MathTool", "operation", "...", "...")
+
+		if !IsToolError(toolErr) {
+			t.Error("Expected IsToolError to return true for ToolError")
+		}
+
+		genericErr := errors.New("generic error")
+		if IsToolError(genericErr) {
+			t.Error("Expected IsToolError to return false for generic error")
+		}
+	})
+
+	t.Run("ToolError unwraps correctly", func(t *testing.T) {
+		err := NewToolParameterError("MathTool", "operation", "...", "...")
+
+		if !errors.Is(err, ErrToolExecution) {
+			t.Error("Expected ToolError to unwrap to ErrToolExecution")
+		}
+	})
+}

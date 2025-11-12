@@ -129,6 +129,10 @@ func (b *Builder) executeReActNative(ctx context.Context, task string) (*ReActRe
 
 	// Execution loop
 	for iteration := 0; iteration < b.reactConfig.MaxIterations; iteration++ {
+		// Track iteration start time for debug logging (v0.7.7)
+		iterationStart := time.Now()
+		var iterationThought, iterationAction, iterationObservation string
+
 		if b.reactConfig.EnableTimeline {
 			result.Timeline.AddEvent("iteration_start", fmt.Sprintf("Iteration %d started", iteration+1), 0, nil)
 		}
@@ -249,6 +253,9 @@ func (b *Builder) executeReActNative(ctx context.Context, task string) (*ReActRe
 				}
 				result.Steps = append(result.Steps, step)
 
+				// Capture for debug logging (v0.7.7)
+				iterationThought = args.Reasoning
+
 				if b.reactConfig.EnableTimeline {
 					result.Timeline.AddEvent("thought", args.Reasoning, 0, nil)
 				}
@@ -283,6 +290,9 @@ func (b *Builder) executeReActNative(ctx context.Context, task string) (*ReActRe
 				}
 				result.Steps = append(result.Steps, actionStep)
 
+				// Capture for debug logging (v0.7.7)
+				iterationAction = fmt.Sprintf("%s(%v)", args.ToolName, args.ToolArguments)
+
 				if b.reactConfig.EnableMetrics {
 					result.Metrics.ToolCalls++
 				}
@@ -316,6 +326,9 @@ func (b *Builder) executeReActNative(ctx context.Context, task string) (*ReActRe
 					Error:     toolErr,
 				}
 				result.Steps = append(result.Steps, obsStep)
+
+				// Capture for debug logging (v0.7.7)
+				iterationObservation = obsContent
 
 				if b.reactConfig.EnableTimeline {
 					result.Timeline.AddEvent("observation", obsContent, 0, nil)
@@ -368,6 +381,11 @@ func (b *Builder) executeReActNative(ctx context.Context, task string) (*ReActRe
 				result.Success = true
 				result.Iterations = iteration + 1
 
+				// Debug logging: Log final answer (v0.7.7)
+				if b.debugLogger != nil {
+					b.debugLogger.logReActFinalAnswer(iteration+1, b.reactConfig.MaxIterations, args.Answer)
+				}
+
 				return result, nil
 
 			default:
@@ -376,6 +394,19 @@ func (b *Builder) executeReActNative(ctx context.Context, task string) (*ReActRe
 				result.Error = fmt.Errorf("unknown meta-tool called: %s", funcName)
 				return result, result.Error
 			}
+		}
+
+		// Debug logging: Log iteration summary with tree-style output (v0.7.7)
+		if b.debugLogger != nil {
+			iterationDuration := time.Since(iterationStart)
+			b.debugLogger.logReActIteration(
+				iteration+1,
+				b.reactConfig.MaxIterations,
+				iterationThought,
+				iterationAction,
+				iterationObservation,
+				iterationDuration,
+			)
 		}
 	}
 

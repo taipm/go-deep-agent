@@ -102,8 +102,8 @@ func main() {
 		WithTools(weatherTool, stockTool, newsTool).
 		WithAutoExecute(true).
 		WithMaxToolRounds(3).
-		WithParallelTools(true). // Enable parallel execution
-		WithMaxWorkers(10).      // Allow up to 10 concurrent tools
+		WithParallelTools(true).         // Enable parallel execution
+		WithMaxWorkers(10).              // Allow up to 10 concurrent tools
 		WithToolTimeout(5 * time.Second) // Timeout per tool
 
 	start = time.Now()

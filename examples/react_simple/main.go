@@ -91,7 +91,7 @@ func main() {
 
 	for i, task := range tasks {
 		fmt.Printf("Task %d: %s\n", i+1, task)
-		
+
 		result, err := ai.Execute(ctx, task)
 		if err != nil {
 			log.Printf("Error: %v\n", err)

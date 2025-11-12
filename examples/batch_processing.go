@@ -187,7 +187,7 @@ func batchStats(apiKey string) {
 	fmt.Printf("  Total Tokens: %d\n", stats.TotalTokens)
 	fmt.Printf("  Prompt Tokens: %d\n", stats.PromptTokens)
 	fmt.Printf("  Completion Tokens: %d\n", stats.CompletionTokens)
-	
+
 	if stats.Successful > 0 {
 		avgTokens := float64(stats.TotalTokens) / float64(stats.Successful)
 		fmt.Printf("  Avg Tokens/Request: %.1f\n", avgTokens)

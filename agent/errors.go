@@ -310,3 +310,142 @@ func WrapMaxRetries(attempts int, lastErr error) error {
 func WrapToolExecution(toolName string, err error) error {
 	return fmt.Errorf("%w (%s): %v", ErrToolExecution, toolName, err)
 }
+
+// ToolError provides rich, actionable error context for tool execution failures.
+// Added in v0.7.7 to dramatically improve debugging experience.
+//
+// This error type provides:
+//   - Tool name and failing parameter
+//   - Human-readable error message
+//   - Example usage showing correct format
+//   - Documentation URL for reference
+//
+// Usage:
+//
+//	result, err := tool.Call(params)
+//	if err != nil {
+//	    var toolErr *agent.ToolError
+//	    if errors.As(err, &toolErr) {
+//	        fmt.Printf("Tool: %s\n", toolErr.Tool)
+//	        fmt.Printf("Parameter: %s\n", toolErr.Parameter)
+//	        fmt.Printf("Example: %s\n", toolErr.Example)
+//	    }
+//	}
+type ToolError struct {
+	// Tool is the name of the tool that failed
+	Tool string
+
+	// Parameter is the specific parameter that caused the error (optional)
+	Parameter string
+
+	// Message is the human-readable error description
+	Message string
+
+	// Example shows correct usage of the tool
+	Example string
+
+	// DocsURL points to documentation for more details
+	DocsURL string
+
+	// Err is the underlying error (if any)
+	Err error
+}
+
+// Error implements the error interface with rich formatting.
+// Output format matches the suggestion specification:
+//
+//	MathTool Error: Missing required parameter 'operation'
+//
+//	Required parameters:
+//	  operation: "evaluate" | "statistics" | "solve" | "convert" | "random"
+//	  expression: "math expression" (for operation="evaluate")
+//
+//	Example:
+//	  math(operation="evaluate", expression="100+200")
+//
+//	Docs: https://github.com/.../README.md#mathtool
+func (e *ToolError) Error() string {
+	// Build the error message
+	msg := fmt.Sprintf("%s Error: %s", e.Tool, e.Message)
+
+	// Add parameter info if available
+	if e.Parameter != "" {
+		msg += fmt.Sprintf("\n\nRequired parameter:\n  %s", e.Parameter)
+	}
+
+	// Add example if available
+	if e.Example != "" {
+		msg += fmt.Sprintf("\n\nExample:\n  %s", e.Example)
+	}
+
+	// Add docs URL if available
+	if e.DocsURL != "" {
+		msg += fmt.Sprintf("\n\nDocs: %s", e.DocsURL)
+	}
+
+	return msg
+}
+
+// Unwrap returns the underlying error for errors.Is/As compatibility
+func (e *ToolError) Unwrap() error {
+	return e.Err
+}
+
+// NewRichToolError creates a ToolError with all fields for rich error messages.
+// Added in v0.7.7 for dramatically improved debugging experience.
+//
+// Parameters:
+//   - tool: Name of the tool (e.g., "MathTool", "FileSystemTool")
+//   - message: Human-readable error description
+//   - parameter: Parameter specification (optional, can be empty)
+//   - example: Example usage showing correct format
+//   - docsURL: Documentation URL for reference
+//
+// Example:
+//
+//	return NewRichToolError(
+//	    "MathTool",
+//	    "Missing required parameter 'operation'",
+//	    "operation: \"evaluate\" | \"statistics\" | \"solve\"",
+//	    "math(operation=\"evaluate\", expression=\"100+200\")",
+//	    "https://github.com/taipm/go-deep-agent#mathtool",
+//	)
+func NewRichToolError(tool, message, parameter, example, docsURL string) *ToolError {
+	return &ToolError{
+		Tool:      tool,
+		Message:   message,
+		Parameter: parameter,
+		Example:   example,
+		DocsURL:   docsURL,
+		Err:       ErrToolExecution,
+	}
+}
+
+// NewToolParameterError creates a ToolError for missing/invalid parameter.
+// This is a convenience function for the most common tool error case.
+// Added in v0.7.7.
+//
+// Example:
+//
+//	return NewToolParameterError(
+//	    "MathTool",
+//	    "operation",
+//	    "\"evaluate\" | \"statistics\" | \"solve\"",
+//	    "math(operation=\"evaluate\", expression=\"100+200\")",
+//	)
+func NewToolParameterError(tool, paramName, paramSpec, example string) *ToolError {
+	return &ToolError{
+		Tool:      tool,
+		Message:   fmt.Sprintf("Missing or invalid parameter '%s'", paramName),
+		Parameter: fmt.Sprintf("%s: %s", paramName, paramSpec),
+		Example:   example,
+		DocsURL:   "https://github.com/taipm/go-deep-agent#built-in-tools",
+		Err:       ErrToolExecution,
+	}
+}
+
+// IsToolError checks if error is a ToolError
+func IsToolError(err error) bool {
+	var toolErr *ToolError
+	return errors.As(err, &toolErr)
+}

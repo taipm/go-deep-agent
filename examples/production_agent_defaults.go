@@ -26,10 +26,10 @@ func main() {
 
 	// Start with defaults, then customize
 	ai := agent.NewOpenAI("gpt-4", apiKey).
-		WithDefaults().          // Production-ready: Memory(20), Retry(3), Timeout(30s), ExponentialBackoff
-		WithMaxHistory(50).      // Customize: Increase memory to 50 messages
-		WithTemperature(0.7).    // Add: Creative temperature
-		WithMaxTokens(500).      // Add: Limit response length
+		WithDefaults().                                    // Production-ready: Memory(20), Retry(3), Timeout(30s), ExponentialBackoff
+		WithMaxHistory(50).                                // Customize: Increase memory to 50 messages
+		WithTemperature(0.7).                              // Add: Creative temperature
+		WithMaxTokens(500).                                // Add: Limit response length
 		WithSystem("You are a helpful, concise assistant") // Add: System prompt
 
 	ctx := context.Background()
@@ -107,9 +107,9 @@ func main() {
 	}
 
 	aiWithTools := agent.NewOpenAI("gpt-4o-mini", apiKey).
-		WithDefaults().         // Start with defaults
-		WithTools(calculator).  // Add tool capability
-		WithAutoExecute(true)   // Auto-execute tool calls
+		WithDefaults().        // Start with defaults
+		WithTools(calculator). // Add tool capability
+		WithAutoExecute(true)  // Auto-execute tool calls
 
 	resp3, err := aiWithTools.Ask(ctx, "What is 15.5 multiplied by 3?")
 	if err != nil {

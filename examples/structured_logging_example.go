@@ -157,10 +157,10 @@ func simulateProductionError() error {
 
 	// Layer 3: Error context
 	contextErr := agent.WithContext(codedErr, "fetch user profile", map[string]interface{}{
-		"user_id":       "usr_123456",
-		"endpoint":      "https://api.example.com/v1/users/123456",
-		"retry_count":   3,
-		"timeout_ms":    5000,
+		"user_id":        "usr_123456",
+		"endpoint":       "https://api.example.com/v1/users/123456",
+		"retry_count":    3,
+		"timeout_ms":     5000,
 		"correlation_id": "req_abc123",
 	})
 

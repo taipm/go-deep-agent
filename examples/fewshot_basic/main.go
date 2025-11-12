@@ -19,7 +19,7 @@ func main() {
 
 	// Example: French translation with few-shot examples
 	fmt.Println("=== Few-Shot Translation Example ===")
-	
+
 	ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
 		WithSystem("You are a French translator.").
 		AddFewShotExample("Translate: Hello", "Bonjour").
@@ -30,6 +30,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	fmt.Printf("Translation: %s\n", response)
 }
