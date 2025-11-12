@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/openai/openai-go/v3"
@@ -35,6 +36,46 @@ func (b *Builder) WithAutoExecute(enable bool) *Builder {
 
 func (b *Builder) WithMaxToolRounds(max int) *Builder {
 	b.maxToolRounds = max
+	return b
+}
+
+// WithToolChoice controls how the model uses tools.
+//
+// Valid values:
+//   - "auto": Let the model decide whether to use tools (default)
+//   - "required": Force the model to call at least one tool
+//   - "none": Disable tool calling for this request
+//
+// Use cases:
+//   - Compliance: Force tool usage for auditable operations (financial, legal)
+//   - Quality Control: Ensure 100% accurate data via tool verification
+//   - API Integration: Guarantee real-time data retrieval
+//   - Security: Mandatory verification steps
+//
+// Example:
+//
+//	agent.NewOpenAI("gpt-4o", apiKey).
+//	    WithTools(calculatorTool).
+//	    WithToolChoice("required"). // Force tool usage
+//	    Ask(ctx, "Calculate 1000 * 750")
+func (b *Builder) WithToolChoice(choice string) *Builder {
+	// Validate choice
+	validChoices := map[string]bool{
+		"auto":     true,
+		"required": true,
+		"none":     true,
+	}
+
+	if !validChoices[choice] {
+		b.lastError = fmt.Errorf("invalid toolChoice value %q: must be one of: auto, required, none", choice)
+		return b
+	}
+
+	// Convert string to OpenAI union param
+	b.toolChoice = &openai.ChatCompletionToolChoiceOptionUnionParam{
+		OfAuto: openai.String(choice),
+	}
+
 	return b
 }
 

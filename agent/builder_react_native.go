@@ -528,6 +528,11 @@ func (b *Builder) callLLMWithMetaTools(ctx context.Context, messages []Message, 
 		params.Temperature = openai.Float(*b.temperature)
 	}
 
+	// Apply tool choice if set
+	if b.toolChoice != nil {
+		params.ToolChoice = *b.toolChoice
+	}
+
 	// Execute request
 	completion, err := b.client.Chat.Completions.New(ctx, params)
 	if err != nil {

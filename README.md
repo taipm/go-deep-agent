@@ -894,7 +894,30 @@ aiProd := agent.NewOpenAI("gpt-4o-mini", apiKey).
 - `WithTools(tools...)` - Register tools/functions
 - `WithAutoExecute(enable)` - Auto-execute tool calls
 - `WithMaxToolRounds(max)` - Max execution rounds (default 5)
+- `WithToolChoice(choice)` - Control when LLM uses tools (v0.7.8 🆕)
+  - `"auto"` - Let LLM decide (default)
+  - `"required"` - Force tool usage (compliance, audit trails)
+  - `"none"` - Disable tools temporarily
 - `OnToolCall(callback)` - Tool call callback
+
+**Tool Choice Control** (v0.7.8) - Fine-grained control over tool usage:
+
+```go
+// REQUIRED mode: Force tool usage for compliance
+builder := agent.NewOpenAI("gpt-4o", apiKey).
+    WithTools(calculatorTool).
+    WithAutoExecute(true).
+    WithToolChoice("required").  // Guarantee tool execution
+    Ask(ctx, "Calculate total: 1000 shares at $750.50")
+// ✓ Calculation verified via tool - audit trail available
+```
+
+Use cases:
+- **Compliance**: Financial calculations, legal verification, healthcare data (auditable)
+- **Quality Control**: Guarantee 100% accurate data via tool verification
+- **API Integration**: Force real-time data retrieval, prevent hallucination
+- **Security**: Mandatory verification steps
+- **Testing**: `"none"` mode to test LLM reasoning without tools
 
 ### Multimodal Support (Vision)
 

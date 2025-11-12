@@ -53,9 +53,10 @@ type Builder struct {
 	onRefusal  func(refusal string)                             // Called when refusal detected
 
 	// Tool calling
-	tools         []*Tool // Registered tools
-	autoExecute   bool    // If true, automatically execute tool calls
-	maxToolRounds int     // Maximum number of tool execution rounds (default 5)
+	tools         []*Tool                                          // Registered tools
+	autoExecute   bool                                             // If true, automatically execute tool calls
+	maxToolRounds int                                              // Maximum number of tool execution rounds (default 5)
+	toolChoice    *openai.ChatCompletionToolChoiceOptionUnionParam // Tool choice control ("auto", "required", "none")
 
 	// Tool orchestration (parallel execution)
 	enableParallel bool          // Enable parallel tool execution (default: false)

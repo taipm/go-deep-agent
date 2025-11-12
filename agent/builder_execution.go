@@ -62,6 +62,13 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 		return "", err
 	}
 
+	// Validate tool choice configuration
+	if b.toolChoice != nil && len(b.tools) == 0 {
+		err := fmt.Errorf("toolChoice is set but no tools are configured: use WithTools() to add tools before setting toolChoice")
+		logger.Error(ctx, "Invalid toolChoice configuration", F("error", err.Error()))
+		return "", err
+	}
+
 	// Ensure client is initialized
 	if err := b.ensureClient(); err != nil {
 		logger.Error(ctx, "Failed to initialize client", F("error", err.Error()))
@@ -414,6 +421,13 @@ func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
 		return "", err
 	}
 
+	// Validate tool choice configuration
+	if b.toolChoice != nil && len(b.tools) == 0 {
+		err := fmt.Errorf("toolChoice is set but no tools are configured: use WithTools() to add tools before setting toolChoice")
+		logger.Error(ctx, "Invalid toolChoice configuration in stream", F("error", err.Error()))
+		return "", err
+	}
+
 	// Ensure client is initialized
 	if err := b.ensureClient(); err != nil {
 		logger.Error(ctx, "Failed to initialize client for stream", F("error", err.Error()))
@@ -654,6 +668,11 @@ func (b *Builder) buildParams(messages []openai.ChatCompletionMessageParamUnion)
 			toolParams[i] = tool.toOpenAI()
 		}
 		params.Tools = toolParams
+	}
+
+	// Add tool choice if set
+	if b.toolChoice != nil {
+		params.ToolChoice = *b.toolChoice
 	}
 
 	// Add response format if set
