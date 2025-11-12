@@ -378,3 +378,84 @@ func TestErrorHandlingChaining(t *testing.T) {
 		t.Error("Expected useExpBackoff to be true")
 	}
 }
+
+// TestReActError tests ReActError struct (v0.7.6+)
+func TestReActError(t *testing.T) {
+	steps := []ReActStep{
+		{Type: StepTypeThought, Content: "Analyzing the problem"},
+		{Type: StepTypeAction, Content: "search(query)", Tool: "search"},
+		{Type: StepTypeObservation, Content: "Found results"},
+	}
+
+	t.Run("NewReActMaxIterationsError", func(t *testing.T) {
+		err := NewReActMaxIterationsError(5, 5, steps)
+
+		if err.Type != "max_iterations" {
+			t.Errorf("Expected type 'max_iterations', got %s", err.Type)
+		}
+
+		if err.CurrentIteration != 5 {
+			t.Errorf("Expected CurrentIteration=5, got %d", err.CurrentIteration)
+		}
+
+		if err.MaxIterations != 5 {
+			t.Errorf("Expected MaxIterations=5, got %d", err.MaxIterations)
+		}
+
+		if len(err.Steps) != 3 {
+			t.Errorf("Expected 3 steps, got %d", len(err.Steps))
+		}
+
+		if len(err.Suggestions) == 0 {
+			t.Error("Expected suggestions to be non-empty")
+		}
+
+		// Check error message includes key info
+		errMsg := err.Error()
+		if errMsg == "" {
+			t.Error("Expected non-empty error message")
+		}
+	})
+
+	t.Run("NewReActTimeoutError", func(t *testing.T) {
+		err := NewReActTimeoutError(3, 5, steps, "60s")
+
+		if err.Type != "timeout" {
+			t.Errorf("Expected type 'timeout', got %s", err.Type)
+		}
+
+		if err.CurrentIteration != 3 {
+			t.Errorf("Expected CurrentIteration=3, got %d", err.CurrentIteration)
+		}
+
+		if len(err.Suggestions) == 0 {
+			t.Error("Expected suggestions to be non-empty")
+		}
+	})
+
+	t.Run("IsReActMaxIterationsError", func(t *testing.T) {
+		err := NewReActMaxIterationsError(5, 5, steps)
+
+		if !IsReActMaxIterationsError(err) {
+			t.Error("Expected IsReActMaxIterationsError to return true")
+		}
+
+		// Test with base error
+		if !IsReActMaxIterationsError(ErrReActMaxIterations) {
+			t.Error("Expected IsReActMaxIterationsError to recognize base error")
+		}
+
+		// Test with unrelated error
+		if IsReActMaxIterationsError(ErrAPIKey) {
+			t.Error("Expected IsReActMaxIterationsError to return false for unrelated error")
+		}
+	})
+
+	t.Run("ReActError unwraps correctly", func(t *testing.T) {
+		err := NewReActMaxIterationsError(5, 5, steps)
+
+		if !errors.Is(err, ErrReActMaxIterations) {
+			t.Error("Expected ReActError to unwrap to ErrReActMaxIterations")
+		}
+	})
+}

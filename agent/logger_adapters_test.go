@@ -117,13 +117,13 @@ func TestSlogAdapter_JSONHandler(t *testing.T) {
 	adapter := NewSlogAdapter(logger)
 
 	ctx := context.Background()
-	adapter.Info(ctx, "test message", 
+	adapter.Info(ctx, "test message",
 		F("string_field", "value"),
 		F("int_field", 42),
 		F("bool_field", true))
 
 	output := buf.String()
-	
+
 	// Parse JSON to verify structure
 	var logEntry map[string]interface{}
 	if err := json.Unmarshal([]byte(output), &logEntry); err != nil {
@@ -163,7 +163,7 @@ func TestSlogAdapter_MultipleFields(t *testing.T) {
 		F("field4", 3.14))
 
 	output := buf.String()
-	
+
 	expectedFields := []string{"field1", "field2", "field3", "field4"}
 	for _, field := range expectedFields {
 		if !strings.Contains(output, field) {
@@ -198,17 +198,17 @@ func TestSlogAdapter_LevelFiltering(t *testing.T) {
 	adapter := NewSlogAdapter(logger)
 
 	ctx := context.Background()
-	
+
 	// These should be filtered out
 	adapter.Debug(ctx, "debug message")
 	adapter.Info(ctx, "info message")
-	
+
 	// These should appear
 	adapter.Warn(ctx, "warn message")
 	adapter.Error(ctx, "error message")
 
 	output := buf.String()
-	
+
 	if strings.Contains(output, "debug message") {
 		t.Error("Debug message should be filtered out")
 	}
@@ -232,7 +232,7 @@ func TestSlogAdapter_ContextPropagation(t *testing.T) {
 
 	// Create context with value
 	ctx := context.WithValue(context.Background(), "request_id", "12345")
-	
+
 	// Log with context (slog should handle context)
 	adapter.Info(ctx, "test with context", F("key", "value"))
 
@@ -285,7 +285,7 @@ func TestSlogAdapter_FieldTypes(t *testing.T) {
 		F("nil", nil))
 
 	output := buf.String()
-	
+
 	var logEntry map[string]interface{}
 	if err := json.Unmarshal([]byte(output), &logEntry); err != nil {
 		t.Fatalf("Failed to parse JSON: %v", err)
@@ -358,7 +358,7 @@ func TestSlogAdapter_LargeFields(t *testing.T) {
 	adapter := NewSlogAdapter(logger)
 
 	ctx := context.Background()
-	
+
 	// Create 50 fields
 	fields := make([]Field, 50)
 	for i := 0; i < 50; i++ {

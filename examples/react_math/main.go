@@ -46,10 +46,11 @@ func example1SimpleCalculation(ctx context.Context, apiKey string) {
 	fmt.Println("─────────────────────────────────────────────────────\n")
 
 	// Create agent with ReAct mode + built-in MathTool
+	// v0.7.6+: Use WithReActComplexity() for better UX - this is a simple task
 	ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
 		WithReActMode(true).
-		WithReActMaxIterations(3).
-		WithTool(tools.NewMathTool()). // Built-in professional math tool
+		WithReActComplexity(agent.ReActTaskSimple). // 3 iterations, 30s timeout, auto-fallback enabled
+		WithTool(tools.NewMathTool()).              // Built-in professional math tool
 		WithSystem("You are a helpful math assistant. Use the math tool to solve calculations.")
 
 	task := "What is the result of 2 * (15 + 8) - sqrt(16)?"
@@ -74,9 +75,10 @@ func example2Statistics(ctx context.Context, apiKey string) {
 	fmt.Println("Example 2: Statistical Analysis")
 	fmt.Println("─────────────────────────────────────────────────────\n")
 
+	// v0.7.6+: Medium complexity for multi-step statistical tasks
 	ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
 		WithReActMode(true).
-		WithReActMaxIterations(5).
+		WithReActComplexity(agent.ReActTaskMedium). // 5 iterations, 60s timeout
 		WithTool(tools.NewMathTool()).
 		WithSystem("You are a data analyst. Use the math tool for statistical calculations.")
 
@@ -103,9 +105,10 @@ func example3ComplexReasoning(ctx context.Context, apiKey string) {
 	fmt.Println("Example 3: Complex Multi-Step Reasoning")
 	fmt.Println("─────────────────────────────────────────────────────\n")
 
+	// v0.7.6+: Complex task needs more iterations
 	ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
 		WithReActMode(true).
-		WithReActMaxIterations(8).
+		WithReActComplexity(agent.ReActTaskComplex). // 10 iterations, 120s timeout
 		WithTool(tools.NewMathTool()).
 		WithSystem("You are a problem solver. Break down complex problems step by step.")
 

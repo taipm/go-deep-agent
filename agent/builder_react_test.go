@@ -136,6 +136,120 @@ func TestReActConfiguration(t *testing.T) {
 		}
 	})
 
+	t.Run("WithReActComplexity_Simple", func(t *testing.T) {
+		builder := NewOpenAI("gpt-4o-mini", "test-key").
+			WithReActMode(true).
+			WithReActComplexity(ReActTaskSimple)
+
+		if builder.reactConfig.MaxIterations != ReActSimpleMaxIterations {
+			t.Errorf("Expected MaxIterations=%d, got %d", ReActSimpleMaxIterations, builder.reactConfig.MaxIterations)
+		}
+		if builder.reactConfig.Timeout != ReActSimpleTimeout {
+			t.Errorf("Expected Timeout=%v, got %v", ReActSimpleTimeout, builder.reactConfig.Timeout)
+		}
+		if !builder.reactConfig.EnableAutoFallback {
+			t.Error("Expected EnableAutoFallback=true for simple tasks")
+		}
+		if !builder.reactConfig.ForceFinalAnswerAtMax {
+			t.Error("Expected ForceFinalAnswerAtMax=true for simple tasks")
+		}
+		if !builder.reactConfig.EnableIterationReminders {
+			t.Error("Expected EnableIterationReminders=true for simple tasks")
+		}
+	})
+
+	t.Run("WithReActComplexity_Medium", func(t *testing.T) {
+		builder := NewOpenAI("gpt-4o-mini", "test-key").
+			WithReActMode(true).
+			WithReActComplexity(ReActTaskMedium)
+
+		if builder.reactConfig.MaxIterations != ReActMediumMaxIterations {
+			t.Errorf("Expected MaxIterations=%d, got %d", ReActMediumMaxIterations, builder.reactConfig.MaxIterations)
+		}
+		if builder.reactConfig.Timeout != ReActMediumTimeout {
+			t.Errorf("Expected Timeout=%v, got %v", ReActMediumTimeout, builder.reactConfig.Timeout)
+		}
+		if !builder.reactConfig.EnableAutoFallback {
+			t.Error("Expected EnableAutoFallback=true for medium tasks")
+		}
+	})
+
+	t.Run("WithReActComplexity_Complex", func(t *testing.T) {
+		builder := NewOpenAI("gpt-4o-mini", "test-key").
+			WithReActMode(true).
+			WithReActComplexity(ReActTaskComplex)
+
+		if builder.reactConfig.MaxIterations != ReActComplexMaxIterations {
+			t.Errorf("Expected MaxIterations=%d, got %d", ReActComplexMaxIterations, builder.reactConfig.MaxIterations)
+		}
+		if builder.reactConfig.Timeout != ReActComplexTimeout {
+			t.Errorf("Expected Timeout=%v, got %v", ReActComplexTimeout, builder.reactConfig.Timeout)
+		}
+		if !builder.reactConfig.EnableAutoFallback {
+			t.Error("Expected EnableAutoFallback=true for complex tasks")
+		}
+	})
+
+	t.Run("WithReActAutoFallback", func(t *testing.T) {
+		// Test enabled (default)
+		builderEnabled := NewOpenAI("gpt-4o-mini", "test-key").
+			WithReActMode(true).
+			WithReActAutoFallback(true)
+
+		if !builderEnabled.reactConfig.EnableAutoFallback {
+			t.Error("Expected EnableAutoFallback=true when explicitly enabled")
+		}
+
+		// Test disabled
+		builderDisabled := NewOpenAI("gpt-4o-mini", "test-key").
+			WithReActMode(true).
+			WithReActAutoFallback(false)
+
+		if builderDisabled.reactConfig.EnableAutoFallback {
+			t.Error("Expected EnableAutoFallback=false when disabled")
+		}
+	})
+
+	t.Run("WithReActIterationReminders", func(t *testing.T) {
+		// Test enabled (default)
+		builderEnabled := NewOpenAI("gpt-4o-mini", "test-key").
+			WithReActMode(true).
+			WithReActIterationReminders(true)
+
+		if !builderEnabled.reactConfig.EnableIterationReminders {
+			t.Error("Expected EnableIterationReminders=true when explicitly enabled")
+		}
+
+		// Test disabled
+		builderDisabled := NewOpenAI("gpt-4o-mini", "test-key").
+			WithReActMode(true).
+			WithReActIterationReminders(false)
+
+		if builderDisabled.reactConfig.EnableIterationReminders {
+			t.Error("Expected EnableIterationReminders=false when disabled")
+		}
+	})
+
+	t.Run("WithReActForceFinalAnswer", func(t *testing.T) {
+		// Test enabled (default)
+		builderEnabled := NewOpenAI("gpt-4o-mini", "test-key").
+			WithReActMode(true).
+			WithReActForceFinalAnswer(true)
+
+		if !builderEnabled.reactConfig.ForceFinalAnswerAtMax {
+			t.Error("Expected ForceFinalAnswerAtMax=true when explicitly enabled")
+		}
+
+		// Test disabled
+		builderDisabled := NewOpenAI("gpt-4o-mini", "test-key").
+			WithReActMode(true).
+			WithReActForceFinalAnswer(false)
+
+		if builderDisabled.reactConfig.ForceFinalAnswerAtMax {
+			t.Error("Expected ForceFinalAnswerAtMax=false when disabled")
+		}
+	})
+
 	t.Run("MethodChaining", func(t *testing.T) {
 		builder := NewOpenAI("gpt-4o-mini", "test-key").
 			WithReActMode(true).

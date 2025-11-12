@@ -137,6 +137,42 @@ func (b *Builder) executeReActNative(ctx context.Context, task string) (*ReActRe
 			result.Metrics.TotalIterations = iteration + 1
 		}
 
+		// Progressive urgency reminders (v0.7.6+)
+		// Inject reminder messages at critical points to guide LLM toward final_answer()
+		if b.reactConfig.EnableIterationReminders {
+			remainingIterations := b.reactConfig.MaxIterations - (iteration + 1)
+
+			// At n-2 iterations: Gentle reminder
+			if remainingIterations == 2 {
+				reminder := System("⚠️ REMINDER: You have 2 iterations remaining before max iterations is reached. Please start wrapping up your reasoning and prepare to call final_answer().")
+				messages = append(messages, reminder)
+
+				if b.reactConfig.EnableTimeline {
+					result.Timeline.AddEvent("reminder", "2 iterations remaining (gentle reminder)", 0, nil)
+				}
+			}
+
+			// At n-1 iterations: Urgent reminder
+			if remainingIterations == 1 {
+				reminder := System("⚠️ URGENT: This is your LAST iteration before max iterations is reached. You MUST call final_answer() now with your best response based on the work completed so far.")
+				messages = append(messages, reminder)
+
+				if b.reactConfig.EnableTimeline {
+					result.Timeline.AddEvent("reminder", "1 iteration remaining (urgent reminder)", 0, nil)
+				}
+			}
+
+			// At n iterations (last one): Critical reminder
+			if remainingIterations == 0 {
+				reminder := System("🚨 CRITICAL: This is the FINAL iteration. You absolutely MUST call final_answer() in this iteration. If you don't, your work will be lost. Provide your best answer based on your reasoning so far.")
+				messages = append(messages, reminder)
+
+				if b.reactConfig.EnableTimeline {
+					result.Timeline.AddEvent("reminder", "0 iterations remaining (critical reminder)", 0, nil)
+				}
+			}
+		}
+
 		// Call LLM with meta-tools
 		completion, err := b.callLLMWithMetaTools(ctx, messages, metaTools)
 		if err != nil {
@@ -344,14 +380,98 @@ func (b *Builder) executeReActNative(ctx context.Context, task string) (*ReActRe
 	}
 
 	// If we reach here, max iterations exceeded without final_answer
+	// Check if auto-fallback is enabled (v0.7.6+)
+	if b.reactConfig.EnableAutoFallback || b.reactConfig.ForceFinalAnswerAtMax {
+		// Synthesize a final answer from the collected reasoning steps
+		fallbackAnswer := b.synthesizeFallbackAnswer(result.Steps, b.reactConfig.MaxIterations)
+
+		result.Answer = fallbackAnswer
+		result.Success = true
+		result.Iterations = b.reactConfig.MaxIterations
+
+		// Add a fallback step to document what happened
+		fallbackStep := ReActStep{
+			Type:      StepTypeFinal,
+			Content:   fallbackAnswer,
+			Timestamp: time.Now(),
+		}
+		result.Steps = append(result.Steps, fallbackStep)
+
+		if b.reactConfig.EnableTimeline {
+			result.Timeline.AddEvent("auto_fallback", "Auto-fallback: synthesized answer from steps", 0, nil)
+		}
+
+		// Callback: onComplete (even though we hit max iterations)
+		if b.reactConfig.Callback != nil {
+			b.reactConfig.Callback.OnComplete(result)
+		}
+
+		return result, nil
+	}
+
+	// Auto-fallback disabled - return rich error with debugging info (v0.7.6+)
 	result.Success = false
-	result.Error = fmt.Errorf("max iterations (%d) reached without final answer", b.reactConfig.MaxIterations)
+	result.Error = NewReActMaxIterationsError(b.reactConfig.MaxIterations, b.reactConfig.MaxIterations, result.Steps)
 
 	if b.reactConfig.EnableTimeline {
 		result.Timeline.AddEvent("max_iterations", "Max iterations reached", 0, nil)
 	}
 
+	// Callback: onError
+	if b.reactConfig.Callback != nil {
+		b.reactConfig.Callback.OnError(result.Error)
+	}
+
 	return result, result.Error
+}
+
+// synthesizeFallbackAnswer creates a best-effort answer from the reasoning steps
+// when max iterations is reached without an explicit final_answer() call.
+//
+// This is part of the auto-fallback mechanism (v0.7.6+) that provides graceful
+// degradation instead of hard errors.
+func (b *Builder) synthesizeFallbackAnswer(steps []ReActStep, maxIterations int) string {
+	if len(steps) == 0 {
+		return fmt.Sprintf("⚠️ Max iterations (%d) reached with no reasoning steps. Unable to provide an answer.", maxIterations)
+	}
+
+	// Build summary of what was accomplished
+	thoughtCount := 0
+	actionCount := 0
+	lastThought := ""
+	lastObservation := ""
+
+	for _, step := range steps {
+		switch step.Type {
+		case StepTypeThought:
+			thoughtCount++
+			lastThought = step.Content
+		case StepTypeAction:
+			actionCount++
+		case StepTypeObservation:
+			lastObservation = step.Content
+		}
+	}
+
+	// Synthesize answer based on available information
+	var answer string
+	answer += fmt.Sprintf("⚠️ Auto-fallback activated: Max iterations (%d) reached without explicit final answer.\n\n", maxIterations)
+	answer += fmt.Sprintf("**Work Summary**: %d thoughts, %d actions taken.\n\n", thoughtCount, actionCount)
+
+	if lastThought != "" {
+		answer += fmt.Sprintf("**Last Reasoning**: %s\n\n", lastThought)
+	}
+
+	if lastObservation != "" {
+		answer += fmt.Sprintf("**Last Observation**: %s\n\n", lastObservation)
+	}
+
+	answer += "**Note**: This answer was synthesized from partial work. For better results, consider:\n"
+	answer += "1. Increasing MaxIterations for this task complexity\n"
+	answer += "2. Simplifying the task\n"
+	answer += "3. Using WithReActComplexity() to auto-configure settings"
+
+	return answer
 }
 
 // callLLMWithMetaTools calls the LLM with meta-tools and returns the completion.

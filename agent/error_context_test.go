@@ -8,17 +8,17 @@ import (
 
 func TestErrorContext_Error(t *testing.T) {
 	baseErr := errors.New("connection failed")
-	
+
 	// Simple context
 	err := WithSimpleContext(baseErr, "database query")
 	expected := "database query: connection failed"
 	if err.Error() != expected {
 		t.Errorf("Expected %q, got %q", expected, err.Error())
 	}
-	
+
 	// With details
 	err = WithContext(baseErr, "API request", map[string]interface{}{
-		"model": "gpt-4o-mini",
+		"model":  "gpt-4o-mini",
 		"tokens": 150,
 	})
 	msg := err.Error()
@@ -36,11 +36,11 @@ func TestErrorContext_Error(t *testing.T) {
 func TestErrorContext_Unwrap(t *testing.T) {
 	baseErr := errors.New("base error")
 	wrapped := WithSimpleContext(baseErr, "operation")
-	
+
 	if unwrapped := errors.Unwrap(wrapped); unwrapped != baseErr {
 		t.Errorf("Expected unwrap to return base error, got %v", unwrapped)
 	}
-	
+
 	// Test errors.Is
 	if !errors.Is(wrapped, baseErr) {
 		t.Error("Expected errors.Is to work with wrapped error")
@@ -52,7 +52,7 @@ func TestWithContext_NilError(t *testing.T) {
 	if err != nil {
 		t.Errorf("Expected nil for nil error, got %v", err)
 	}
-	
+
 	err = WithSimpleContext(nil, "operation")
 	if err != nil {
 		t.Errorf("Expected nil for nil error, got %v", err)
@@ -64,7 +64,7 @@ func TestGetErrorContext(t *testing.T) {
 	contextErr := WithContext(baseErr, "test op", map[string]interface{}{
 		"key": "value",
 	})
-	
+
 	// Should extract context
 	ctx := GetErrorContext(contextErr)
 	if ctx == nil {
@@ -76,7 +76,7 @@ func TestGetErrorContext(t *testing.T) {
 	if ctx.Details["key"] != "value" {
 		t.Error("Expected to preserve details")
 	}
-	
+
 	// Should return nil for regular error
 	ctx = GetErrorContext(baseErr)
 	if ctx != nil {
@@ -87,15 +87,15 @@ func TestGetErrorContext(t *testing.T) {
 func TestIsErrorContext(t *testing.T) {
 	contextErr := WithSimpleContext(errors.New("test"), "op")
 	regularErr := errors.New("test")
-	
+
 	if !IsErrorContext(contextErr) {
 		t.Error("Expected IsErrorContext to return true for ErrorContext")
 	}
-	
+
 	if IsErrorContext(regularErr) {
 		t.Error("Expected IsErrorContext to return false for regular error")
 	}
-	
+
 	if IsErrorContext(nil) {
 		t.Error("Expected IsErrorContext to return false for nil")
 	}
@@ -103,27 +103,27 @@ func TestIsErrorContext(t *testing.T) {
 
 func TestErrorChain(t *testing.T) {
 	chain := NewErrorChain()
-	
+
 	if chain.HasErrors() {
 		t.Error("New chain should have no errors")
 	}
 	if chain.Count() != 0 {
 		t.Errorf("Expected count 0, got %d", chain.Count())
 	}
-	
+
 	// Add errors
 	chain.AddSimple(errors.New("error 1"), "step 1")
 	chain.Add(errors.New("error 2"), "step 2", map[string]interface{}{
 		"detail": "value",
 	})
-	
+
 	if !chain.HasErrors() {
 		t.Error("Chain should have errors")
 	}
 	if chain.Count() != 2 {
 		t.Errorf("Expected count 2, got %d", chain.Count())
 	}
-	
+
 	// Test First/Last
 	first := chain.First()
 	if first == nil {
@@ -132,7 +132,7 @@ func TestErrorChain(t *testing.T) {
 	if !strings.Contains(first.Error(), "step 1") {
 		t.Error("Expected first error to contain step 1")
 	}
-	
+
 	last := chain.Last()
 	if last == nil {
 		t.Fatal("Expected last error")
@@ -140,7 +140,7 @@ func TestErrorChain(t *testing.T) {
 	if !strings.Contains(last.Error(), "step 2") {
 		t.Error("Expected last error to contain step 2")
 	}
-	
+
 	// Test Error message
 	msg := chain.Error()
 	if !strings.Contains(msg, "error chain") {
@@ -153,7 +153,7 @@ func TestErrorChain(t *testing.T) {
 
 func TestErrorChain_Empty(t *testing.T) {
 	chain := NewErrorChain()
-	
+
 	if chain.First() != nil {
 		t.Error("Expected nil from empty chain First()")
 	}
@@ -168,7 +168,7 @@ func TestErrorChain_Empty(t *testing.T) {
 func TestErrorChain_SingleError(t *testing.T) {
 	chain := NewErrorChain()
 	chain.AddSimple(errors.New("single error"), "operation")
-	
+
 	// Should return the error directly without "error chain" wrapper
 	msg := chain.Error()
 	if strings.Contains(msg, "error chain") {
@@ -183,7 +183,7 @@ func TestErrorChain_NilErrors(t *testing.T) {
 	chain := NewErrorChain()
 	chain.AddSimple(nil, "operation 1")
 	chain.Add(nil, "operation 2", nil)
-	
+
 	// Nil errors should not be added
 	if chain.HasErrors() {
 		t.Error("Nil errors should not be added to chain")
@@ -198,7 +198,7 @@ func TestErrorChain_All(t *testing.T) {
 	chain.AddSimple(errors.New("error 1"), "op1")
 	chain.AddSimple(errors.New("error 2"), "op2")
 	chain.AddSimple(errors.New("error 3"), "op3")
-	
+
 	all := chain.All()
 	if len(all) != 3 {
 		t.Errorf("Expected 3 errors, got %d", len(all))
@@ -215,7 +215,7 @@ func TestSummarizeError_Nil(t *testing.T) {
 func TestSummarizeError_RegularError(t *testing.T) {
 	err := errors.New("regular error")
 	summary := SummarizeError(err)
-	
+
 	if summary == nil {
 		t.Fatal("Expected summary")
 	}
@@ -236,7 +236,7 @@ func TestSummarizeError_RegularError(t *testing.T) {
 func TestSummarizeError_CodedError(t *testing.T) {
 	err := NewAPIKeyError(errors.New("missing key"))
 	summary := SummarizeError(err)
-	
+
 	if summary == nil {
 		t.Fatal("Expected summary")
 	}
@@ -257,7 +257,7 @@ func TestSummarizeError_PanicError(t *testing.T) {
 		StackTrace: "goroutine 1 [running]:\ntest stack trace",
 	}
 	summary := SummarizeError(panicErr)
-	
+
 	if summary == nil {
 		t.Fatal("Expected summary")
 	}
@@ -282,7 +282,7 @@ func TestSummarizeError_ErrorContext(t *testing.T) {
 		"retry": 2,
 	})
 	summary := SummarizeError(contextErr)
-	
+
 	if summary == nil {
 		t.Fatal("Expected summary")
 	}
@@ -314,7 +314,7 @@ func TestSummarizeError_SentinelErrors(t *testing.T) {
 		{ErrTimeout, "REQUEST_TIMEOUT", true},
 		{ErrToolExecution, "TOOL_EXECUTION_FAILED", false},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.code, func(t *testing.T) {
 			summary := SummarizeError(tt.err)
@@ -342,11 +342,11 @@ func TestSummarizeError_LongStackTrace(t *testing.T) {
 		StackTrace: longTrace,
 	}
 	summary := SummarizeError(panicErr)
-	
+
 	if summary == nil {
 		t.Fatal("Expected summary")
 	}
-	
+
 	stackTrace := summary.Context["stack_trace"].(string)
 	if len(stackTrace) > 510 { // 500 + "..."
 		t.Errorf("Expected truncated stack trace, got length %d", len(stackTrace))
@@ -359,24 +359,24 @@ func TestSummarizeError_LongStackTrace(t *testing.T) {
 func TestErrorContext_RealWorldScenario(t *testing.T) {
 	// Simulate a real-world error flow
 	baseErr := errors.New("network timeout")
-	
+
 	// Wrap with coded error
 	codedErr := NewTimeoutError(baseErr)
-	
+
 	// Add context
 	contextErr := WithContext(codedErr, "Chat completion", map[string]interface{}{
 		"model":         "gpt-4o-mini",
 		"retry_attempt": 3,
 		"duration_ms":   5000,
 	})
-	
+
 	// Summarize for logging
 	summary := SummarizeError(contextErr)
-	
+
 	if summary == nil {
 		t.Fatal("Expected summary")
 	}
-	
+
 	// Should preserve coded error info
 	if summary.Code != ErrCodeRequestTimeout {
 		t.Errorf("Expected timeout code, got %q", summary.Code)
@@ -384,7 +384,7 @@ func TestErrorContext_RealWorldScenario(t *testing.T) {
 	if !summary.Retryable {
 		t.Error("Expected retryable for timeout")
 	}
-	
+
 	// Should have context details
 	if summary.Context["operation"] != "Chat completion" {
 		t.Error("Expected operation in context")

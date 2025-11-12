@@ -19,10 +19,10 @@ import (
 // - Error aggregation
 // - Result ordering preservation
 type Orchestrator struct {
-	maxWorkers   int           // Maximum concurrent workers
-	toolTimeout  time.Duration // Default timeout per tool
-	enableParallel bool        // Enable parallel execution
-	mu           sync.RWMutex  // Protects configuration
+	maxWorkers     int           // Maximum concurrent workers
+	toolTimeout    time.Duration // Default timeout per tool
+	enableParallel bool          // Enable parallel execution
+	mu             sync.RWMutex  // Protects configuration
 }
 
 // OrchestratorConfig holds configuration for the orchestrator.
@@ -86,12 +86,12 @@ func (o *Orchestrator) SetParallelExecution(enable bool) {
 
 // ToolCall represents a tool to be executed with its metadata.
 type ToolCall struct {
-	ID       string                            // Unique identifier
-	Name     string                            // Tool name
-	Args     string                            // JSON arguments
-	Handler  func(string) (string, error)      // Tool handler function
-	Timeout  time.Duration                     // Execution timeout (0 = use default)
-	DependsOn []string                         // IDs of tools this depends on
+	ID        string                       // Unique identifier
+	Name      string                       // Tool name
+	Args      string                       // JSON arguments
+	Handler   func(string) (string, error) // Tool handler function
+	Timeout   time.Duration                // Execution timeout (0 = use default)
+	DependsOn []string                     // IDs of tools this depends on
 }
 
 // ToolResult contains the result of a tool execution.
@@ -107,7 +107,7 @@ type ToolResult struct {
 
 // ExecutionPlan represents a plan for executing tools with dependencies.
 type ExecutionPlan struct {
-	Batches [][]string // Tool IDs grouped by execution batch
+	Batches [][]string          // Tool IDs grouped by execution batch
 	Graph   map[string][]string // Dependency graph (tool ID -> depends on IDs)
 }
 
@@ -141,17 +141,17 @@ func (o *Orchestrator) Execute(ctx context.Context, toolCalls []*ToolCall) ([]*T
 // executeSequential runs tools one by one (used when parallel is disabled).
 func (o *Orchestrator) executeSequential(ctx context.Context, toolCalls []*ToolCall) ([]*ToolResult, error) {
 	results := make([]*ToolResult, len(toolCalls))
-	
+
 	for i, tc := range toolCalls {
 		result := o.executeOne(ctx, tc)
 		results[i] = result
-		
+
 		// Stop on first error if context is canceled
 		if result.Error != nil && ctx.Err() != nil {
 			return results, ctx.Err()
 		}
 	}
-	
+
 	return results, nil
 }
 
@@ -161,26 +161,26 @@ func (o *Orchestrator) buildExecutionPlan(toolCalls []*ToolCall) *ExecutionPlan 
 	// Build dependency graph
 	graph := make(map[string][]string)
 	idToIndex := make(map[string]int)
-	
+
 	for i, tc := range toolCalls {
 		idToIndex[tc.ID] = i
 		if len(tc.DependsOn) > 0 {
 			graph[tc.ID] = tc.DependsOn
 		}
 	}
-	
+
 	// Group tools into batches using topological sort
 	batches := [][]string{}
 	executed := make(map[string]bool)
-	
+
 	for len(executed) < len(toolCalls) {
 		batch := []string{}
-		
+
 		for _, tc := range toolCalls {
 			if executed[tc.ID] {
 				continue
 			}
-			
+
 			// Check if all dependencies are executed
 			canExecute := true
 			for _, depID := range tc.DependsOn {
@@ -189,12 +189,12 @@ func (o *Orchestrator) buildExecutionPlan(toolCalls []*ToolCall) *ExecutionPlan 
 					break
 				}
 			}
-			
+
 			if canExecute {
 				batch = append(batch, tc.ID)
 			}
 		}
-		
+
 		if len(batch) == 0 {
 			// Circular dependency detected or invalid dependency
 			// Add remaining tools to final batch
@@ -204,13 +204,13 @@ func (o *Orchestrator) buildExecutionPlan(toolCalls []*ToolCall) *ExecutionPlan 
 				}
 			}
 		}
-		
+
 		batches = append(batches, batch)
 		for _, id := range batch {
 			executed[id] = true
 		}
 	}
-	
+
 	return &ExecutionPlan{
 		Batches: batches,
 		Graph:   graph,
@@ -224,24 +224,24 @@ func (o *Orchestrator) executePlan(ctx context.Context, toolCalls []*ToolCall, p
 	for _, tc := range toolCalls {
 		idToTool[tc.ID] = tc
 	}
-	
+
 	// Map tool IDs to results
 	idToResult := make(map[string]*ToolResult)
-	
+
 	// Execute each batch in sequence, but tools within batch in parallel
 	for batchNum, batch := range plan.Batches {
 		batchResults := o.executeBatch(ctx, batch, idToTool)
-		
+
 		// Store results
 		for id, result := range batchResults {
 			idToResult[id] = result
 		}
-		
+
 		// Check for context cancellation
 		if ctx.Err() != nil {
 			break
 		}
-		
+
 		// Log batch completion
 		logInfo(ctx, "Tool batch completed", map[string]interface{}{
 			"batch":      batchNum + 1,
@@ -249,7 +249,7 @@ func (o *Orchestrator) executePlan(ctx context.Context, toolCalls []*ToolCall, p
 			"tool_count": len(batch),
 		})
 	}
-	
+
 	// Return results in original order
 	results := make([]*ToolResult, len(toolCalls))
 	for i, tc := range toolCalls {
@@ -264,7 +264,7 @@ func (o *Orchestrator) executePlan(ctx context.Context, toolCalls []*ToolCall, p
 			}
 		}
 	}
-	
+
 	return results, nil
 }
 
@@ -272,42 +272,42 @@ func (o *Orchestrator) executePlan(ctx context.Context, toolCalls []*ToolCall, p
 func (o *Orchestrator) executeBatch(ctx context.Context, batch []string, idToTool map[string]*ToolCall) map[string]*ToolResult {
 	results := make(map[string]*ToolResult)
 	resultsMu := sync.Mutex{}
-	
+
 	// Create worker pool
 	o.mu.RLock()
 	maxWorkers := o.maxWorkers
 	o.mu.RUnlock()
-	
+
 	// Limit workers to batch size
 	if len(batch) < maxWorkers {
 		maxWorkers = len(batch)
 	}
-	
+
 	// Create semaphore for worker pool
 	sem := make(chan struct{}, maxWorkers)
 	var wg sync.WaitGroup
-	
+
 	for _, toolID := range batch {
 		tc := idToTool[toolID]
 		if tc == nil {
 			continue
 		}
-		
+
 		wg.Add(1)
 		sem <- struct{}{} // Acquire worker
-		
+
 		go func(call *ToolCall) {
 			defer wg.Done()
 			defer func() { <-sem }() // Release worker
-			
+
 			result := o.executeOne(ctx, call)
-			
+
 			resultsMu.Lock()
 			results[call.ID] = result
 			resultsMu.Unlock()
 		}(tc)
 	}
-	
+
 	wg.Wait()
 	return results
 }
@@ -319,7 +319,7 @@ func (o *Orchestrator) executeOne(ctx context.Context, tc *ToolCall) *ToolResult
 		Name:      tc.Name,
 		StartTime: time.Now(),
 	}
-	
+
 	// Determine timeout
 	timeout := tc.Timeout
 	if timeout == 0 {
@@ -327,16 +327,16 @@ func (o *Orchestrator) executeOne(ctx context.Context, tc *ToolCall) *ToolResult
 		timeout = o.toolTimeout
 		o.mu.RUnlock()
 	}
-	
+
 	// Create context with timeout
 	toolCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	
+
 	// Execute in goroutine to support timeout
 	done := make(chan struct{})
 	var output string
 	var err error
-	
+
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -344,10 +344,10 @@ func (o *Orchestrator) executeOne(ctx context.Context, tc *ToolCall) *ToolResult
 			}
 			close(done)
 		}()
-		
+
 		output, err = tc.Handler(tc.Args)
 	}()
-	
+
 	// Wait for completion or timeout
 	select {
 	case <-done:
@@ -356,10 +356,10 @@ func (o *Orchestrator) executeOne(ctx context.Context, tc *ToolCall) *ToolResult
 	case <-toolCtx.Done():
 		result.Error = fmt.Errorf("tool execution timeout after %v", timeout)
 	}
-	
+
 	result.EndTime = time.Now()
 	result.Duration = result.EndTime.Sub(result.StartTime)
-	
+
 	// Log execution
 	if result.Error != nil {
 		logError(toolCtx, "Tool execution failed", map[string]interface{}{
@@ -375,19 +375,19 @@ func (o *Orchestrator) executeOne(ctx context.Context, tc *ToolCall) *ToolResult
 			"duration": result.Duration,
 		})
 	}
-	
+
 	return result
 }
 
 // Stats returns statistics about an execution.
 type ExecutionStats struct {
-	TotalTools     int           // Total number of tools
-	SuccessCount   int           // Successfully executed
-	FailureCount   int           // Failed executions
-	TotalDuration  time.Duration // Total execution time
-	ParallelBatches int          // Number of parallel batches
-	AvgDuration    time.Duration // Average tool duration
-	MaxDuration    time.Duration // Longest tool duration
+	TotalTools      int           // Total number of tools
+	SuccessCount    int           // Successfully executed
+	FailureCount    int           // Failed executions
+	TotalDuration   time.Duration // Total execution time
+	ParallelBatches int           // Number of parallel batches
+	AvgDuration     time.Duration // Average tool duration
+	MaxDuration     time.Duration // Longest tool duration
 }
 
 // ComputeStats calculates statistics from execution results.
@@ -396,23 +396,23 @@ func ComputeStats(results []*ToolResult, plan *ExecutionPlan) *ExecutionStats {
 		TotalTools:      len(results),
 		ParallelBatches: len(plan.Batches),
 	}
-	
+
 	for _, r := range results {
 		if r.Error == nil {
 			stats.SuccessCount++
 		} else {
 			stats.FailureCount++
 		}
-		
+
 		stats.TotalDuration += r.Duration
 		if r.Duration > stats.MaxDuration {
 			stats.MaxDuration = r.Duration
 		}
 	}
-	
+
 	if stats.TotalTools > 0 {
 		stats.AvgDuration = stats.TotalDuration / time.Duration(stats.TotalTools)
 	}
-	
+
 	return stats
 }

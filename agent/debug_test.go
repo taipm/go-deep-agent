@@ -243,33 +243,33 @@ func TestDebugLogger_RedactSecrets(t *testing.T) {
 	dl := newDebugLogger(config, mock)
 
 	tests := []struct {
-		name     string
-		input    string
-		shouldContain string
+		name             string
+		input            string
+		shouldContain    string
 		shouldNotContain string
 	}{
 		{
-			name:     "OpenAI API key",
-			input:    `{"api_key": "sk-1234567890abcdef1234567890abcdef1234567890abcdef"}`,
-			shouldContain: "REDACTED",
+			name:             "OpenAI API key",
+			input:            `{"api_key": "sk-1234567890abcdef1234567890abcdef1234567890abcdef"}`,
+			shouldContain:    "REDACTED",
 			shouldNotContain: "1234567890abcdef",
 		},
 		{
-			name:     "OpenAI project key",
-			input:    `{"api_key": "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890"}`,
-			shouldContain: "REDACTED",
+			name:             "OpenAI project key",
+			input:            `{"api_key": "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890"}`,
+			shouldContain:    "REDACTED",
 			shouldNotContain: "abcdefghijklmnopqrstuvwxyz",
 		},
 		{
-			name:     "Bearer token",
-			input:    `Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9`,
-			shouldContain: "REDACTED",
+			name:             "Bearer token",
+			input:            `Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9`,
+			shouldContain:    "REDACTED",
 			shouldNotContain: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
 		},
 		{
-			name:     "Generic API key in JSON",
-			input:    `{"api_key": "supersecretkey123456"}`,
-			shouldContain: "REDACTED",
+			name:             "Generic API key in JSON",
+			input:            `{"api_key": "supersecretkey123456"}`,
+			shouldContain:    "REDACTED",
 			shouldNotContain: "supersecretkey123456",
 		},
 	}

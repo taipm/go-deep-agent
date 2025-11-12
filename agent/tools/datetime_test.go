@@ -10,7 +10,7 @@ func TestDateTimeTool(t *testing.T) {
 	t.Run("CurrentTime", func(t *testing.T) {
 		tool := NewDateTimeTool()
 		args := `{"operation": "current_time", "timezone": "UTC"}`
-		
+
 		result, err := tool.Handler(args)
 		if err != nil {
 			t.Fatalf("CurrentTime failed: %v", err)
@@ -26,7 +26,7 @@ func TestDateTimeTool(t *testing.T) {
 	t.Run("FormatDate", func(t *testing.T) {
 		tool := NewDateTimeTool()
 		args := `{"operation": "format_date", "date": "2025-01-15", "format": "RFC3339"}`
-		
+
 		result, err := tool.Handler(args)
 		if err != nil {
 			t.Fatalf("FormatDate failed: %v", err)
@@ -39,7 +39,7 @@ func TestDateTimeTool(t *testing.T) {
 	t.Run("ParseDate", func(t *testing.T) {
 		tool := NewDateTimeTool()
 		args := `{"operation": "parse_date", "date": "2025-12-25"}`
-		
+
 		result, err := tool.Handler(args)
 		if err != nil {
 			t.Fatalf("ParseDate failed: %v", err)
@@ -55,7 +55,7 @@ func TestDateTimeTool(t *testing.T) {
 	t.Run("AddDuration", func(t *testing.T) {
 		tool := NewDateTimeTool()
 		args := `{"operation": "add_duration", "date": "2025-01-01", "duration": "7d"}`
-		
+
 		result, err := tool.Handler(args)
 		if err != nil {
 			t.Fatalf("AddDuration failed: %v", err)
@@ -68,7 +68,7 @@ func TestDateTimeTool(t *testing.T) {
 	t.Run("DateDiff", func(t *testing.T) {
 		tool := NewDateTimeTool()
 		args := `{"operation": "date_diff", "date": "2025-01-01", "date2": "2025-01-08"}`
-		
+
 		result, err := tool.Handler(args)
 		if err != nil {
 			t.Fatalf("DateDiff failed: %v", err)
@@ -81,7 +81,7 @@ func TestDateTimeTool(t *testing.T) {
 	t.Run("ConvertTimezone", func(t *testing.T) {
 		tool := NewDateTimeTool()
 		args := `{"operation": "convert_timezone", "date": "2025-01-01 12:00:00", "timezone": "America/New_York"}`
-		
+
 		result, err := tool.Handler(args)
 		if err != nil {
 			t.Fatalf("ConvertTimezone failed: %v", err)
@@ -94,7 +94,7 @@ func TestDateTimeTool(t *testing.T) {
 	t.Run("DayOfWeek", func(t *testing.T) {
 		tool := NewDateTimeTool()
 		args := `{"operation": "day_of_week", "date": "2025-12-25"}`
-		
+
 		result, err := tool.Handler(args)
 		if err != nil {
 			t.Fatalf("DayOfWeek failed: %v", err)
@@ -110,7 +110,7 @@ func TestDateTimeTool(t *testing.T) {
 	t.Run("InvalidOperation", func(t *testing.T) {
 		tool := NewDateTimeTool()
 		args := `{"operation": "invalid_op"}`
-		
+
 		_, err := tool.Handler(args)
 		if err == nil {
 			t.Error("Expected error for invalid operation")
@@ -120,7 +120,7 @@ func TestDateTimeTool(t *testing.T) {
 	t.Run("InvalidDate", func(t *testing.T) {
 		tool := NewDateTimeTool()
 		args := `{"operation": "parse_date", "date": "invalid-date"}`
-		
+
 		_, err := tool.Handler(args)
 		if err == nil {
 			t.Error("Expected error for invalid date")
@@ -236,7 +236,7 @@ func TestFormatTime(t *testing.T) {
 func TestGetWeekNumber(t *testing.T) {
 	testDate := time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC)
 	week := getWeekNumber(testDate)
-	
+
 	if week < 1 || week > 53 {
 		t.Errorf("getWeekNumber() = %d, want between 1 and 53", week)
 	}

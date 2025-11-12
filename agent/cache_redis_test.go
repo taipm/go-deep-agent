@@ -243,9 +243,9 @@ func TestRedisCacheStats(t *testing.T) {
 	// Perform operations
 	cache.Set(ctx, "key1", "value1", 5*time.Minute)
 	cache.Set(ctx, "key2", "value2", 5*time.Minute)
-	cache.Get(ctx, "key1")      // hit
-	cache.Get(ctx, "key1")      // hit
-	cache.Get(ctx, "nonexist")  // miss
+	cache.Get(ctx, "key1")     // hit
+	cache.Get(ctx, "key1")     // hit
+	cache.Get(ctx, "nonexist") // miss
 
 	// Check stats
 	stats = cache.Stats()

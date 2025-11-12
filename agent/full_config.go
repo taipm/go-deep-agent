@@ -13,7 +13,8 @@ import (
 // (persona) and technical settings can be defined together or separately.
 //
 // Priority order for conflicting settings:
-//   Code > FullConfig.Settings > Persona.TechnicalConfig > Defaults
+//
+//	Code > FullConfig.Settings > Persona.TechnicalConfig > Defaults
 type FullConfig struct {
 	// Persona defines the agent's behavior, personality, and role
 	Persona *Persona `yaml:"persona,omitempty"`
@@ -42,10 +43,10 @@ type ConfigMetadata struct {
 // independently and reused across different personas.
 type AgentSettings struct {
 	// Model configuration
-	Model       string  `yaml:"model,omitempty"`
-	Temperature float64 `yaml:"temperature,omitempty"`
-	MaxTokens   int     `yaml:"max_tokens,omitempty"`
-	TopP        float64 `yaml:"top_p,omitempty"`
+	Model       string        `yaml:"model,omitempty"`
+	Temperature float64       `yaml:"temperature,omitempty"`
+	MaxTokens   int           `yaml:"max_tokens,omitempty"`
+	TopP        float64       `yaml:"top_p,omitempty"`
 	Timeout     time.Duration `yaml:"timeout,omitempty"`
 
 	// Memory configuration

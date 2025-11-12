@@ -317,12 +317,11 @@ calculator := agent.NewTool("calculator", "Perform calculations").
 search := agent.NewTool("search", "Search the web").
     WithHandler(searchHandler)
 
-// Enable ReAct native mode (default, recommended)
+// Enable ReAct with task complexity (v0.7.6+ recommended)
 ai := agent.NewOpenAI("gpt-4o", apiKey).
     WithTools(calculator, search).
     WithReActMode(true).         // Enable ReAct pattern  
-    WithReActNativeMode().       // Use function calling (default)
-    WithReActMaxIterations(7)    // Allow up to 7 reasoning steps
+    WithReActComplexity(agent.ReActTaskMedium). // Auto-configure for medium tasks
 
 // Execute complex multi-step task
 result, _ := ai.Ask(ctx, "What is 15 * 7 and what's the weather in Paris?")
@@ -343,18 +342,48 @@ for i, step := range reactResult.Steps {
 }
 ```
 
+#### Task Complexity Levels (v0.7.6+)
+
+Choose the right complexity for better UX:
+
+```go
+// Simple tasks: 3 iterations, 30s timeout
+ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithReActMode(true).
+    WithReActComplexity(agent.ReActTaskSimple).
+    WithTools(mathTool)
+// Use for: Single calculation, direct lookup, simple queries
+
+// Medium tasks: 5 iterations, 60s timeout  
+ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithReActMode(true).
+    WithReActComplexity(agent.ReActTaskMedium).
+    WithTools(mathTool, searchTool)
+// Use for: Multi-step reasoning, 2-3 tool calls, analysis
+
+// Complex tasks: 10 iterations, 120s timeout
+ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithReActMode(true).
+    WithReActComplexity(agent.ReActTaskComplex).
+    WithTools(mathTool, searchTool, dbTool)
+// Use for: Advanced reasoning, multiple tools, complex workflows
+```
+
 **Features:**
 
 - ✅ Autonomous multi-step reasoning
 - ✅ Tool orchestration (chains multiple tools naturally)
-- ✅ Error recovery with retry logic
+- ✅ Auto-fallback on max iterations (v0.7.6+)
+- ✅ Progressive urgency reminders (v0.7.6+)
+- ✅ Rich error messages with debugging info (v0.7.6+)
 - ✅ Transparent reasoning (full trace of thoughts and actions)
 - ✅ Streaming support for real-time progress
-- ✅ Few-shot examples to guide behavior
 
 **[📖 ReAct Pattern Guide](docs/guides/REACT_GUIDE.md)** - Full documentation, best practices, and advanced features
 
-**[🚀 Native ReAct Examples](examples/react_native/)** - Comprehensive demos showing native function calling vs text parsing
+**[🚀 Native ReAct Examples](examples/react_native/)** - Comprehensive demos showing native function calling
+
+**[🔧 Troubleshooting](docs/REACT_TROUBLESHOOTING.md)** - Common issues and solutions (v0.7.6+)
 
 ### 9. Planning Layer - Complex Workflows (v0.7.1 🆕)
 

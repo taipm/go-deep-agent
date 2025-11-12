@@ -28,11 +28,50 @@ const (
 	ReActModeHybrid ReActMode = "hybrid"
 )
 
+// ReActTaskComplexity defines the complexity level of a ReAct task.
+// This helps users choose appropriate settings for different task types.
+// Use WithReActComplexity() to automatically configure optimal settings.
+type ReActTaskComplexity string
+
+const (
+	// ReActTaskSimple is for simple tasks: classification, review, yes/no decisions.
+	// Recommended settings: MaxIterations=3, Timeout=30s
+	// Examples: Document review, sentiment analysis, simple validation
+	ReActTaskSimple ReActTaskComplexity = "simple"
+
+	// ReActTaskMedium is for moderate reasoning tasks.
+	// Recommended settings: MaxIterations=5, Timeout=60s
+	// Examples: Multi-step calculations, data analysis, moderate research
+	ReActTaskMedium ReActTaskComplexity = "medium"
+
+	// ReActTaskComplex is for complex reasoning tasks.
+	// Recommended settings: MaxIterations=10, Timeout=120s
+	// Examples: Deep research, planning, multi-source analysis
+	ReActTaskComplex ReActTaskComplexity = "complex"
+)
+
+// Recommended settings for each task complexity level
+const (
+	// Simple task settings
+	ReActSimpleMaxIterations = 3
+	ReActSimpleTimeout       = 30 * time.Second
+
+	// Medium task settings
+	ReActMediumMaxIterations = 5
+	ReActMediumTimeout       = 60 * time.Second
+
+	// Complex task settings
+	ReActComplexMaxIterations = 10
+	ReActComplexTimeout       = 120 * time.Second
+)
+
 // Default configuration values for ReAct pattern
 const (
-	// DefaultReActMaxIterations is the default maximum number of reasoning loops
-	// This prevents infinite loops while allowing for complex multi-step reasoning
-	DefaultReActMaxIterations = 5
+	// DefaultReActMaxIterations is the default maximum number of reasoning loops.
+	// Changed from 5 to 3 in v0.7.6 for better UX with simple tasks.
+	// Most tasks don't need more than 3 iterations. Use WithReActComplexity()
+	// or WithReActMaxIterations() to customize for complex tasks.
+	DefaultReActMaxIterations = 3
 
 	// DefaultReActTimeout is the default execution timeout
 	// Protects against hanging executions while allowing time for complex tasks
@@ -109,6 +148,33 @@ type ReActConfig struct {
 	// Default: false
 	EnableTimeline bool
 
+	// EnableAutoFallback enables graceful degradation when max iterations reached.
+	// When true and final_answer() not called:
+	// - Synthesizes answer from completed reasoning steps
+	// - Returns success with warning instead of error
+	// - Prevents losing all analysis work
+	// Default: true (recommended for better UX)
+	// Added in v0.7.6
+	EnableAutoFallback bool
+
+	// ForceFinalAnswerAtMax forces LLM to provide final_answer() at last iteration.
+	// When true, injects special prompt at final iteration requiring conclusion.
+	// Prevents timeout errors by ensuring LLM provides answer.
+	// Works in conjunction with EnableIterationReminders.
+	// Default: true (recommended)
+	// Added in v0.7.6
+	ForceFinalAnswerAtMax bool
+
+	// EnableIterationReminders adds progressive urgency to system prompts.
+	// Reminds LLM to wrap up analysis as max iterations approaches:
+	// - At n-2: "You have 2 iterations remaining"
+	// - At n-1: "This is your second-to-last iteration"
+	// - At n: "FINAL iteration - you MUST call final_answer() now"
+	// Reduces analysis paralysis and timeout errors.
+	// Default: true (recommended)
+	// Added in v0.7.6
+	EnableIterationReminders bool
+
 	// Examples are few-shot examples to guide the LLM's reasoning
 	// These are included in the system prompt to demonstrate expected format
 	// Can be set using WithReActExamples() or WithReActExampleSet()
@@ -119,16 +185,19 @@ type ReActConfig struct {
 // NewReActConfig creates a new ReActConfig with default values.
 func NewReActConfig() *ReActConfig {
 	return &ReActConfig{
-		Enabled:        false,            // Must be explicitly enabled
-		Mode:           DefaultReActMode, // Native mode by default
-		MaxIterations:  DefaultReActMaxIterations,
-		Timeout:        DefaultReActTimeout,
-		Strict:         DefaultReActStrict,
-		SystemPrompt:   "", // Use default
-		Callback:       nil,
-		EnableMetrics:  false,
-		EnableTimeline: false,
-		Examples:       nil,
+		Enabled:                  false,            // Must be explicitly enabled
+		Mode:                     DefaultReActMode, // Native mode by default
+		MaxIterations:            DefaultReActMaxIterations,
+		Timeout:                  DefaultReActTimeout,
+		Strict:                   DefaultReActStrict,
+		SystemPrompt:             "", // Use default
+		Callback:                 nil,
+		EnableMetrics:            false,
+		EnableTimeline:           false,
+		EnableAutoFallback:       true, // v0.7.6: Better UX
+		ForceFinalAnswerAtMax:    true, // v0.7.6: Prevent timeouts
+		EnableIterationReminders: true, // v0.7.6: Guide LLM
+		Examples:                 nil,
 	}
 }
 

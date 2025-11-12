@@ -62,6 +62,16 @@ var (
 		"  3. Verify tool parameters match JSON schema\n" +
 		"  4. Add error handling in tool function\n" +
 		"  5. Increase tool timeout: .WithToolTimeout(60*time.Second)")
+
+	// ErrReActMaxIterations indicates max iterations reached without final answer
+	// Added in v0.7.6 - this is now a structured error instead of generic fmt.Errorf
+	ErrReActMaxIterations = errors.New("max iterations reached without final answer\n\n" +
+		"Fix:\n" +
+		"  1. Use task complexity: .WithReActComplexity(agent.ReActTaskSimple/Medium/Complex)\n" +
+		"  2. Enable auto-fallback (default): .WithReActAutoFallback(true)\n" +
+		"  3. Increase iterations: .WithReActMaxIterations(10)\n" +
+		"  4. Enable reminders (default): .WithReActIterationReminders(true)\n" +
+		"  5. Simplify the task or break it into smaller steps")
 )
 
 // APIError wraps API errors with additional context
@@ -81,6 +91,135 @@ func (e *APIError) Error() string {
 
 func (e *APIError) Unwrap() error {
 	return e.Err
+}
+
+// ReActError provides detailed context when ReAct execution fails.
+// Added in v0.7.6 to give users actionable debugging information.
+//
+// This error type is returned when:
+//   - Max iterations reached without final_answer() (and auto-fallback disabled)
+//   - Timeout occurs during ReAct execution
+//   - Critical parsing errors in ReAct loop
+//
+// Usage:
+//
+//	result, err := ai.Execute(ctx, task)
+//	if err != nil {
+//	    var reactErr *agent.ReActError
+//	    if errors.As(err, &reactErr) {
+//	        fmt.Printf("Failed after %d iterations\n", reactErr.CurrentIteration)
+//	        fmt.Printf("Steps: %v\n", reactErr.Steps)
+//	        fmt.Printf("Suggestions: %v\n", reactErr.Suggestions)
+//	    }
+//	}
+type ReActError struct {
+	// Type indicates error category: "max_iterations", "timeout", "parse_error"
+	Type string
+
+	// Message is the human-readable error description
+	Message string
+
+	// CurrentIteration is the iteration where error occurred (1-based)
+	CurrentIteration int
+
+	// MaxIterations is the configured maximum
+	MaxIterations int
+
+	// Steps contains the reasoning steps completed before error
+	Steps []ReActStep
+
+	// Suggestions contains actionable fix recommendations
+	Suggestions []string
+
+	// Err is the underlying error (if any)
+	Err error
+}
+
+func (e *ReActError) Error() string {
+	baseMsg := fmt.Sprintf("ReAct %s (iteration %d/%d): %s",
+		e.Type, e.CurrentIteration, e.MaxIterations, e.Message)
+
+	if len(e.Suggestions) > 0 {
+		baseMsg += "\n\nSuggestions:"
+		for i, suggestion := range e.Suggestions {
+			baseMsg += fmt.Sprintf("\n  %d. %s", i+1, suggestion)
+		}
+	}
+
+	if len(e.Steps) > 0 {
+		baseMsg += fmt.Sprintf("\n\nCompleted %d steps before failure:", len(e.Steps))
+		thoughtCount := 0
+		actionCount := 0
+		for _, step := range e.Steps {
+			if step.Type == StepTypeThought {
+				thoughtCount++
+			} else if step.Type == StepTypeAction {
+				actionCount++
+			}
+		}
+		baseMsg += fmt.Sprintf("\n  - %d thoughts, %d actions", thoughtCount, actionCount)
+	}
+
+	return baseMsg
+}
+
+func (e *ReActError) Unwrap() error {
+	return e.Err
+}
+
+// NewReActMaxIterationsError creates a ReActError for max iterations scenario.
+// This provides much better UX than generic "max iterations reached" message.
+//
+// Added in: v0.7.6
+func NewReActMaxIterationsError(currentIteration, maxIterations int, steps []ReActStep) *ReActError {
+	suggestions := []string{
+		"Use .WithReActComplexity(agent.ReActTaskMedium) or ReActTaskComplex for harder tasks",
+		"Enable auto-fallback (default): .WithReActAutoFallback(true) to get best-effort answers",
+		"Increase max iterations: .WithReActMaxIterations(10) or higher",
+		"Enable iteration reminders (default): .WithReActIterationReminders(true)",
+		"Simplify the task or break it into multiple smaller agent calls",
+	}
+
+	return &ReActError{
+		Type:             "max_iterations",
+		Message:          "Maximum iterations reached without calling final_answer()",
+		CurrentIteration: currentIteration,
+		MaxIterations:    maxIterations,
+		Steps:            steps,
+		Suggestions:      suggestions,
+		Err:              ErrReActMaxIterations,
+	}
+}
+
+// NewReActTimeoutError creates a ReActError for timeout scenario.
+//
+// Added in: v0.7.6
+func NewReActTimeoutError(currentIteration, maxIterations int, steps []ReActStep, timeout string) *ReActError {
+	suggestions := []string{
+		fmt.Sprintf("Increase timeout: .WithReActTimeout(120*time.Second) (current: %s)", timeout),
+		"Use .WithReActComplexity(agent.ReActTaskComplex) for longer timeouts",
+		"Simplify the task to require fewer steps",
+		"Check network connectivity and LLM API status",
+	}
+
+	return &ReActError{
+		Type:             "timeout",
+		Message:          "ReAct execution timeout",
+		CurrentIteration: currentIteration,
+		MaxIterations:    maxIterations,
+		Steps:            steps,
+		Suggestions:      suggestions,
+		Err:              ErrTimeout,
+	}
+}
+
+// IsReActMaxIterationsError checks if error is ReAct max iterations related
+func IsReActMaxIterationsError(err error) bool {
+	var reactErr *ReActError
+	if errors.As(err, &reactErr) {
+		return reactErr.Type == "max_iterations"
+	}
+	return errors.Is(err, ErrReActMaxIterations)
 }
 
 // IsAPIKeyError checks if error is API key related

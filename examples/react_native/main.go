@@ -1,5 +1,4 @@
 package main
-package main
 
 import (
 	"context"
@@ -36,10 +35,12 @@ func main() {
 
 // Demo 1: Simple calculation using math tool
 func runSimpleCalculation(apiKey string) {
+	// v0.7.6+: Simple calculation = ReActTaskSimple
 	ai := agent.New(agent.ProviderOpenAI, "gpt-4o-mini").
 		WithAPIKey(apiKey).
 		WithReActMode(true).
-		WithReActNativeMode(). // Use native function calling
+		WithReActNativeMode().                      // Use native function calling
+		WithReActComplexity(agent.ReActTaskSimple). // 3 iterations, fast timeout
 		WithTools(tools.NewMathTool())
 
 	result, err := ai.Execute(context.Background(), "What is 25 * 17 + 123?")
@@ -49,22 +50,24 @@ func runSimpleCalculation(apiKey string) {
 	}
 
 	fmt.Printf("✅ Answer: %s\n", result.Answer)
-	fmt.Printf("📊 Steps: %d, Tool calls: %d\n", 
+	fmt.Printf("📊 Steps: %d, Tool calls: %d\n",
 		len(result.Steps), countToolCalls(result))
 }
 
 // Demo 2: Multi-step reasoning with multiple tools
 func runMultiStepReasoning(apiKey string) {
+	// v0.7.6+: Multi-step = ReActTaskMedium
 	ai := agent.New(agent.ProviderOpenAI, "gpt-4o-mini").
 		WithAPIKey(apiKey).
 		WithReActMode(true).
 		WithReActNativeMode().
+		WithReActComplexity(agent.ReActTaskMedium). // 5 iterations for multi-step
 		WithTools(
 			tools.NewMathTool(),
 			tools.NewDateTimeTool(),
 		)
 
-	result, err := ai.Execute(context.Background(), 
+	result, err := ai.Execute(context.Background(),
 		"I was born on 1990-05-15. How many days old am I today? Then calculate what 10% of that number would be.")
 	if err != nil {
 		fmt.Printf("❌ Error: %v\n", err)
@@ -72,13 +75,13 @@ func runMultiStepReasoning(apiKey string) {
 	}
 
 	fmt.Printf("✅ Answer: %s\n", result.Answer)
-	fmt.Printf("📊 Steps: %d, Tool calls: %d\n", 
+	fmt.Printf("📊 Steps: %d, Tool calls: %d\n",
 		len(result.Steps), countToolCalls(result))
-		
+
 	// Show reasoning steps
 	fmt.Println("🧠 Reasoning steps:")
 	for i, step := range result.Steps {
-		fmt.Printf("  %d. [%s] %s\n", i+1, step.Type, 
+		fmt.Printf("  %d. [%s] %s\n", i+1, step.Type,
 			truncateString(step.Content, 60))
 	}
 }
@@ -91,7 +94,7 @@ func runPureReasoning(apiKey string) {
 		WithReActNativeMode()
 		// No tools registered
 
-	result, err := ai.Execute(context.Background(), 
+	result, err := ai.Execute(context.Background(),
 		"Explain the concept of compound interest in simple terms with an example.")
 	if err != nil {
 		fmt.Printf("❌ Error: %v\n", err)

@@ -3,7 +3,6 @@ package agent
 // This file contains message and conversation history management methods for Builder.
 // Methods: WithMessages, GetHistory, SetHistory, Clear, WithMaxHistory
 
-//
 // Example:
 //
 //	builder := agent.NewOpenAI("gpt-4o-mini", apiKey).

@@ -88,12 +88,12 @@ func NewEnhancedCallback() *EnhancedReActCallback {
 // SimpleProgressCallback provides a simple progress tracking callback.
 // It counts steps and can be used to display progress bars or status updates.
 type SimpleProgressCallback struct {
-	TotalSteps    int
-	ThoughtCount  int
-	ActionCount   int
+	TotalSteps       int
+	ThoughtCount     int
+	ActionCount      int
 	ObservationCount int
-	ErrorCount    int
-	
+	ErrorCount       int
+
 	// OnProgress is called after each step with progress percentage
 	OnProgress func(percent float64, stepType string, iteration int)
 }
@@ -115,7 +115,7 @@ func (s *SimpleProgressCallback) OnStep(step ReActStep) {
 		// Calculate approximate progress (THOUGHT -> ACTION -> OBSERVATION -> FINAL)
 		// Each complete cycle is ~25% progress per iteration
 		iteration := (s.ThoughtCount + s.ActionCount + s.ObservationCount) / 3
-		percent := float64(iteration*25) // Simple approximation
+		percent := float64(iteration * 25) // Simple approximation
 		if percent > 100 {
 			percent = 99 // Cap at 99% until FINAL
 		}

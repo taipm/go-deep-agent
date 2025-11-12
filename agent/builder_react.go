@@ -137,6 +137,60 @@ func (b *Builder) WithReActStrict(strict bool) *Builder {
 	return b
 }
 
+// WithReActComplexity configures optimal ReAct settings based on task complexity.
+// This is the recommended way to configure ReAct for different task types.
+// Automatically sets MaxIterations, Timeout, and enables helpful UX features.
+//
+// Task complexity levels:
+//   - ReActTaskSimple: Classification, review, yes/no decisions (max=3, timeout=30s)
+//   - ReActTaskMedium: Multi-step calculations, moderate reasoning (max=5, timeout=60s)
+//   - ReActTaskComplex: Deep research, planning, complex analysis (max=10, timeout=120s)
+//
+// All complexity levels enable auto-fallback, iteration reminders, and force final answer
+// for the best user experience.
+//
+// Example for document review (simple task):
+//
+//	ai := agent.NewOpenAI("gpt-4o-mini", apiKey).
+//	    WithReActMode(true).
+//	    WithReActComplexity(agent.ReActTaskSimple).  // max=3, 30s
+//	    WithTools(myTools...)
+//
+// Example for complex research (complex task):
+//
+//	ai := agent.NewOpenAI("gpt-4o", apiKey).
+//	    WithReActMode(true).
+//	    WithReActComplexity(agent.ReActTaskComplex).  // max=10, 120s
+//	    WithTools(myTools...)
+//
+// Added in v0.7.6
+func (b *Builder) WithReActComplexity(complexity ReActTaskComplexity) *Builder {
+	if b.reactConfig == nil {
+		b.reactConfig = NewReActConfig()
+	}
+
+	switch complexity {
+	case ReActTaskSimple:
+		b.reactConfig.MaxIterations = ReActSimpleMaxIterations
+		b.reactConfig.Timeout = ReActSimpleTimeout
+
+	case ReActTaskMedium:
+		b.reactConfig.MaxIterations = ReActMediumMaxIterations
+		b.reactConfig.Timeout = ReActMediumTimeout
+
+	case ReActTaskComplex:
+		b.reactConfig.MaxIterations = ReActComplexMaxIterations
+		b.reactConfig.Timeout = ReActComplexTimeout
+	}
+
+	// Enable UX improvements for all complexity levels
+	b.reactConfig.EnableAutoFallback = true
+	b.reactConfig.ForceFinalAnswerAtMax = true
+	b.reactConfig.EnableIterationReminders = true
+
+	return b
+}
+
 // WithReActSystemPrompt sets a custom system prompt for ReAct execution.
 // If empty (default), uses the built-in ReAct prompt template.
 // Advanced users can customize the prompt format and examples.
@@ -240,6 +294,116 @@ func (b *Builder) WithReActTimeline(enabled bool) *Builder {
 		b.reactConfig = NewReActConfig()
 	}
 	b.reactConfig.EnableTimeline = enabled
+	return b
+}
+
+// WithReActAutoFallback enables or disables automatic fallback behavior when max iterations is reached.
+// When enabled and max iterations is reached, the agent will synthesize a final answer from the
+// reasoning steps collected so far instead of returning an error.
+//
+// This provides graceful degradation - the agent returns its best effort based on partial work
+// rather than failing completely. The synthesized answer includes a note that max iterations was reached.
+//
+// Default: true (enabled by default in v0.7.6+)
+//
+// Disable this if you prefer strict enforcement of iteration limits.
+//
+// Added in: v0.7.6
+//
+// Example:
+//
+//	// Enable auto-fallback (default)
+//	ai := agent.New().
+//	    WithOpenAI(apiKey).
+//	    WithReActMode(true).
+//	    WithReActAutoFallback(true).
+//	    Build()
+//
+//	// Disable for strict enforcement
+//	ai := agent.New().
+//	    WithOpenAI(apiKey).
+//	    WithReActMode(true).
+//	    WithReActAutoFallback(false).
+//	    Build()
+func (b *Builder) WithReActAutoFallback(enabled bool) *Builder {
+	if b.reactConfig == nil {
+		b.reactConfig = NewReActConfig()
+	}
+	b.reactConfig.EnableAutoFallback = enabled
+	return b
+}
+
+// WithReActIterationReminders enables or disables iteration reminder messages.
+// When enabled, the agent will inject reminder messages at n-2, n-1, and n iterations
+// to guide the LLM toward calling final_answer() before timeout.
+//
+// These reminders increase the likelihood that the agent completes successfully
+// within the iteration budget, especially for complex tasks.
+//
+// Default: true (enabled by default in v0.7.6+)
+//
+// Disable this if you want completely unguided LLM behavior.
+//
+// Added in: v0.7.6
+//
+// Example:
+//
+//	// Enable reminders (default)
+//	ai := agent.New().
+//	    WithOpenAI(apiKey).
+//	    WithReActMode(true).
+//	    WithReActIterationReminders(true).
+//	    Build()
+//
+//	// Disable for unguided behavior
+//	ai := agent.New().
+//	    WithOpenAI(apiKey).
+//	    WithReActMode(true).
+//	    WithReActIterationReminders(false).
+//	    Build()
+func (b *Builder) WithReActIterationReminders(enabled bool) *Builder {
+	if b.reactConfig == nil {
+		b.reactConfig = NewReActConfig()
+	}
+	b.reactConfig.EnableIterationReminders = enabled
+	return b
+}
+
+// WithReActForceFinalAnswer enables or disables forcing final_answer at max iterations.
+// When enabled and max iterations is reached, the agent will automatically inject
+// a final_answer() call to prevent timeout errors.
+//
+// This works in conjunction with EnableAutoFallback:
+// - If both enabled: Synthesize answer from steps when max iterations reached
+// - If only ForceFinalAnswer: Force final_answer() call but may be empty
+// - If neither: Return error when max iterations reached
+//
+// Default: true (enabled by default in v0.7.6+)
+//
+// Disable this if you prefer strict enforcement with explicit errors.
+//
+// Added in: v0.7.6
+//
+// Example:
+//
+//	// Enable forced final answer (default)
+//	ai := agent.New().
+//	    WithOpenAI(apiKey).
+//	    WithReActMode(true).
+//	    WithReActForceFinalAnswer(true).
+//	    Build()
+//
+//	// Disable for strict errors
+//	ai := agent.New().
+//	    WithOpenAI(apiKey).
+//	    WithReActMode(true).
+//	    WithReActForceFinalAnswer(false).
+//	    Build()
+func (b *Builder) WithReActForceFinalAnswer(enabled bool) *Builder {
+	if b.reactConfig == nil {
+		b.reactConfig = NewReActConfig()
+	}
+	b.reactConfig.ForceFinalAnswerAtMax = enabled
 	return b
 }
 
