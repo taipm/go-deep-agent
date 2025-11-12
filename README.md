@@ -12,7 +12,8 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 - ⚡ **WithDefaults()** - Production-ready in one line: Memory(20) + Retry(3) + Timeout(30s) + ExponentialBackoff (v0.5.8 🆕)
 - 🤖 **Multi-Provider** - OpenAI, Ollama, and custom endpoints
 - 🧠 **Hierarchical Memory** - 3-tier system (Working → Episodic → Semantic) with automatic importance scoring (v0.6.0 🆕)
-- 📡 **Streaming** - Real-time response streaming with callbacks
+- � **Session Persistence** - Save/restore conversations across executions with file-based or custom backends (v0.8.0 🆕)
+- �📡 **Streaming** - Real-time response streaming with callbacks
 - 🛠️ **Tool Calling** - Auto-execution with type-safe function definitions
 - 📋 **Structured Outputs** - JSON Schema with strict mode
 - ⚡ **Error Recovery** - Smart retries with exponential backoff
@@ -32,7 +33,7 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 - 🤔 **ReAct Pattern** - Native function calling + text parsing modes for autonomous multi-step reasoning (v0.7.5 🆕)
 - 🧩 **Planning Layer** - Goal decomposition, parallel execution, adaptive strategies for complex workflows (v0.7.1 🆕)
 - 🚦 **Rate Limiting** - Token bucket algorithm with per-key limits and burst capacity (v0.7.3 🆕)
-- ✅ **Well Tested** - 1012+ tests, 71%+ coverage, 75+ working examples
+- ✅ **Well Tested** - 1344+ tests, 71%+ coverage, 77+ working examples
 
 ## 📦 Installation
 
@@ -66,6 +67,101 @@ builder := agent.NewOpenAI("gpt-4o-mini", apiKey).WithMemory()
 builder.Ask(ctx, "My name is John")
 builder.Ask(ctx, "What's my name?")  // AI remembers: "Your name is John"
 ```
+
+### With Persistent Memory (v0.9.0+)
+
+**Save conversations across program executions** - memories are automatically saved and restored:
+
+#### File-Based (Built-in, Zero Config)
+
+```go
+// First conversation
+agent := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithShortMemory().                    // Working memory (RAM)
+    WithLongMemory("user-alice")          // Persistent memory (disk)
+
+agent.Ask(ctx, "My favorite color is blue")
+// Automatically saved to ~/.go-deep-agent/memories/user-alice.json
+
+// Later (new program execution)
+agent2 := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithShortMemory().
+    WithLongMemory("user-alice")          // Auto-loads previous conversation
+
+agent2.Ask(ctx, "What's my favorite color?")  // AI remembers: "Blue"
+```
+
+#### Redis Backend (v0.10.0+ - Production)
+
+**For production deployments with shared memory across instances:**
+
+```go
+// ✅ RECOMMENDED: Simple setup
+backend := agent.NewRedisBackend("localhost:6379")
+defer backend.Close()
+
+agent := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithShortMemory().
+    WithLongMemory("user-alice").
+    UsingBackend(backend)
+
+// Conversations stored in Redis with 7-day TTL (auto-extends on activity)
+agent.Ask(ctx, "My favorite color is blue")
+```
+
+**With authentication:**
+
+```go
+backend := agent.NewRedisBackend("localhost:6379").
+    WithPassword("your-redis-password")
+
+agent := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithShortMemory().
+    WithLongMemory("user-alice").
+    UsingBackend(backend)
+```
+
+**Custom configuration:**
+
+```go
+backend := agent.NewRedisBackend("localhost:6379").
+    WithPassword("secret").
+    WithTTL(24 * time.Hour).      // Expire after 24h of inactivity
+    WithPrefix("myapp:")           // Custom key prefix
+
+agent := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithShortMemory().
+    WithLongMemory("user-alice").
+    UsingBackend(backend)
+```
+
+**Key Features:**
+- 💾 **Auto-save** - Automatically persists after each `Ask()` or `Stream()`
+- 🔄 **Auto-load** - Restores previous conversations on initialization
+- 🏪 **File-based** - Zero dependencies, works out-of-the-box (`~/.go-deep-agent/memories/`)
+- 🔴 **Redis backend** - Production-ready with clustering, TTL, and connection pooling
+- 🔌 **Pluggable** - Custom backends (PostgreSQL, S3, etc.)
+- 🔒 **Thread-safe** - Concurrent access with atomic writes
+- ⏮️ **Backward compatible** - Old API still works with deprecation warnings
+
+**Manual Control:**
+
+```go
+agent := agent.NewOpenAI("gpt-4o-mini", apiKey).
+    WithShortMemory().
+    WithLongMemory("user-bob").
+    WithAutoSaveLongMemory(false)  // Manual mode
+
+// Manual operations
+agent.SaveLongMemory(ctx)                  // Save explicitly
+agent.LoadLongMemory(ctx)                  // Reload from storage
+agent.DeleteLongMemory(ctx)                // Remove memory
+memories, _ := agent.ListLongMemories(ctx) // List all memories
+```
+
+**📖 Guides:**
+- **[Redis Backend Guide](docs/REDIS_BACKEND_GUIDE.md)** - Installation, configuration, best practices (v0.10.1 updated)
+- **[Memory System Guide](RELEASE_NOTES_v0.9.0.md)** - Memory terminology, migration from v0.8.0
 
 ### With Few-Shot Learning (v0.6.5 🆕)
 
@@ -1300,6 +1396,7 @@ ai := ai.WithDebug(debug)
 ## �📚 Documentation
 
 - **[README.md](README.md)** - Main documentation (you are here)
+- **[MEMORY_SYSTEM_GUIDE.md](docs/MEMORY_SYSTEM_GUIDE.md)** - 🧠 Complete memory system guide: Memory vs Cache vs Vector Store (v0.7.10 🆕)
 - **[COMPARISON.md](docs/COMPARISON.md)** - 🆚 Why go-deep-agent vs openai-go (with code examples)
 - **[FEWSHOT_GUIDE.md](docs/FEWSHOT_GUIDE.md)** - 🎓 Few-Shot Learning complete guide (v0.6.5)
 - **[PLANNING_GUIDE.md](docs/PLANNING_GUIDE.md)** - 🧩 Planning Layer concepts and patterns (v0.7.1 🆕)
