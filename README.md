@@ -29,7 +29,7 @@ Built with [openai-go v3.8.1](https://github.com/openai/openai-go).
 - 🛠️ **Built-in Tools** - FileSystem, HTTP, DateTime, Math tools (v0.5.5 🆕 convenient loading)
 - 🔍 **Tools Logging** - Comprehensive logging for built-in tools with security auditing (v0.5.6 🆕)
 - 🎓 **Few-Shot Learning** - Teach agents with examples (inline or YAML personas) (v0.6.5 🆕)
-- 🤔 **ReAct Pattern** - Thought → Action → Observation loop for autonomous multi-step reasoning (v0.7.0 🆕)
+- 🤔 **ReAct Pattern** - Native function calling + text parsing modes for autonomous multi-step reasoning (v0.7.5 🆕)
 - 🧩 **Planning Layer** - Goal decomposition, parallel execution, adaptive strategies for complex workflows (v0.7.1 🆕)
 - 🚦 **Rate Limiting** - Token bucket algorithm with per-key limits and burst capacity (v0.7.3 🆕)
 - ✅ **Well Tested** - 1012+ tests, 71%+ coverage, 75+ working examples
@@ -306,9 +306,9 @@ response, err := agent.NewOllama("qwen2.5:3b").
     Ask(ctx, "Explain goroutines")
 ```
 
-### 9. ReAct Pattern - Autonomous Multi-Step Reasoning (v0.7.0 🆕)
+### 9. ReAct Pattern - Native Function Calling (v0.7.5 🆕)
 
-**ReAct (Reasoning + Acting)** enables agents to think, act, and observe iteratively:
+**ReAct (Reasoning + Acting)** with **native function calling** for reliable tool execution:
 
 ```go
 // Define tools
@@ -317,10 +317,11 @@ calculator := agent.NewTool("calculator", "Perform calculations").
 search := agent.NewTool("search", "Search the web").
     WithHandler(searchHandler)
 
-// Enable ReAct mode
+// Enable ReAct native mode (default, recommended)
 ai := agent.NewOpenAI("gpt-4o", apiKey).
     WithTools(calculator, search).
-    WithReActMode(true).         // Enable thought → action → observation loop
+    WithReActMode(true).         // Enable ReAct pattern  
+    WithReActNativeMode().       // Use function calling (default)
     WithReActMaxIterations(7)    // Allow up to 7 reasoning steps
 
 // Execute complex multi-step task
@@ -352,6 +353,8 @@ for i, step := range reactResult.Steps {
 - ✅ Few-shot examples to guide behavior
 
 **[📖 ReAct Pattern Guide](docs/guides/REACT_GUIDE.md)** - Full documentation, best practices, and advanced features
+
+**[🚀 Native ReAct Examples](examples/react_native/)** - Comprehensive demos showing native function calling vs text parsing
 
 ### 9. Planning Layer - Complex Workflows (v0.7.1 🆕)
 
