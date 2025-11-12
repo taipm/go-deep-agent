@@ -13,7 +13,9 @@ require (
 	github.com/openai/openai-go/v3 v3.8.1
 	github.com/redis/go-redis/v9 v9.16.0
 	github.com/stretchr/testify v1.11.1
+	golang.org/x/time v0.14.0
 	gonum.org/v1/gonum v0.16.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -26,6 +28,4 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
 	github.com/yuin/gopher-lua v1.1.1 // indirect
-	golang.org/x/time v0.14.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

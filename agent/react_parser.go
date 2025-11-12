@@ -7,6 +7,27 @@ import (
 	"strings"
 )
 
+// DEPRECATED: This file implements legacy text parsing for ReAct pattern.
+//
+// The text parsing approach has several limitations:
+//   - Regex dependency (brittle parsing)
+//   - English-only support (THOUGHT:, ACTION:, FINAL: keywords)
+//   - Parse errors common with LLM output variations
+//   - High cognitive complexity (CC=55+)
+//   - Difficult to maintain and extend
+//
+// RECOMMENDED: Use native function calling mode instead.
+//   - More reliable (structured output)
+//   - Language-agnostic (no keywords)
+//   - Better error handling
+//   - 78% less code complexity
+//
+// Migration:
+//   OLD: .WithReActTextMode()
+//   NEW: .WithReActNativeMode()  // Default in v0.7.5+
+//
+// This file is maintained for backward compatibility only.
+
 // Parser regular expressions for ReAct format
 var (
 	// thoughtRegex matches "THOUGHT: <reasoning>"

@@ -319,8 +319,19 @@ func (b *Builder) Execute(ctx context.Context, task string) (*ReActResult, error
 	}
 }
 
-// executeReAct implements the core ReAct reasoning + acting loop.
-// This is the main execution logic for ReAct pattern.
+// executeReAct implements the core ReAct reasoning + acting loop using text parsing.
+//
+// DEPRECATED: This method uses legacy text parsing with regex patterns.
+// Use executeReActNative() for new applications (more reliable, language-agnostic).
+// This method is maintained for backward compatibility only.
+//
+// Migration: Change .WithReActTextMode() to .WithReActNativeMode()
+//
+// Issues with text parsing:
+//   - Regex dependency (brittle)
+//   - English-only support (THOUGHT:, ACTION:, FINAL:)
+//   - Parse error prone
+//   - Complex maintenance
 func (b *Builder) executeReAct(ctx context.Context, task string) (*ReActResult, error) {
 	// Initialize result
 	result := &ReActResult{
