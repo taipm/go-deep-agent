@@ -205,3 +205,37 @@ func TestWithDefaultsNoSideEffects(t *testing.T) {
 		t.Error("Expected parallel execution to be disabled (opt-in feature)")
 	}
 }
+
+// TestWithDefaults_EnablesAutoMemory verifies that WithDefaults() enables autoMemory (Bug Fix v0.7.10)
+// This test addresses the bug where WithDefaults() was documented to enable memory but didn't
+func TestWithDefaultsEnablesAutoMemory(t *testing.T) {
+	builder := NewOpenAI("gpt-4", "sk-test").WithDefaults()
+
+	// Verify autoMemory is enabled (critical for conversational agents)
+	if !builder.autoMemory {
+		t.Error("Expected autoMemory to be enabled by WithDefaults()")
+	}
+
+	// Verify maxHistory is also set (capacity)
+	if builder.maxHistory != 20 {
+		t.Errorf("Expected maxHistory=20, got %d", builder.maxHistory)
+	}
+}
+
+// TestWithDefaults_MemoryCanBeDisabled verifies that memory can be disabled after WithDefaults()
+// This ensures users can opt-out if they really don't want memory
+func TestWithDefaultsMemoryCanBeDisabled(t *testing.T) {
+	builder := NewOpenAI("gpt-4", "sk-test").
+		WithDefaults().
+		DisableMemory()
+
+	// Verify memory is now disabled
+	if builder.memoryEnabled {
+		t.Error("Expected memoryEnabled to be false after DisableMemory()")
+	}
+
+	// Other defaults should remain
+	if builder.maxRetries != 3 {
+		t.Errorf("Expected maxRetries=3, got %d", builder.maxRetries)
+	}
+}

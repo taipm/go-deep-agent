@@ -39,6 +39,7 @@ import "time"
 //   - *Builder: The builder instance with defaults configured (chainable)
 func (b *Builder) WithDefaults() *Builder {
 	// Memory: Keep last 20 messages
+	b.WithMemory()
 	b.WithMaxHistory(20)
 
 	// Retry: Retry failed requests up to 3 times
