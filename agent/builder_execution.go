@@ -62,10 +62,9 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 		return "", err
 	}
 
-	// Validate tool choice configuration
-	if b.toolChoice != nil && len(b.tools) == 0 {
-		err := fmt.Errorf("toolChoice is set but no tools are configured: use WithTools() to add tools before setting toolChoice")
-		logger.Error(ctx, "Invalid toolChoice configuration", F("error", err.Error()))
+	// Enhanced configuration validation (v0.7.9)
+	if err := b.validateConfiguration(); err != nil {
+		logger.Error(ctx, "Configuration validation failed", F("error", err.Error()))
 		return "", err
 	}
 
@@ -384,6 +383,12 @@ func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
 		F("model", b.model),
 		F("message_length", len(message)),
 		F("rate_limit_enabled", b.rateLimitEnabled))
+
+	// Enhanced configuration validation (v0.7.9)
+	if err := b.validateConfiguration(); err != nil {
+		logger.Error(ctx, "Configuration validation failed", F("error", err.Error()))
+		return "", err
+	}
 
 	// Initialize and check rate limiting if enabled
 	if b.rateLimitEnabled {

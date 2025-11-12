@@ -356,3 +356,22 @@ func (b *Builder) WithRateLimitKey(key string) *Builder {
 	b.rateLimitKey = key
 	return b
 }
+
+// validateConfiguration checks for invalid or conflicting configuration
+// Added in v0.7.9 - comprehensive validation at execution time
+//
+// This method is called automatically by Ask(), Stream(), and other execution methods
+// to catch configuration errors early with clear, actionable error messages.
+//
+// Validation checks:
+//   - Tool choice requirements (toolChoice set without tools)
+//
+// Returns nil if configuration is valid, or a detailed error with fixes.
+func (b *Builder) validateConfiguration() error {
+	// Check tool choice requires tools
+	if b.toolChoice != nil && len(b.tools) == 0 {
+		return ErrToolChoiceRequiresTools
+	}
+
+	return nil
+}

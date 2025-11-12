@@ -62,8 +62,8 @@ func TestToolChoice_ValidationWithoutTools(t *testing.T) {
 	_, err := builder.Ask(ctx, "test")
 
 	assert.Error(t, err, "should error when toolChoice is set without tools")
-	assert.Contains(t, err.Error(), "toolChoice is set but no tools are configured", "error should explain the issue")
-	assert.Contains(t, err.Error(), "WithTools()", "error should suggest solution")
+	assert.Contains(t, err.Error(), "tool choice requires tools", "error should explain the issue")
+	assert.Contains(t, err.Error(), "WithTools", "error should suggest solution")
 }
 
 func TestToolChoice_ValidationWithTools(t *testing.T) {
@@ -112,7 +112,7 @@ func TestToolChoice_StreamValidationWithoutTools(t *testing.T) {
 	_, err := builder.Stream(ctx, "test")
 
 	assert.Error(t, err, "should error when toolChoice is set without tools in Stream")
-	assert.Contains(t, err.Error(), "toolChoice is set but no tools are configured", "error should explain the issue")
+	assert.Contains(t, err.Error(), "tool choice requires tools", "error should explain the issue")
 }
 
 func TestWithToolChoice_MultipleCallsLastWins(t *testing.T) {

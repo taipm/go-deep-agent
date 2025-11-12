@@ -72,6 +72,52 @@ var (
 		"  3. Increase iterations: .WithReActMaxIterations(10)\n" +
 		"  4. Enable reminders (default): .WithReActIterationReminders(true)\n" +
 		"  5. Simplify the task or break it into smaller steps")
+
+	// ErrInvalidConfiguration indicates invalid or conflicting configuration
+	// Added in v0.7.9 - comprehensive configuration validation at execution time
+	ErrInvalidConfiguration = errors.New("invalid configuration detected\n\n" +
+		"Common issues:\n" +
+		"  • ReActMode requires WithReActNativeMode() in v0.7.5+\n" +
+		"  • WithToolChoice(\"required\") needs WithTools(...)\n" +
+		"  • WithToolChoice(\"none\") conflicts with WithAutoExecute(true)\n" +
+		"  • WithReActMode() and WithReActNativeMode() cannot both be true\n\n" +
+		"Tip: Enable debug mode with .WithDebug() for detailed diagnostics")
+
+	// ErrConflictingReActModes indicates both ReAct modes are enabled
+	ErrConflictingReActModes = errors.New("conflicting ReAct configuration\n\n" +
+		"Problem: Both WithReActMode(true) and WithReActNativeMode(true) are set\n\n" +
+		"Fix (choose ONE):\n" +
+		"  Option 1 - ReAct Native (Recommended for v0.7.5+):\n" +
+		"    .WithReActNativeMode(true)\n" +
+		"    .WithTools(tools...)\n\n" +
+		"  Option 2 - ReAct Classic (Legacy):\n" +
+		"    .WithReActMode(true)\n\n" +
+		"Docs: https://github.com/taipm/go-deep-agent#react-patterns")
+
+	// ErrToolChoiceRequiresTools indicates toolChoice is set without any tools
+	ErrToolChoiceRequiresTools = errors.New("tool choice requires tools\n\n" +
+		"Problem: WithToolChoice() is configured but no tools are provided\n\n" +
+		"Fix:\n" +
+		"  1. Add tools: .WithTools(tool1, tool2, ...)\n" +
+		"  2. Or remove: Don't call WithToolChoice()\n\n" +
+		"Example:\n" +
+		"  agent.NewOpenAI(\"gpt-4o-mini\", apiKey).\n" +
+		"      WithTools(tools.NewMathTool()).\n" +
+		"      WithToolChoice(\"required\").\n" +
+		"      Ask(ctx, \"Calculate 100+200\")\n\n" +
+		"Docs: https://github.com/taipm/go-deep-agent#tool-choice")
+
+	// ErrToolChoiceConflictsWithAutoExecute indicates incompatible tool settings
+	ErrToolChoiceConflictsWithAutoExecute = errors.New("tool choice conflicts with auto-execute\n\n" +
+		"Problem: WithToolChoice(\"none\") disables tools, but WithAutoExecute(true) enables them\n\n" +
+		"Fix (choose ONE):\n" +
+		"  Option 1 - Disable tools completely:\n" +
+		"    .WithToolChoice(\"none\")\n" +
+		"    // Remove WithAutoExecute()\n\n" +
+		"  Option 2 - Enable auto-execution:\n" +
+		"    .WithAutoExecute(true)\n" +
+		"    .WithToolChoice(\"auto\")  // or \"required\"\n\n" +
+		"Docs: https://github.com/taipm/go-deep-agent#tool-control")
 )
 
 // APIError wraps API errors with additional context
