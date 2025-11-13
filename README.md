@@ -1,4 +1,23 @@
+<div align="center">
+
 # Go Deep Agent 🚀
+
+[![Go Version](https://img.shields.io/github/go-mod/go-version/taipm/go-deep-agent?style=flat-square&logo=go)](https://golang.org/)
+[![Tests](https://img.shields.io/badge/tests-1344%2B%20passing-success?style=flat-square&logo=github)](https://github.com/taipm/go-deep-agent)
+[![Coverage](https://img.shields.io/badge/coverage-73%25-success?style=flat-square&logo=codecov)](https://github.com/taipm/go-deep-agent)
+[![Go Report Card](https://goreportcard.com/badge/github.com/taipm/go-deep-agent?style=flat-square)](https://goreportcard.com/report/github.com/taipm/go-deep-agent)
+[![License](https://img.shields.io/github/license/taipm/go-deep-agent?style=flat-square)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/taipm/go-deep-agent?style=social)](https://github.com/taipm/go-deep-agent/stargazers)
+
+**The #1 Production-Ready AI Agent Library for Go**
+
+*[92/100 Professional Score](LIBRARY_ASSESSMENT_REPORT.md) • 60-80% Less Code • Type-Safe • 1344+ Tests • Built for Production*
+
+[Quick Start](#-quick-start) • [Features](#-features) • [Examples](examples/) • [Docs](docs/) • [Assessment Report](LIBRARY_ASSESSMENT_REPORT.md)
+
+---
+
+</div>
 
 A powerful yet simple LLM agent library for Go with a modern **Fluent Builder API**. Build AI applications with method chaining, automatic conversation memory, intelligent error handling, and seamless streaming support.
 
