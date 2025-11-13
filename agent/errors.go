@@ -118,6 +118,40 @@ var (
 		"    .WithAutoExecute(true)\n" +
 		"    .WithToolChoice(\"auto\")  // or \"required\"\n\n" +
 		"Docs: https://github.com/taipm/go-deep-agent#tool-control")
+
+	// ErrLongMemoryIDRequired indicates long-term memory ID is required for operation
+	ErrLongMemoryIDRequired = errors.New("long-term memory ID required\n\n" +
+		"Problem: Trying to save/load/delete long-term memory without setting ID\n\n" +
+		"Fix:\n" +
+		"  1. Set memory ID: .WithLongMemory(\"user-123\")\n\n" +
+		"Example:\n" +
+		"  agent := agent.NewOpenAI(\"gpt-4\", apiKey).\n" +
+		"      WithShortMemory().\n" +
+		"      WithLongMemory(\"user-alice\")\n\n" +
+		"Docs: https://github.com/taipm/go-deep-agent#long-term-memory")
+
+	// ErrLongMemoryBackendRequired indicates memory backend is required for operation
+	ErrLongMemoryBackendRequired = errors.New("long-term memory backend required\n\n" +
+		"Problem: No memory backend configured for long-term memory operations\n\n" +
+		"Fix:\n" +
+		"  1. Use WithLongMemory() - auto-initializes FileBackend\n" +
+		"  2. Or manually: .UsingBackend(backend)\n\n" +
+		"Example:\n" +
+		"  agent := agent.NewOpenAI(\"gpt-4\", apiKey).\n" +
+		"      WithShortMemory().\n" +
+		"      WithLongMemory(\"user-123\")  // Auto-creates FileBackend\n\n" +
+		"Docs: https://github.com/taipm/go-deep-agent#long-term-memory")
+
+	// Deprecated error constants (v0.9.0+)
+	// These will be removed in v1.0.0
+
+	// ErrSessionIDRequired is deprecated. Use ErrLongMemoryIDRequired instead.
+	// Deprecated: Use ErrLongMemoryIDRequired
+	ErrSessionIDRequired = ErrLongMemoryIDRequired
+
+	// ErrMemoryBackendRequired is deprecated. Use ErrLongMemoryBackendRequired instead.
+	// Deprecated: Use ErrLongMemoryBackendRequired
+	ErrMemoryBackendRequired = ErrLongMemoryBackendRequired
 )
 
 // APIError wraps API errors with additional context

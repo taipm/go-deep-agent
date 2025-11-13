@@ -36,6 +36,13 @@ go.work.sum
 # .vscode/
 mynotes.txt
 
+# AI Tool Configurations (local development only)
+.bmad/
+.claude/
+.gemini/
+.github/chatmodes/
+.opencode/
+
 # Working documents (planning/analysis)
 ANALYSIS_INDEX.md
 CODEBASE_ANALYSIS.md
@@ -82,6 +89,7 @@ react_error_recovery
 react_research
 react_simple
 react_streaming
+main
 
 # Compiled binaries - examples/
 examples/builder_advanced

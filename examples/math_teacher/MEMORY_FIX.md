@@ -1,8 +1,14 @@
 # Memory Fix - Math Teacher Example
 
-## Vấn đề phát hiện
+## ✅ ĐÃ FIX TRONG THƯ VIỆN (v0.7.10+)
 
-Agent **không nhớ được cuộc hội thoại** trong interactive mode.
+Bug đã được fix trong phiên bản mới! `WithDefaults()` giờ đã tự động bật memory.
+
+---
+
+## Vấn đề phát hiện (Đã fix)
+
+Agent **không nhớ được cuộc hội thoại** trong interactive mode (phiên bản cũ).
 
 ### Ví dụ lỗi:
 
@@ -26,25 +32,31 @@ Chi tiết: [BUG_REPORT_MEMORY_WITHDEFAULTS.md](../../BUG_REPORT_MEMORY_WITHDEFA
 
 ## Giải pháp
 
-### Đã sửa trong example này:
+### Fix trong thư viện (v0.7.10+):
 
-**Trước (SAI):**
+`WithDefaults()` đã được cập nhật để tự động bật memory:
+
 ```go
-teacher := agent.NewOpenAI("gpt-4o-mini", apiKey).
-    WithDefaults().          // Không bật memory!
-    WithPersona(persona).
-    WithTools(...).
-    WithMaxHistory(20)       // Vô dụng nếu không có memory
+func (b *Builder) WithDefaults() *Builder {
+    b.WithMemory()           // ← ĐÃ THÊM dòng này
+    b.WithMaxHistory(20)
+    b.WithRetry(3)
+    b.WithTimeout(30 * time.Second)
+    b.WithExponentialBackoff()
+    return b
+}
 ```
 
-**Sau (ĐÚNG):**
+### Code hiện tại (Đơn giản hơn):
+
 ```go
 teacher := agent.NewOpenAI("gpt-4o-mini", apiKey).
-    WithDefaults().
-    WithMemory().            // ← QUAN TRỌNG: Bật memory
+    WithDefaults().          // ← Giờ đã có memory tự động!
     WithPersona(persona).
     WithTools(...)
 ```
+
+**Không cần `.WithMemory()` nữa!** 🎉
 
 ## Test lại
 
@@ -58,23 +70,33 @@ Sau khi fix, agent giờ đã nhớ được:
 👩‍🏫 Cô giáo: Dĩ nhiên rồi! Tên con là Lan.  ← NHỚ được!
 ```
 
-## Khuyến nghị cho users khác
+## Khuyến nghị
 
-Nếu bạn dùng `WithDefaults()` và cần memory, **luôn thêm `.WithMemory()`**:
+### Phiên bản v0.7.10+
+
+Chỉ cần `WithDefaults()`, memory đã tự động hoạt động:
 
 ```go
-// ❌ SAI - Memory không hoạt động
+// ✅ ĐÚNG - Memory tự động có sẵn
 ai := agent.NewOpenAI(apiKey).WithDefaults()
+```
 
-// ✅ ĐÚNG - Memory hoạt động
+### Phiên bản cũ (< v0.7.10)
+
+Nếu dùng phiên bản cũ, cần thêm `.WithMemory()`:
+
+```go
+// Phiên bản cũ cần thêm WithMemory()
 ai := agent.NewOpenAI(apiKey).
     WithDefaults().
     WithMemory()
 ```
 
-## Next steps
+## Timeline
 
-Bug đã được report cho tác giả thư viện. Sẽ được fix trong v0.7.10 hoặc v0.8.0.
+- **2025-11-12**: Bug được phát hiện và report
+- **2025-11-12**: Tác giả fix ngay trong ngày
+- **v0.7.10+**: Bug đã được fix hoàn toàn
 
 ---
 

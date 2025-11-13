@@ -9,9 +9,37 @@ import (
 
 // TokenUsage represents token usage statistics
 type TokenUsage struct {
-	PromptTokens     int
-	CompletionTokens int
-	TotalTokens      int
+	PromptTokens       int
+	CompletionTokens   int
+	TotalTokens        int
+	PromptCachedTokens int // Cached tokens (for providers like Anthropic that support caching)
+}
+
+// EstimateCost estimates the cost in USD for this token usage.
+// This is a helper method for common cost calculation.
+//
+// Parameters:
+//   - promptPricePer1M: Price per 1 million prompt tokens in USD
+//   - completionPricePer1M: Price per 1 million completion tokens in USD
+//
+// Returns estimated cost in USD.
+//
+// Example:
+//
+//	cost := usage.EstimateCost(0.50, 1.50) // Gemini Pro pricing
+//	fmt.Printf("Estimated cost: $%.4f\n", cost)
+func (u TokenUsage) EstimateCost(promptPricePer1M, completionPricePer1M float64) float64 {
+	promptCost := float64(u.PromptTokens) / 1_000_000.0 * promptPricePer1M
+	completionCost := float64(u.CompletionTokens) / 1_000_000.0 * completionPricePer1M
+	return promptCost + completionCost
+}
+
+// String returns a human-readable representation of token usage.
+//
+// Example output: "Tokens: 150 prompt + 75 completion = 225 total"
+func (u TokenUsage) String() string {
+	return fmt.Sprintf("Tokens: %d prompt + %d completion = %d total",
+		u.PromptTokens, u.CompletionTokens, u.TotalTokens)
 }
 
 // BatchResult represents the result of a single batch request

@@ -222,6 +222,27 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 		b.addMessage(Assistant(result))
 	}
 
+	// Long-term memory: auto-save after successful message (v0.9.0+)
+	if b.autoSaveLongMemory && b.longMemoryID != "" && b.longMemoryBackend != nil {
+		go func() {
+			saveCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			saveStart := time.Now()
+			if err := b.longMemoryBackend.Save(saveCtx, b.longMemoryID, b.messages); err != nil {
+				logger.Error(saveCtx, "Failed to auto-save long-term memory",
+					F("memory_id", b.longMemoryID),
+					F("error", err.Error()),
+					F("duration_ms", time.Since(saveStart).Milliseconds()))
+			} else {
+				logger.Debug(saveCtx, "Long-term memory auto-saved",
+					F("memory_id", b.longMemoryID),
+					F("message_count", len(b.messages)),
+					F("duration_ms", time.Since(saveStart).Milliseconds()))
+			}
+		}()
+	}
+
 	return result, nil
 }
 
@@ -538,6 +559,27 @@ func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
 	if b.autoMemory && fullContent != "" {
 		b.addMessage(User(message))
 		b.addMessage(Assistant(fullContent))
+	}
+
+	// Long-term memory: auto-save after successful stream (v0.9.0+)
+	if b.autoSaveLongMemory && b.longMemoryID != "" && b.longMemoryBackend != nil && fullContent != "" {
+		go func() {
+			saveCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			saveStart := time.Now()
+			if err := b.longMemoryBackend.Save(saveCtx, b.longMemoryID, b.messages); err != nil {
+				logger.Error(saveCtx, "Failed to auto-save long-term memory after stream",
+					F("memory_id", b.longMemoryID),
+					F("error", err.Error()),
+					F("duration_ms", time.Since(saveStart).Milliseconds()))
+			} else {
+				logger.Debug(saveCtx, "Long-term memory auto-saved after stream",
+					F("memory_id", b.longMemoryID),
+					F("message_count", len(b.messages)),
+					F("duration_ms", time.Since(saveStart).Milliseconds()))
+			}
+		}()
 	}
 
 	return fullContent, nil

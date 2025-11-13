@@ -119,6 +119,11 @@ type Builder struct {
 	// ReAct (Reasoning + Acting)
 	reactConfig *ReActConfig // ReAct pattern configuration
 
+	// Long-Term Memory Persistence (v0.9.0+)
+	longMemoryID       string        // Unique memory identifier for persistence
+	longMemoryBackend  MemoryBackend // Backend for storing conversation history
+	autoSaveLongMemory bool          // Auto-save after each message (default: true)
+
 	// Rate Limiting
 	rateLimiter      RateLimiter     // Rate limiter instance
 	rateLimitConfig  RateLimitConfig // Rate limit configuration
@@ -127,6 +132,9 @@ type Builder struct {
 
 	// OpenAI client (lazy initialized)
 	client *openai.Client
+
+	// LLM Adapter (for multi-provider support)
+	adapter LLMAdapter
 
 	// Usage tracking
 	lastUsage TokenUsage // Last request token usage
@@ -179,6 +187,42 @@ func NewOllama(model string) *Builder {
 		provider:      ProviderOllama,
 		model:         model,
 		baseURL:       "http://localhost:11434/v1",
+		autoMemory:    false,
+		messages:      []Message{},
+		memory:        memory.New(),
+		memoryEnabled: true,
+	}
+}
+
+// NewGemini creates a new Builder for Google Gemini with the specified model and API key.
+//
+// Example:
+//
+//	builder := agent.NewGemini("gemini-pro", apiKey)
+//	builder := agent.NewGemini("gemini-1.5-flash", apiKey)
+func NewGemini(model, apiKey string) *Builder {
+	return &Builder{
+		provider:      ProviderGemini,
+		model:         model,
+		apiKey:        apiKey,
+		autoMemory:    false,
+		messages:      []Message{},
+		memory:        memory.New(),
+		memoryEnabled: true,
+	}
+}
+
+// NewWithAdapter creates a new Builder with a custom LLM adapter.
+// This allows using any LLM provider that implements the LLMAdapter interface.
+//
+// Example:
+//
+//	adapter := adapters.NewGeminiAdapter(apiKey)
+//	builder := agent.NewWithAdapter("gemini-pro", adapter)
+func NewWithAdapter(model string, adapter LLMAdapter) *Builder {
+	return &Builder{
+		model:         model,
+		adapter:       adapter,
 		autoMemory:    false,
 		messages:      []Message{},
 		memory:        memory.New(),

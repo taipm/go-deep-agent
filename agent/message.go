@@ -5,8 +5,10 @@ import "github.com/openai/openai-go/v3"
 // Message represents a chat message in the conversation.
 // This is our own type to avoid users needing to import openai-go.
 type Message struct {
-	Role    string // "system", "user", or "assistant"
-	Content string // The message content
+	Role       string     // "system", "user", "assistant", or "tool"
+	Content    string     // The message content
+	ToolCalls  []ToolCall // Tool calls made by assistant (only for assistant messages)
+	ToolCallID string     // ID of the tool call this message is responding to (only for tool messages)
 }
 
 // System creates a system message.

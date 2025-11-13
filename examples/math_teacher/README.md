@@ -151,14 +151,13 @@ func CreateMathTeacher(apiKey string) (*agent.Builder, error) {
     persona, _ := agent.LoadPersona("examples/math_teacher/math_teacher.yaml")
 
     return agent.NewOpenAI("gpt-4o-mini", apiKey).
-        WithDefaults().              // Memory + Retry + Timeout
-        WithPersona(persona).        // Load persona
+        WithDefaults().              // Memory(20) + Retry(3) + Timeout(30s) + Backoff
+        WithPersona(persona).        // Load persona từ YAML
         WithTools(
             tools.NewMathTool(),     // Công cụ tính toán
             tools.NewDateTimeTool(), // Xử lý thời gian
         ).
-        WithAutoExecute(true).       // Tự động dùng tools
-        WithMaxHistory(20),          // Nhớ 20 tin nhắn
+        WithAutoExecute(true),       // Tự động dùng tools
     nil
 }
 ```

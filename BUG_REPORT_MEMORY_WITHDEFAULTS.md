@@ -1,5 +1,11 @@
 # Bug Report: WithDefaults() không bật Memory
 
+## ✅ STATUS: FIXED (2025-11-12)
+
+Bug đã được fix trong cùng ngày phát hiện!
+
+---
+
 ## Tóm tắt
 
 `WithDefaults()` không bật `autoMemory`, dẫn đến agent **không nhớ được cuộc hội thoại** mặc dù documentation nói rằng "Memory(20): Keeps last 20 messages".
@@ -7,6 +13,18 @@
 ## Mức độ nghiêm trọng
 
 🔴 **HIGH** - Ảnh hưởng đến trải nghiệm người dùng và vi phạm documentation
+
+## Resolution
+
+**Fixed in:** [agent/builder_defaults.go:42](agent/builder_defaults.go#L42)
+
+```go
+func (b *Builder) WithDefaults() *Builder {
+    b.WithMemory()           // ← ĐÃ THÊM dòng này
+    b.WithMaxHistory(20)
+    // ...
+}
+```
 
 ## Tái hiện lỗi
 
