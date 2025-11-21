@@ -1,4 +1,3 @@
-package ratelimitbasic
 package main
 
 import (
@@ -50,7 +49,7 @@ func simpleRateLimiting(apiKey string) {
 	// then throttled to 2 per second
 	for i := 1; i <= 8; i++ {
 		start := time.Now()
-		
+
 		response, err := agentBuilder.Ask(ctx, fmt.Sprintf("Say 'Request %d'", i))
 		if err != nil {
 			log.Printf("   Request %d failed: %v", i, err)
@@ -80,31 +79,31 @@ func burstCapacity(apiKey string) {
 		start := time.Now()
 		response, err := agentBuilder.Ask(ctx, "Say 'OK'")
 		duration := time.Since(start)
-		
+
 		if err != nil {
 			log.Printf("   Request %d failed: %v", i, err)
 			continue
 		}
-		
-		fmt.Printf("   Request %d: %s (waited %v)\n", 
+
+		fmt.Printf("   Request %d: %s (waited %v)\n",
 			i, response, duration.Round(time.Millisecond))
 	}
 
 	fmt.Println()
 	fmt.Println("   Next 2 requests (rate limited):")
-	
+
 	// Next requests will be rate limited
 	for i := 4; i <= 5; i++ {
 		start := time.Now()
 		response, err := agentBuilder.Ask(ctx, "Say 'OK'")
 		duration := time.Since(start)
-		
+
 		if err != nil {
 			log.Printf("   Request %d failed: %v", i, err)
 			continue
 		}
-		
-		fmt.Printf("   Request %d: %s (waited %v)\n", 
+
+		fmt.Printf("   Request %d: %s (waited %v)\n",
 			i, response, duration.Round(time.Millisecond))
 	}
 }
@@ -128,7 +127,7 @@ func rateLimitStats(apiKey string) {
 		start := time.Now()
 		_, err := agentBuilder.Ask(ctx, fmt.Sprintf("Say 'Request %d'", i))
 		duration := time.Since(start)
-		
+
 		if err != nil {
 			log.Printf("   Request %d failed: %v", i, err)
 		} else {

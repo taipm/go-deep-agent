@@ -1,4 +1,3 @@
-package ratelimitadvanced
 package main
 
 import (
@@ -45,7 +44,7 @@ func perKeyRateLimiting(apiKey string) {
 		Enabled:           true,
 		RequestsPerSecond: 3.0,
 		BurstSize:         5,
-		PerKey:            true,  // Enable per-key limits
+		PerKey:            true, // Enable per-key limits
 		KeyTimeout:        5 * time.Minute,
 		WaitTimeout:       30 * time.Second,
 	}
@@ -72,7 +71,7 @@ func perKeyRateLimiting(apiKey string) {
 			// Make 3 requests per user
 			for i := 1; i <= 3; i++ {
 				start := time.Now()
-				response, err := agentBuilder.Ask(ctx, 
+				response, err := agentBuilder.Ask(ctx,
 					fmt.Sprintf("Say 'Hello from %s, request %d'", userID, i))
 				duration := time.Since(start)
 
@@ -81,7 +80,7 @@ func perKeyRateLimiting(apiKey string) {
 					continue
 				}
 
-				fmt.Printf("   [%s] Request %d: %s (took %v)\n", 
+				fmt.Printf("   [%s] Request %d: %s (took %v)\n",
 					userID, i, response, duration.Round(time.Millisecond))
 			}
 		}(user)
@@ -105,8 +104,8 @@ func advancedConfiguration(apiKey string) {
 		RequestsPerSecond: 5.0,
 		BurstSize:         10,
 		PerKey:            false,
-		KeyTimeout:        10 * time.Minute,  // Cleanup unused keys after 10 min
-		WaitTimeout:       5 * time.Second,   // Max wait time per request
+		KeyTimeout:        10 * time.Minute, // Cleanup unused keys after 10 min
+		WaitTimeout:       5 * time.Second,  // Max wait time per request
 	}
 
 	agentBuilder := agent.NewOpenAI("gpt-4o-mini", apiKey).
@@ -134,7 +133,7 @@ func advancedConfiguration(apiKey string) {
 			continue
 		}
 
-		fmt.Printf("   Request %d: %s (waited %v)\n", 
+		fmt.Printf("   Request %d: %s (waited %v)\n",
 			i, response, duration.Round(time.Millisecond))
 	}
 }
@@ -165,14 +164,14 @@ func concurrentRequests(apiKey string) {
 			defer wg.Done()
 
 			start := time.Now()
-			response, err := agentBuilder.Ask(ctx, 
+			response, err := agentBuilder.Ask(ctx,
 				fmt.Sprintf("Say 'Request %d'", requestID))
 			duration := time.Since(start)
 
 			if err != nil {
 				results <- fmt.Sprintf("   Request %d: FAILED (%v)", requestID, err)
 			} else {
-				results <- fmt.Sprintf("   Request %d: %s (waited %v)", 
+				results <- fmt.Sprintf("   Request %d: %s (waited %v)",
 					requestID, response, duration.Round(time.Millisecond))
 			}
 		}(i)
@@ -192,7 +191,7 @@ func concurrentRequests(apiKey string) {
 	totalDuration := time.Since(startTime)
 	fmt.Println()
 	fmt.Printf("   Total time: %v\n", totalDuration.Round(time.Millisecond))
-	fmt.Printf("   Average: %.2f requests/second\n", 
+	fmt.Printf("   Average: %.2f requests/second\n",
 		float64(numRequests)/totalDuration.Seconds())
 	fmt.Println()
 	fmt.Println("   ✓ Rate limiting automatically queued concurrent requests")

@@ -1,0 +1,259 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1</storyId>
+    <title>Project Security Audit &amp; Baseline Assessment</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-14</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>/Users/taipm/GitHub/go-deep-agent/docs/sprint-artifacts/1-1-project-security-audit-baseline-assessment.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>Security Engineer</asA>
+    <iWant>baseline security assessment của codebase hiện tại</iWant>
+    <soThat>tôi hiểu current security posture và có thể track improvements</soThat>
+    <tasks>
+      <task id="1" acs="AC-1, AC-2">
+        <title>Install security scanning tools</title>
+        <subtasks>
+          <subtask id="1.1">Install gosec: go install github.com/securego/gosec/v2/cmd/gosec@latest (verify v2.22.10+)</subtask>
+          <subtask id="1.2">Install govulncheck: go install golang.org/x/vuln/cmd/govulncheck@latest (verify v1.1.4+)</subtask>
+          <subtask id="1.3">Verify Go version compatibility (require Go 1.18+, current: Go 1.25.2)</subtask>
+        </subtasks>
+      </task>
+      <task id="2" acs="AC-1, AC-3">
+        <title>Run gosec security scan</title>
+        <subtasks>
+          <subtask id="2.1">Run: gosec -fmt=json -out=gosec-report.json ./...</subtask>
+          <subtask id="2.2">Verify gosec scanned all packages</subtask>
+          <subtask id="2.3">Parse JSON: extract CWE ID, severity, file, line, description; count by severity</subtask>
+          <subtask id="2.4">Document scan duration (target: &lt;2 minutes)</subtask>
+        </subtasks>
+      </task>
+      <task id="3" acs="AC-2, AC-3">
+        <title>Run govulncheck dependency scan</title>
+        <subtasks>
+          <subtask id="3.1">Run: govulncheck -json ./... &gt; govulncheck-report.json</subtask>
+          <subtask id="3.2">Parse JSON: extract CVE ID, package, version, severity, classify direct vs transitive, extract fixes</subtask>
+          <subtask id="3.3">Document scan duration (target: &lt;1 minute)</subtask>
+        </subtasks>
+      </task>
+      <task id="4" acs="AC-3, AC-4">
+        <title>Categorize and analyze findings</title>
+        <subtasks>
+          <subtask id="4.1">Combine gosec and govulncheck findings</subtask>
+          <subtask id="4.2">Apply severity categorization (map gosec confidence/severity and CVE CVSS to standard levels)</subtask>
+          <subtask id="4.3">Calculate baseline metrics: total by severity, affected files, top 5 CWE IDs</subtask>
+          <subtask id="4.4">Create security debt inventory: prioritized list, group by remediation effort</subtask>
+        </subtasks>
+      </task>
+      <task id="5" acs="AC-5">
+        <title>Generate markdown baseline report</title>
+        <subtasks>
+          <subtask id="5.1">Create docs/security directory: mkdir -p docs/security</subtask>
+          <subtask id="5.2">Generate report structure: Executive Summary, gosec table, govulncheck table, Remediation Plan</subtask>
+          <subtask id="5.3">Populate report sections with parsed data</subtask>
+          <subtask id="5.4">Add metadata: date, commit hash, Go version, tool versions</subtask>
+          <subtask id="5.5">Save to docs/security/security-baseline-report.md</subtask>
+        </subtasks>
+      </task>
+      <task id="6" acs="AC-5, AC-6">
+        <title>Verify and commit baseline</title>
+        <subtasks>
+          <subtask id="6.1">Review generated report: verify sections, spot-check 5 findings, validate markdown</subtask>
+          <subtask id="6.2">Verify scan performance: total time &lt; 5 minutes, document durations</subtask>
+          <subtask id="6.3">Commit baseline to version control with descriptive message</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-1" title="Complete security scan report từ gosec">
+      <given>go-deep-agent codebase với 73% test coverage và 92/100 assessment score</given>
+      <when>chạy gosec security scan</when>
+      <then>
+        <item>JSON report từ gosec scanning tất cả .go files</item>
+        <item>All security issues được phát hiện và categorized</item>
+        <item>CWE IDs được assigned cho từng finding</item>
+        <item>File locations và line numbers được included</item>
+      </then>
+    </criterion>
+    <criterion id="AC-2" title="Vulnerability report từ govulncheck">
+      <given>go.mod với 42 dependencies (8 direct, 34 transitive)</given>
+      <when>chạy govulncheck dependency scan</when>
+      <then>
+        <item>JSON report listing tất cả known CVE vulnerabilities</item>
+        <item>Vulnerability details: CVE ID, severity, affected package, version</item>
+        <item>Direct vs transitive dependency classification</item>
+        <item>Fix recommendations (version upgrades)</item>
+      </then>
+    </criterion>
+    <criterion id="AC-3" title="Categorized findings by severity">
+      <given>gosec và govulncheck reports</given>
+      <when>parse và categorize findings</when>
+      <then>
+        <item>Critical: Immediate action required (e.g., SQL injection, hardcoded secrets)</item>
+        <item>High: High security impact (e.g., weak crypto, XSS vulnerabilities)</item>
+        <item>Medium: Moderate risk (e.g., error handling gaps, logging issues)</item>
+        <item>Low: Best practice violations (e.g., TODO comments, code style)</item>
+      </then>
+    </criterion>
+    <criterion id="AC-4" title="Baseline metrics và security debt inventory">
+      <given>categorized findings</given>
+      <when>generate baseline metrics</when>
+      <then>
+        <item>Total issues count</item>
+        <item>Issues by category: Critical, High, Medium, Low</item>
+        <item>Affected files count</item>
+        <item>Security debt inventory: list of all vulnerabilities requiring remediation</item>
+        <item>Baseline date và commit hash for tracking</item>
+      </then>
+    </criterion>
+    <criterion id="AC-5" title="Markdown report saved to version control">
+      <given>all findings và metrics compiled</given>
+      <when>generate final report</when>
+      <then>
+        <item>Report saved to docs/security/security-baseline-report.md</item>
+        <item>Structure includes: Executive Summary, gosec Findings table, govulncheck Findings table, Remediation Plan</item>
+      </then>
+    </criterion>
+    <criterion id="AC-6" title="Scan performance target met">
+      <given>full codebase scan</given>
+      <when>measure total scan time</when>
+      <then>
+        <item>Total time &lt; 5 minutes (target for CI feasibility)</item>
+      </then>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>Success Criteria - Code Quality Targets</section>
+        <snippet>Target: Zero high/critical vulnerabilities. Security audit baseline with comprehensive scanning (gosec, govulncheck) to establish security posture tracking.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Enhanced Structure - Security Infrastructure</section>
+        <snippet>New docs/security/ directory for security documentation including security-baseline-report.md. Additive-only approach with no code changes required.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>Tools Stack, Detailed Design, Data Models</section>
+        <snippet>gosec v2.22.10+ (code security), govulncheck v1.1.4+ (vulnerabilities), target &lt;5min scan. SARIF/JSON output, severity categorization, baseline report markdown schema defined.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epics Definition</title>
+        <section>Epic 1 - Story 1.1</section>
+        <snippet>Establish security baseline: Run scans, categorize findings by severity, generate report to docs/security/security-baseline-report.md, commit to version control.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>go.mod</path>
+        <kind>dependency-manifest</kind>
+        <symbol>require block</symbol>
+        <lines>8-21</lines>
+        <reason>Contains 42 dependencies (8 direct, 34 transitive) that govulncheck will scan for CVE vulnerabilities</reason>
+      </artifact>
+      <artifact>
+        <path>go.sum</path>
+        <kind>dependency-lock</kind>
+        <symbol>checksum file</symbol>
+        <lines>all</lines>
+        <reason>Required by govulncheck for verifying dependency integrity during vulnerability scanning</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <go>
+        <version>1.25.2</version>
+        <direct>
+          <package name="github.com/Knetic/govaluate" version="v3.0.0+incompatible"/>
+          <package name="github.com/alicebob/miniredis/v2" version="v2.35.0"/>
+          <package name="github.com/google/generative-ai-go" version="v0.20.1"/>
+          <package name="github.com/joho/godotenv" version="v1.5.1"/>
+          <package name="github.com/openai/openai-go" version="v1.12.0"/>
+          <package name="github.com/openai/openai-go/v3" version="v3.8.1"/>
+          <package name="github.com/redis/go-redis/v9" version="v9.16.0"/>
+          <package name="github.com/stretchr/testify" version="v1.11.1"/>
+        </direct>
+        <note>Total 42 packages (8 direct, 34 transitive). govulncheck will scan all for known CVEs.</note>
+      </go>
+      <tools>
+        <tool name="gosec" version="v2.22.10+" install="go install github.com/securego/gosec/v2/cmd/gosec@latest"/>
+        <tool name="govulncheck" version="v1.1.4+" install="go install golang.org/x/vuln/cmd/govulncheck@latest"/>
+      </tools>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint id="1" source="Tech Spec">Additive-only changes: No modifications to existing agent/ code. Pure infrastructure/tooling setup.</constraint>
+    <constraint id="2" source="Tech Spec">Scan performance: Total scan time must be &lt;5 minutes for CI feasibility (gosec &lt;2min, govulncheck &lt;1min typical).</constraint>
+    <constraint id="3" source="Architecture">New directory: docs/security/ - must follow project documentation conventions (Markdown format).</constraint>
+    <constraint id="4" source="Tech Spec">Output formats: JSON for programmatic parsing (gosec, govulncheck), Markdown for human review (baseline report).</constraint>
+    <constraint id="5" source="Dev Notes">No code changes required: This story is infrastructure/tooling setup only, no changes to agent/ or other packages.</constraint>
+    <constraint id="6" source="Tech Spec">Tool versions: Go 1.18+ required for govulncheck. Current project Go 1.25.2 well above minimum.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>gosec CLI</name>
+      <kind>Command-line tool</kind>
+      <signature>gosec -fmt=json -out=gosec-report.json ./...</signature>
+      <path>Install via: go install github.com/securego/gosec/v2/cmd/gosec@latest</path>
+    </interface>
+    <interface>
+      <name>govulncheck CLI</name>
+      <kind>Command-line tool</kind>
+      <signature>govulncheck -json ./... &gt; govulncheck-report.json</signature>
+      <path>Install via: go install golang.org/x/vuln/cmd/govulncheck@latest</path>
+    </interface>
+    <interface>
+      <name>gosec JSON Output</name>
+      <kind>Data format</kind>
+      <signature>{"Issues": [{"severity": "HIGH", "confidence": "HIGH", "cwe": {"ID": "..."}, "file": "...", "line": "..."}]}</signature>
+      <path>Output file: gosec-report.json (temporary, for parsing)</path>
+    </interface>
+    <interface>
+      <name>govulncheck JSON Output</name>
+      <kind>Data format</kind>
+      <signature>{"Vulns": [{"OSV": {"id": "CVE-...", "summary": "..."}, "Modules": [...]}]}</signature>
+      <path>Output file: govulncheck-report.json (temporary, for parsing)</path>
+    </interface>
+    <interface>
+      <name>Baseline Report</name>
+      <kind>Markdown document</kind>
+      <signature>docs/security/security-baseline-report.md with sections: Executive Summary, gosec Findings, govulncheck Findings, Remediation Plan</signature>
+      <path>docs/security/security-baseline-report.md</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <para>Verification testing only (no unit tests for infrastructure story):</para>
+      <para>1. Tool Installation: Verify gosec --version returns v2.22.10+, govulncheck --help succeeds</para>
+      <para>2. Scan Completeness: Verify gosec scanned all packages (count matches go list ./...), govulncheck checked 42 deps</para>
+      <para>3. Report Quality: Spot-check 5 gosec findings (file exists, line valid), validate CVE IDs format (CVE-YYYY-NNNNN), verify markdown renders in GitHub</para>
+      <para>4. Performance: gosec &lt;2min, govulncheck &lt;1min typical, total &lt;5min</para>
+    </standards>
+    <locations>
+      <location>No test files created for this story (infrastructure only)</location>
+      <location>Verification: Manual testing of tool installations and scan outputs</location>
+    </locations>
+    <ideas>
+      <idea ac="AC-1">After gosec scan completes, verify JSON report contains expected fields: CWE ID, severity, file, line, description</idea>
+      <idea ac="AC-2">After govulncheck scan, verify JSON contains CVE entries if vulnerabilities found, or empty results if clean</idea>
+      <idea ac="AC-3">Parse both reports and verify severity categorization logic: Critical/High/Medium/Low mapping is correct</idea>
+      <idea ac="AC-4">Verify baseline metrics calculation: count total issues, group by severity, list affected files, identify top CWE IDs</idea>
+      <idea ac="AC-5">After report generation, open docs/security/security-baseline-report.md in markdown viewer, verify all sections populated and formatted correctly</idea>
+      <idea ac="AC-6">Time each scan step (gosec, govulncheck, parsing), verify total &lt;5 minutes, document actual durations in report metadata</idea>
+    </ideas>
+  </tests>
+</story-context>

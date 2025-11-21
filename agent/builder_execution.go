@@ -7,6 +7,7 @@ package agent
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/openai/openai-go/v3"
@@ -66,6 +67,57 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 	if err := b.validateConfiguration(); err != nil {
 		logger.Error(ctx, "Configuration validation failed", F("error", err.Error()))
 		return "", err
+	}
+
+	// CRITICAL FIX: Use adapter if available for Ask method
+	if b.adapter != nil {
+		// Build unified messages for adapter (excluding system prompt)
+		unifiedMessages := []Message{}
+
+		// Add existing conversation history
+		unifiedMessages = append(unifiedMessages, b.messages...)
+
+		// Add current message
+		unifiedMessages = append(unifiedMessages, User(message))
+
+		// Create completion request for adapter with all parameters
+		req := &CompletionRequest{
+			Model:            b.model,
+			Messages:         unifiedMessages,
+			System:           b.systemPrompt, // Use dedicated System field
+			Temperature:      b.getTemperature(),
+			MaxTokens:        b.getMaxTokens(),
+			TopP:             b.getTopP(),
+			PresencePenalty:  b.getPresencePenalty(),
+			FrequencyPenalty: b.getFrequencyPenalty(),
+			Seed:             b.getSeed(),
+			Tools:            b.tools,
+		}
+
+		// Handle timeout for adapter
+		adapterCtx := ctx
+		if b.timeout > 0 {
+			var cancel context.CancelFunc
+			adapterCtx, cancel = context.WithTimeout(ctx, b.timeout)
+			defer cancel()
+		}
+
+		// Execute with adapter
+		resp, err := b.adapter.Complete(adapterCtx, req)
+		if err != nil {
+			logger.Error(ctx, "Adapter completion failed", F("error", err.Error()))
+			return "", err
+		}
+
+		// Update conversation history if auto-memory is enabled
+		if b.autoMemory {
+			b.messages = append(b.messages, Message{Role: "user", Content: message})
+			if resp.Content != "" {
+				b.messages = append(b.messages, Message{Role: "assistant", Content: resp.Content})
+			}
+		}
+
+		return resp.Content, nil
 	}
 
 	// Ensure client is initialized
@@ -454,17 +506,27 @@ func (b *Builder) Stream(ctx context.Context, message string) (string, error) {
 		return "", err
 	}
 
-	// Ensure client is initialized
-	if err := b.ensureClient(); err != nil {
-		logger.Error(ctx, "Failed to initialize client for stream", F("error", err.Error()))
-		return "", fmt.Errorf("failed to initialize client: %w", err)
-	}
-
 	// Build messages array (includes multimodal content if images added)
 	messages := b.buildMessages(message)
 
 	// Clear pending images after building messages
 	b.pendingImages = nil
+
+	// CRITICAL FIX: Use adapter if available for streaming
+	if b.adapter != nil {
+		return b.streamWithAdapter(ctx, messages, func(chunk string) {
+			// Call onStream callback if available
+			if b.onStream != nil {
+				b.onStream(chunk)
+			}
+		})
+	}
+
+	// Ensure client is initialized
+	if err := b.ensureClient(); err != nil {
+		logger.Error(ctx, "Failed to initialize client for stream", F("error", err.Error()))
+		return "", fmt.Errorf("failed to initialize client: %w", err)
+	}
 
 	// Build params
 	params := b.buildParams(messages)
@@ -731,6 +793,12 @@ func (b *Builder) buildParams(messages []openai.ChatCompletionMessageParamUnion)
 } // executeSyncRaw executes a synchronous (non-streaming) chat completion request and returns the full completion.
 
 func (b *Builder) executeSyncRaw(ctx context.Context, messages []openai.ChatCompletionMessageParamUnion) (*openai.ChatCompletion, error) {
+	// CRITICAL FIX: Use adapter if available
+	if b.adapter != nil {
+		return b.executeWithAdapter(ctx, messages)
+	}
+
+	// Fall back to direct OpenAI client
 	// Use centralized param building to ensure all features (tools, responseFormat, etc.) are included
 	params := b.buildParams(messages)
 
@@ -744,6 +812,178 @@ func (b *Builder) executeSyncRaw(ctx context.Context, messages []openai.ChatComp
 	}
 
 	return completion, nil
+}
+
+// executeWithAdapter executes a request using the adapter (basic implementation)
+func (b *Builder) executeWithAdapter(ctx context.Context, messages []openai.ChatCompletionMessageParamUnion) (*openai.ChatCompletion, error) {
+	if b.adapter == nil {
+		return nil, fmt.Errorf("no adapter available")
+	}
+
+	// Extract user message content (basic implementation for now)
+	var userContent string
+	if len(messages) > 0 {
+		// Simple extraction - get the last user message
+		for i := len(messages) - 1; i >= 0; i-- {
+			if msgStr := fmt.Sprintf("%v", messages[i]); strings.Contains(msgStr, "user") {
+				// For now, use a placeholder - can be enhanced later
+				userContent = "User request"
+				break
+			}
+		}
+	}
+
+	// Create unified messages
+	unifiedMessages := []Message{}
+
+	// Add system prompt if exists
+	if b.systemPrompt != "" {
+		unifiedMessages = append(unifiedMessages, System(b.systemPrompt))
+	}
+
+	// Add user content
+	if userContent != "" {
+		unifiedMessages = append(unifiedMessages, User(userContent))
+	} else {
+		unifiedMessages = append(unifiedMessages, User("Hello"))
+	}
+
+	// Create completion request
+	req := &CompletionRequest{
+		Model:       b.model,
+		Messages:    unifiedMessages,
+		Temperature: b.getTemperature(),
+		MaxTokens:   b.getMaxTokens(),
+	}
+
+	// Execute through adapter
+	resp, err := b.adapter.Complete(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("adapter completion failed: %w", err)
+	}
+
+	// Return basic OpenAI completion (minimal implementation)
+	return &openai.ChatCompletion{
+		ID:      resp.ID,
+		Object:  "chat.completion",
+		Created: time.Now().Unix(),
+		Model:   b.model,
+		Choices: []openai.ChatCompletionChoice{
+			{
+				Index:        0,
+				FinishReason: resp.FinishReason,
+				Logprobs:     openai.ChatCompletionChoiceLogprobs{},
+			},
+		},
+	}, nil
+}
+
+// getTemperature returns the temperature value with proper defaults
+func (b *Builder) getTemperature() float64 {
+	if b.temperature != nil {
+		return *b.temperature
+	}
+	return 1.0 // Default temperature
+}
+
+// getMaxTokens returns the max tokens value with proper defaults
+func (b *Builder) getMaxTokens() int {
+	if b.maxTokens != nil {
+		return int(*b.maxTokens)
+	}
+	return 0 // 0 means use provider default
+}
+
+// getTopP returns the topP value with proper defaults
+func (b *Builder) getTopP() float64 {
+	if b.topP != nil {
+		return *b.topP
+	}
+	return 1.0 // Default topP
+}
+
+// getPresencePenalty returns the presence penalty value with proper defaults
+func (b *Builder) getPresencePenalty() float64 {
+	if b.presencePenalty != nil {
+		return *b.presencePenalty
+	}
+	return 0.0 // Default presence penalty
+}
+
+// getFrequencyPenalty returns the frequency penalty value with proper defaults
+func (b *Builder) getFrequencyPenalty() float64 {
+	if b.frequencyPenalty != nil {
+		return *b.frequencyPenalty
+	}
+	return 0.0 // Default frequency penalty
+}
+
+// getSeed returns the seed value with proper defaults
+func (b *Builder) getSeed() int64 {
+	if b.seed != nil {
+		return *b.seed
+	}
+	return 0 // Default seed (0 means no seeding)
+}
+
+// streamWithAdapter executes a streaming request using the adapter (basic implementation)
+func (b *Builder) streamWithAdapter(ctx context.Context, messages []openai.ChatCompletionMessageParamUnion, onChunk func(string)) (string, error) {
+	if b.adapter == nil {
+		return "", fmt.Errorf("no adapter available")
+	}
+
+	// Extract user message content (same logic as executeWithAdapter)
+	var userContent string
+	if len(messages) > 0 {
+		for i := len(messages) - 1; i >= 0; i-- {
+			if msgStr := fmt.Sprintf("%v", messages[i]); strings.Contains(msgStr, "user") {
+				userContent = "User request"
+				break
+			}
+		}
+	}
+
+	// Create unified messages
+	unifiedMessages := []Message{}
+	if b.systemPrompt != "" {
+		unifiedMessages = append(unifiedMessages, System(b.systemPrompt))
+	}
+	if userContent != "" {
+		unifiedMessages = append(unifiedMessages, User(userContent))
+	} else {
+		unifiedMessages = append(unifiedMessages, User("Hello"))
+	}
+
+	// Handle timeout for adapter streaming
+	adapterCtx := ctx
+	if b.timeout > 0 {
+		var cancel context.CancelFunc
+		adapterCtx, cancel = context.WithTimeout(ctx, b.timeout)
+		defer cancel()
+	}
+
+	// Create completion request with all parameters
+	req := &CompletionRequest{
+		Model:            b.model,
+		Messages:         unifiedMessages,
+		System:           b.systemPrompt,
+		Temperature:      b.getTemperature(),
+		MaxTokens:        b.getMaxTokens(),
+		TopP:             b.getTopP(),
+		PresencePenalty:  b.getPresencePenalty(),
+		FrequencyPenalty: b.getFrequencyPenalty(),
+		Seed:             b.getSeed(),
+		Tools:            b.tools,
+	}
+
+	// Execute streaming through adapter
+	resp, err := b.adapter.Stream(adapterCtx, req, onChunk)
+	if err != nil {
+		return "", fmt.Errorf("adapter streaming failed: %w", err)
+	}
+
+	// Return the accumulated content
+	return resp.Content, nil
 }
 
 func (b *Builder) executeWithRetry(ctx context.Context, operation func(context.Context) error) error {

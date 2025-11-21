@@ -1,6 +1,9 @@
 package agent
 
 import (
+	"fmt"
+	"net/http"
+	"os"
 	"time"
 	_ "unsafe" // For go:linkname
 
@@ -228,6 +231,53 @@ func NewWithAdapter(model string, adapter LLMAdapter) *Builder {
 		memory:        memory.New(),
 		memoryEnabled: true,
 	}
+}
+
+// FromEnv creates a Builder by auto-detecting provider configuration from environment variables.
+// This provides a zero-configuration experience for developers.
+//
+// Priority order (first match wins):
+//   1. OPENAI_API_KEY → OpenAI with gpt-4o-mini
+//   2. GEMINI_API_KEY → Placeholder for future Gemini support
+//   3. Ollama running locally → Ollama with llama2
+//
+// Example:
+//
+//	// Set environment variable and go!
+//	export OPENAI_API_KEY="sk-..."
+//	builder, err := agent.FromEnv()
+//
+// Returns error if no valid provider configuration found.
+func FromEnv() (*Builder, error) {
+	// Check for OpenAI API key
+	if apiKey := os.Getenv("OPENAI_API_KEY"); apiKey != "" {
+		return NewOpenAI("gpt-4o-mini", apiKey), nil
+	}
+
+	// Check for Gemini API key (placeholder for when adapter integration is complete)
+	if apiKey := os.Getenv("GEMINI_API_KEY"); apiKey != "" {
+		return nil, fmt.Errorf("Gemini support coming soon! Please use OPENAI_API_KEY for now.\n\n" +
+			"Set OPENAI_API_KEY=\"sk-...\" to use OpenAI with gpt-4o-mini")
+	}
+
+	// Check for local Ollama instance
+	if isOllamaRunning() {
+		return NewOllama("llama2"), nil
+	}
+
+	return nil, fmt.Errorf("no LLM provider configuration found in environment.\n\n" +
+		"Set one of the following environment variables:\n" +
+		"  • OPENAI_API_KEY=\"sk-...\" (OpenAI)\n" +
+		"  • GEMINI_API_KEY=\"AIza...\" (Google Gemini - coming soon)\n" +
+		"  • Run Ollama locally (http://localhost:11434)")
+}
+
+// isOllamaRunning checks if Ollama is running locally
+func isOllamaRunning() bool {
+	// Simple HTTP check to Ollama endpoint
+	client := &http.Client{Timeout: 2 * time.Second}
+	resp, err := client.Get("http://localhost:11434/api/tags")
+	return err == nil && resp.StatusCode == 200
 }
 
 // WithAPIKey sets the API key for the provider.

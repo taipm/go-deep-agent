@@ -1,0 +1,381 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.2</storyId>
+    <title>Configure gosec for Comprehensive Security Scanning</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-15</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-2-configure-gosec-comprehensive-security-scanning.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>DevOps Engineer</asA>
+    <iWant>gosec configured với comprehensive rule set</iWant>
+    <soThat>mọi security vulnerability được detected automatically</soThat>
+    <tasks>
+      <task id="1" ac="AC-1, AC-4">
+        <name>Create base gosec configuration file</name>
+        <subtasks>
+          <subtask id="1.1">Create `.gosec.json` in project root with base structure, enable all rules G101-G602, set severity threshold "high", set confidence threshold "medium"</subtask>
+          <subtask id="1.2">Configure concurrent scanning: concurrency 0 (auto-detect CPU cores), scan paths `./...`, exclude patterns vendor/ and testutil/mocks/</subtask>
+          <subtask id="1.3">Verify gosec version compatibility: Required v2.22.10+ (current from Story 1.1: v2.22.10 ✅)</subtask>
+        </subtasks>
+      </task>
+      <task id="2" ac="AC-2">
+        <name>Configure test file exclusions</name>
+        <subtasks>
+          <subtask id="2.1">Define test file exclusion rules trong `.gosec.json`: Exclude G404 (weak random) cho test files only, Exclude G101 (hardcoded credentials) cho test fixtures, Path pattern: `**/*_test.go`, `**/testutil/fixtures/**`</subtask>
+          <subtask id="2.2">Verify exclusions apply correctly: Test scan production code (`agent/**/*.go`) with full rules, Test scan test code (`agent/**/*_test.go`) with relaxed rules, Confirm exclusions don't leak to production code</subtask>
+        </subtasks>
+      </task>
+      <task id="3" ac="AC-3">
+        <name>Configure multiple output formats</name>
+        <subtasks>
+          <subtask id="3.1">Configure JSON output: Default format JSON với detailed findings, Include CWE ID/severity/confidence/file/line/description, Output file `gosec-report.json`</subtask>
+          <subtask id="3.2">Configure SARIF output: SARIF schema version 2.1.0, GitHub Security tab compatible, Output file `gosec-results.sarif`, Include rule metadata/locations/fix suggestions</subtask>
+          <subtask id="3.3">Configure text output: Console-friendly colored output, Summary statistics (total issues, by severity), Exit codes: 0 (clean), 1 (issues found), 2 (error)</subtask>
+          <subtask id="3.4">Document output format usage commands</subtask>
+        </subtasks>
+      </task>
+      <task id="4" ac="AC-5">
+        <name>Define custom rules cho go-deep-agent</name>
+        <subtasks>
+          <subtask id="4.1">Analyze go-deep-agent security patterns from Story 1.1 baseline: Review 98 findings, Top CWEs: CWE-703 (72), CWE-276 (12), CWE-22 (8), CWE-338 (3), Prioritize custom rules for high-impact areas</subtask>
+          <subtask id="4.2">Create custom rule definitions trong `.gosec.json`: API key validation rule, Secrets logging rule, TLS enforcement rule, Tool validation rule</subtask>
+          <subtask id="4.3">Document custom rules: Inline comments explaining each rule, Examples of violations và correct patterns, References to architecture.md security patterns</subtask>
+        </subtasks>
+      </task>
+      <task id="5" ac="AC-6">
+        <name>Create security scanning documentation</name>
+        <subtasks>
+          <subtask id="5.1">Create `docs/security/security-scanning.md`: Overview, Configuration sections explanation, Rule descriptions và rationale</subtask>
+          <subtask id="5.2">Document usage examples: Local development, JSON output, SARIF output, Fix mode (future enhancement)</subtask>
+          <subtask id="5.3">Document IDE integration: VSCode gosec extension, GoLand External tool, Pre-commit hook (optional)</subtask>
+          <subtask id="5.4">Document CI/CD integration guidance: GitHub Actions integration (teaser for Story 1.4), SARIF upload to GitHub Security tab, PR blocking strategy</subtask>
+        </subtasks>
+      </task>
+      <task id="6" ac="AC-7">
+        <name>Validate và test configuration</name>
+        <subtasks>
+          <subtask id="6.1">Validate configuration syntax: Parse `.gosec.json` với `gosec -conf=.gosec.json --list-rules`, Verify all rules load correctly, Check for configuration errors</subtask>
+          <subtask id="6.2">Test full scan with configuration: Run `gosec -conf=.gosec.json ./...`, Measure scan duration (target: &lt;2 minutes), Verify findings match Story 1.1 baseline (98 issues expected)</subtask>
+          <subtask id="6.3">Test SARIF output validation: Run SARIF export, Validate SARIF schema 2.1.0, Test GitHub Security tab upload compatibility</subtask>
+          <subtask id="6.4">Test exclusions work correctly: Verify test files have G404 excluded, Verify production code has all rules active, Spot-check 5 files from different packages</subtask>
+          <subtask id="6.5">Document actual scan performance: Record scan duration/issues found/CPU usage, Compare to Story 1.1 baseline (18 seconds), Confirm &lt;2 minute target met</subtask>
+        </subtasks>
+      </task>
+      <task id="7" ac="AC-6">
+        <name>Commit configuration và documentation</name>
+        <subtasks>
+          <subtask id="7.1">Review deliverables: `.gosec.json` complete/commented/validated, `docs/security/security-scanning.md` comprehensive with examples, Configuration tested successfully</subtask>
+          <subtask id="7.2">Commit to version control với descriptive commit message</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-1" priority="critical">
+      <title>All gosec rules enabled với severity thresholds</title>
+      <given>gosec v2.22.10+ installed trong development environment</given>
+      <when>tạo gosec configuration file `.gosec.json`</when>
+      <then>
+        - All gosec rules enabled (G101-G602)
+        - Severity thresholds: fail on High và Critical
+        - Confidence levels: Medium confidence minimum
+        - Rule exclusions documented và justified
+      </then>
+    </criterion>
+    <criterion id="AC-2" priority="high">
+      <title>Test files có relaxed rules</title>
+      <given>test files (`*_test.go`) có different security requirements</given>
+      <when>configure exclusions cho test files</when>
+      <then>
+        - G404 (weak random in tests) - acceptable for test data generation
+        - G101 (hardcoded credentials in test fixtures) - acceptable for test mocks
+        - Exclusions limited to test files only (`**/*_test.go`)
+        - Production code (`agent/**/*.go` excluding tests) has full rules
+      </then>
+    </criterion>
+    <criterion id="AC-3" priority="high">
+      <title>Multiple output formats configured</title>
+      <given>gosec configuration file</given>
+      <when>define output formats</when>
+      <then>
+        - JSON format: machine-parsable, detailed findings
+        - SARIF format: GitHub Security tab integration
+        - Text format: human-readable console output
+        - All formats include: CWE ID, severity, file location, line number, description
+      </then>
+    </criterion>
+    <criterion id="AC-4" priority="high">
+      <title>Concurrent scanning enabled</title>
+      <given>multi-core development và CI environments</given>
+      <when>configure scanning performance</when>
+      <then>
+        - Concurrency: utilize all CPU cores (auto-detect)
+        - Scan target: `./...` (all packages)
+        - Performance target: &lt;2 minutes for full scan
+        - Exclude patterns: vendor/, testutil/mocks/ (generated code)
+      </then>
+    </criterion>
+    <criterion id="AC-5" priority="medium">
+      <title>Custom rules cho go-deep-agent patterns</title>
+      <given>go-deep-agent có specific security patterns</given>
+      <when>define custom rules</when>
+      <then>
+        - API key validation: detect missing validation before use
+        - Secrets logging: detect potential secrets in log calls
+        - TLS enforcement: detect missing TLS configuration
+        - Tool parameter validation: detect unvalidated tool parameters
+        - Custom rules documented trong configuration comments
+      </then>
+    </criterion>
+    <criterion id="AC-6" priority="high">
+      <title>Configuration file saved và documented</title>
+      <given>complete gosec configuration</given>
+      <when>save configuration file</when>
+      <then>
+        - `.gosec.json` in project root với inline comments
+        - `docs/security/security-scanning.md` documentation với: Configuration explanation, Rule descriptions và rationale, Usage examples, VSCode integration instructions, CI/CD integration guidance
+      </then>
+    </criterion>
+    <criterion id="AC-7" priority="critical">
+      <title>Configuration validation và testing</title>
+      <given>gosec configuration file created</given>
+      <when>run gosec với configuration</when>
+      <then>
+        - Configuration parses successfully (no syntax errors)
+        - All rules load correctly (verify via --list-rules)
+        - Scan completes in &lt;2 minutes
+        - Output includes findings from Story 1.1 baseline (98 issues)
+        - SARIF output validates against SARIF schema 2.1.0
+      </then>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR1-FR2: Security Scanning Requirements</section>
+        <snippet>FR1: Library can run automated security scanning using gosec on all source code. FR2: Library can run vulnerability scanning using govulncheck on all dependencies. Zero high/critical severity vulnerabilities requirement for production readiness.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document - Epic 1</title>
+        <section>Epic 1: Security Infrastructure Foundation</section>
+        <snippet>Tools Stack: gosec v2.22.10, govulncheck v1.1.4+, golangci-lint v2.6.1. Integration: GitHub Actions with SARIF upload to GitHub Security tab. Configuration: `.gosec.json` in project root. Documentation: `docs/security/security-scanning.md`.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-1.md</path>
+        <title>Technical Specification - Epic 1</title>
+        <section>gosec Configuration Schema</section>
+        <snippet>Configuration includes: severity "high", confidence "medium", exclude-generated: true, exclude G404 for tests, output "sarif", concurrency: 4. Performance targets: &lt;2 minutes for full scan, &lt;10 minutes total security scan suite.</snippet>
+      </doc>
+      <doc>
+        <path>docs/security/security-baseline-report.md</path>
+        <title>Security Baseline Report (Story 1.1)</title>
+        <section>Baseline Metrics</section>
+        <snippet>Total Issues: 98 (5 Critical, 1 High, 20 Medium, 72 Low). Top CWEs: CWE-703 (72 findings - Error Handling), CWE-276 (12 - File Permissions), CWE-22 (8 - Path Traversal), CWE-338 (3 - Weak PRNG). Scan Performance: gosec ~18 seconds ✅. Dependencies: 0 vulnerabilities ✅.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown - Story 1.2</title>
+        <section>Story 1.2: Configure gosec for Comprehensive Security Scanning</section>
+        <snippet>All gosec rules enabled (G101-G602), Severity thresholds: fail on High và Critical, Test file exclusions: G404/G101 acceptable for tests, Output formats: JSON/SARIF/text, Custom rules for go-deep-agent patterns. Prerequisites: Story 1.1 baseline complete.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>go.mod</path>
+        <kind>manifest</kind>
+        <symbol>module github.com/taipm/go-deep-agent</symbol>
+        <lines>1-63</lines>
+        <reason>Dependency manifest for security scanning scope - 42 dependencies (8 direct, 34 transitive) verified clean in Story 1.1. Go version 1.25.2 confirmed compatible with gosec v2.22.10+.</reason>
+      </artifact>
+      <artifact>
+        <path>go.sum</path>
+        <kind>checksum</kind>
+        <symbol>dependency checksums</symbol>
+        <lines>1-50+</lines>
+        <reason>Dependency integrity checksums for security validation. Used by govulncheck to verify package authenticity and detect tampering.</reason>
+      </artifact>
+      <artifact>
+        <path>.github/workflows/</path>
+        <kind>ci-config</kind>
+        <symbol>GitHub Actions workflows</symbol>
+        <lines>N/A</lines>
+        <reason>CI/CD integration point for Story 1.4. gosec configuration from this story will be consumed by security-scan.yml workflow. SARIF upload depends on properly formatted gosec output.</reason>
+      </artifact>
+      <artifact>
+        <path>docs/security/security-baseline-report.md</path>
+        <kind>documentation</kind>
+        <symbol>Baseline Security Report</symbol>
+        <lines>1-156</lines>
+        <reason>Story 1.1 baseline establishes the 98 issues benchmark that this configuration must reproduce. Critical findings (5) and CWE distribution guide custom rule priorities.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <go>
+        <module name="github.com/securego/gosec/v2" version="v2.22.10" usage="Core security scanner - to be configured in this story"/>
+        <module name="golang.org/x/vuln/cmd/govulncheck" version="v1.1.4+" usage="Dependency vulnerability scanner - configured in Story 1.3"/>
+        <module name="github.com/openai/openai-go" version="v1.12.0" usage="Direct dependency - verified clean in Story 1.1"/>
+        <module name="github.com/google/generative-ai-go" version="v0.20.1" usage="Direct dependency - verified clean in Story 1.1"/>
+        <module name="github.com/stretchr/testify" version="v1.11.1" usage="Testing framework - test files may need G404 exclusion"/>
+        <module name="github.com/redis/go-redis/v9" version="v9.16.0" usage="Direct dependency - verified clean in Story 1.1"/>
+      </go>
+      <tools>
+        <tool name="gosec" version="v2.22.10" install="go install github.com/securego/gosec/v2/cmd/gosec@latest" usage="Primary security scanner being configured"/>
+        <tool name="jq" version="latest" install="OS package manager" usage="JSON parsing for gosec reports (optional for local dev)"/>
+      </tools>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="performance">
+      <name>Scan Duration Target</name>
+      <description>Full gosec scan must complete in &lt;2 minutes to meet CI/CD timeout requirements (10 minutes total for all security scans). Story 1.1 baseline: 18 seconds - well within budget.</description>
+    </constraint>
+    <constraint type="architecture">
+      <name>Additive-Only Approach</name>
+      <description>No changes to existing code - only add `.gosec.json` configuration file and documentation. Preserves existing architecture per brownfield enhancement strategy.</description>
+    </constraint>
+    <constraint type="configuration">
+      <name>Configuration Standards</name>
+      <description>File format: JSON với inline comments (JSON5 not supported by gosec). Every exclusion must be documented với rationale. Validation: gosec --list-rules to verify config loads.</description>
+    </constraint>
+    <constraint type="compatibility">
+      <name>Tool Version Requirements</name>
+      <description>gosec v2.22.10+ required (current version confirmed in Story 1.1). Go 1.25.2 confirmed compatible. SARIF schema 2.1.0 for GitHub Security tab integration.</description>
+    </constraint>
+    <constraint type="security">
+      <name>Test File Exception Policy</name>
+      <description>G404 (weak random) và G101 (hardcoded credentials) exclusions ONLY for test files (`**/*_test.go`, `**/testutil/fixtures/**`). Production code must have all rules enforced. Exclusions must not leak to production packages.</description>
+    </constraint>
+    <constraint type="integration">
+      <name>GitHub Security Tab Compatibility</name>
+      <description>SARIF output must conform to SARIF 2.1.0 schema for GitHub Security tab. Validate output against schema: https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json</description>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>gosec Command Line Interface</name>
+      <kind>CLI tool</kind>
+      <signature>gosec [flags] [packages]</signature>
+      <path>N/A - external tool</path>
+      <description>
+        Primary interface for security scanning. Key flags:
+        - `-conf=.gosec.json` : Load configuration file
+        - `-fmt=json|sarif|text` : Output format selection
+        - `-out=filename` : Output file path
+        - `--list-rules` : Validate configuration loads all rules
+        - `./...` : Scan all packages recursively
+
+        Exit codes: 0 (clean), 1 (issues found), 2 (scan error)
+      </description>
+    </interface>
+    <interface>
+      <name>.gosec.json Configuration File Format</name>
+      <kind>JSON configuration</kind>
+      <signature>
+{
+  "global": {
+    "nosec": false,
+    "showIgnored": false,
+    "auditTags": "performance,generic,usability",
+    "severity": "high",
+    "confidence": "medium",
+    "concurrency": 0,
+    "exclude-generated": true
+  },
+  "rules": {
+    "G101": { "exclude": ["**/*_test.go"] },
+    "G404": { "exclude": ["**/*_test.go", "**/testutil/fixtures/**"] }
+  }
+}
+      </signature>
+      <path>.gosec.json</path>
+      <description>
+        Configuration schema for gosec. Global settings control scan behavior, rules section defines per-rule exclusions.
+        Supports glob patterns for file exclusions. Comments not officially supported (use JSON, not JSON5).
+        Reference: https://github.com/securego/gosec#configuration
+      </description>
+    </interface>
+    <interface>
+      <name>SARIF Output Format</name>
+      <kind>JSON schema</kind>
+      <signature>SARIF 2.1.0 compliant JSON output</signature>
+      <path>gosec-results.sarif</path>
+      <description>
+        Static Analysis Results Interchange Format (SARIF) for GitHub Security tab integration.
+        Schema: https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html
+        GitHub upload: github/codeql-action/upload-sarif@v3
+        Must include: tool metadata, rules, results with locations, severity levels
+      </description>
+    </interface>
+    <interface>
+      <name>VSCode gosec Extension</name>
+      <kind>IDE integration</kind>
+      <signature>Auto-detects .gosec.json in project root</signature>
+      <path>N/A - extension config</path>
+      <description>
+        VSCode extension for gosec auto-detects `.gosec.json` configuration.
+        Provides inline security warnings in editor.
+        Extension ID: golang.go (includes gosec integration)
+        Configuration in this story enables seamless IDE integration for developers.
+      </description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Configuration validation testing per Tech Spec Epic 1 standards:
+      1. Syntax Validation: Parse `.gosec.json` successfully via `gosec -conf=.gosec.json --list-rules`
+      2. Rule Enablement: All rules G101-G602 listed in output
+      3. Baseline Reproduction: Full scan finds 98 issues matching Story 1.1 baseline
+      4. Exclusion Verification: Test files have G404/G101 excluded, production code enforces all rules
+      5. SARIF Schema Compliance: Output validates against SARIF 2.1.0 schema
+      6. Performance Validation: Scan duration &lt;2 minutes (Story 1.1 baseline: 18 seconds)
+    </standards>
+    <locations>
+      - No unit tests required (configuration-only story)
+      - Manual validation via CLI commands
+      - CI/CD integration testing in Story 1.4
+      - Configuration files: `.gosec.json`, `docs/security/security-scanning.md`
+    </locations>
+    <ideas>
+      <idea ac="AC-1, AC-7">
+        <test>Configuration Syntax Validation</test>
+        <approach>Run `gosec -conf=.gosec.json --list-rules` and verify all rules G101-G602 appear in output. Confirm no parsing errors. Validate severity="high" and confidence="medium" are applied.</approach>
+      </idea>
+      <idea ac="AC-2">
+        <test>Test File Exclusion Verification</test>
+        <approach>Scan production code: `gosec -conf=.gosec.json agent/**/*.go` expects G404 enforced. Scan test code: `gosec -conf=.gosec.json agent/**/*_test.go` expects G404 excluded. Spot-check 5 files from different packages to confirm exclusion patterns work correctly.</approach>
+      </idea>
+      <idea ac="AC-3">
+        <test>Output Format Validation</test>
+        <approach>Generate all three formats: JSON (`-fmt=json -out=gosec-report.json`), SARIF (`-fmt=sarif -out=gosec-results.sarif`), Text (default). Verify JSON is parsable, SARIF validates against schema 2.1.0, Text is human-readable with summary statistics.</approach>
+      </idea>
+      <idea ac="AC-4">
+        <test>Performance Benchmark</test>
+        <approach>Run `time gosec -conf=.gosec.json ./...` and measure duration. Compare to Story 1.1 baseline (18 seconds). Verify concurrency=0 auto-detects CPU cores. Confirm scan completes &lt;2 minutes target. Record actual performance in security-scanning.md documentation.</approach>
+      </idea>
+      <idea ac="AC-5">
+        <test>Custom Rule Validation</test>
+        <approach>Review `.gosec.json` custom rule definitions for: API key validation, Secrets logging detection, TLS enforcement, Tool parameter validation. Verify inline comments document each rule's purpose and provide examples. Cross-reference with architecture.md security patterns.</approach>
+      </idea>
+      <idea ac="AC-6">
+        <test>Documentation Completeness</test>
+        <approach>Review `docs/security/security-scanning.md` includes: Configuration overview, All rule descriptions with rationale, Usage examples for all output formats, VSCode integration instructions, CI/CD integration guidance (teaser for Story 1.4). Verify `.gosec.json` has inline comments for all sections.</approach>
+      </idea>
+      <idea ac="AC-7">
+        <test>Baseline Reproduction Test</test>
+        <approach>Run full scan `gosec -conf=.gosec.json ./...` and compare findings to Story 1.1 baseline report. Expect 98 total issues (5 Critical, 1 High, 20 Medium, 72 Low). Verify CWE distribution matches: CWE-703 (72), CWE-276 (12), CWE-22 (8), CWE-338 (3). Any deviation requires investigation.</approach>
+      </idea>
+    </ideas>
+  </tests>
+</story-context>

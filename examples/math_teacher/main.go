@@ -27,9 +27,8 @@ func CreateMathTeacher(apiKey string) (*agent.Builder, error) {
 
 	// Tạo agent với persona và các tools hữu ích
 	teacher := agent.NewOpenAI("gpt-4o-mini", apiKey).
-		WithDefaults().          // Retry(3) + Timeout(30s) + ExponentialBackoff + MaxHistory(20)
-		WithMemory().            // QUAN TRỌNG: Bật memory để nhớ cuộc hội thoại
-		WithPersona(persona).
+		WithDefaults().          // Memory(20) + Retry(3) + Timeout(30s) + ExponentialBackoff
+		WithPersona(persona).    // Load tính cách giáo viên từ YAML
 		WithTools(
 			tools.NewMathTool(),     // Công cụ tính toán
 			tools.NewDateTimeTool(), // Công cụ xử lý thời gian (cho bài toán có ngày tháng)

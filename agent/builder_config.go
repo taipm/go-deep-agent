@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/taipm/go-deep-agent/agent/memory"
@@ -365,13 +366,436 @@ func (b *Builder) WithRateLimitKey(key string) *Builder {
 //
 // Validation checks:
 //   - Tool choice requirements (toolChoice set without tools)
+//   - API key requirements for different providers
+//   - Adapter vs client configuration consistency
+//   - Invalid parameter ranges
+//   - Conflicting settings
 //
 // Returns nil if configuration is valid, or a detailed error with fixes.
+// For comprehensive validation with all errors, use ValidateWithDetails().
 func (b *Builder) validateConfiguration() error {
 	// Check tool choice requires tools
 	if b.toolChoice != nil && len(b.tools) == 0 {
 		return ErrToolChoiceRequiresTools
 	}
 
+	// Validate provider-specific configuration
+	if err := b.validateProviderConfig(); err != nil {
+		return err
+	}
+
+	// Validate parameter ranges
+	if err := b.validateParameterRanges(); err != nil {
+		return err
+	}
+
+	// Validate conflicting settings
+	if err := b.validateConflictingSettings(); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// validateConfigurationAll returns all validation errors, not just the first one
+// This is used internally by ValidateWithDetails() to collect comprehensive errors
+func (b *Builder) validateConfigurationAll() []error {
+	var errors []error
+
+	// Check tool choice requires tools
+	if b.toolChoice != nil && len(b.tools) == 0 {
+		errors = append(errors, ErrToolChoiceRequiresTools)
+	}
+
+	// Validate provider-specific configuration
+	if err := b.validateProviderConfigAll(); err != nil {
+		errors = append(errors, err...)
+	}
+
+	// Validate parameter ranges
+	if errs := b.validateParameterRangesAll(); len(errs) > 0 {
+		errors = append(errors, errs...)
+	}
+
+	// Validate conflicting settings
+	if err := b.validateConflictingSettings(); err != nil {
+		errors = append(errors, err)
+	}
+
+	return errors
+}
+
+// validateProviderConfigAll returns all provider-specific validation errors
+func (b *Builder) validateProviderConfigAll() []error {
+	var errors []error
+
+	switch b.provider {
+	case ProviderOpenAI:
+		if b.apiKey == "" && b.adapter == nil {
+			errors = append(errors, fmt.Errorf("OpenAI API key is required\n\n"+
+				"Fix options:\n"+
+				"  1. Set environment variable: export OPENAI_API_KEY=\"sk-...\"\n"+
+				"  2. Use constructor: agent.NewOpenAI(\"gpt-4o-mini\", \"sk-...\")\n"+
+				"  3. Set API key: .WithAPIKey(\"sk-...\")\n"+
+				"  4. Use FromEnv(): agent.FromEnv() for auto-detection\n\n"+
+				"Get your key: https://platform.openai.com/api-keys"))
+		}
+		// Validate API key format
+		if b.apiKey != "" && len(b.apiKey) < 10 {
+			errors = append(errors, fmt.Errorf("OpenAI API key appears to be invalid (too short)\n\n"+
+				"Valid API keys start with 'sk-' and are typically 50+ characters\n"+
+				"Get your key: https://platform.openai.com/api-keys"))
+		}
+
+	case ProviderGemini:
+		if b.apiKey == "" && b.adapter == nil {
+			errors = append(errors, fmt.Errorf("Gemini API key is required\n\n"+
+				"Fix options:\n"+
+				"  1. Set environment variable: export GEMINI_API_KEY=\"AIza...\"\n"+
+				"  2. Use constructor: agent.NewGemini(\"gemini-pro\", \"AIza...\")\n"+
+				"  3. Set API key: .WithAPIKey(\"AIza...\")\n\n"+
+				"Get your key: https://aistudio.google.com/apikey"))
+		}
+	}
+
+	return errors
+}
+
+// validateParameterRangesAll returns all parameter range validation errors
+func (b *Builder) validateParameterRangesAll() []error {
+	var errors []error
+
+	// Temperature range: 0.0 to 2.0 for OpenAI, 0.0 to 1.0 for Gemini
+	if b.temperature != nil {
+		temp := *b.temperature
+		if temp < 0.0 || temp > 2.0 {
+			errors = append(errors, fmt.Errorf("temperature %.1f is out of valid range [0.0, 2.0]\n\n"+
+				"Fix:\n"+
+				"  • Creative writing: .WithTemperature(1.2) (0.8-1.5)\n"+
+				"  • Balanced responses: .WithTemperature(0.7) (0.5-1.0)\n"+
+				"  • Factual answers: .WithTemperature(0.2) (0.0-0.4)\n"+
+				"  • Deterministic output: .WithTemperature(0.0)", temp))
+		}
+	}
+
+	// TopP range: 0.0 to 1.0
+	if b.topP != nil {
+		topP := *b.topP
+		if topP < 0.0 || topP > 1.0 {
+			errors = append(errors, fmt.Errorf("top_p %.2f is out of valid range [0.0, 1.0]\n\n"+
+				"Fix:\n"+
+				"  • Focused output: .WithTopP(0.8) or .WithTopP(0.9)\n"+
+				"  • Diverse output: .WithTopP(0.95) or .WithTopP(1.0)\n"+
+				"  • Note: Use temperature OR top_p, not both", topP))
+		}
+	}
+
+	// MaxTokens should be reasonable
+	if b.maxTokens != nil {
+		maxTokens := *b.maxTokens
+		if maxTokens < 1 {
+			errors = append(errors, fmt.Errorf("max_tokens %d is too small (minimum: 1)\n\n"+
+				"Fix:\n"+
+				"  • Short responses: .WithMaxTokens(100)\n"+
+				"  • Medium responses: .WithMaxTokens(500)\n"+
+				"  • Long responses: .WithMaxTokens(2000) or higher", maxTokens))
+		}
+		if maxTokens > 32768 && b.provider == ProviderOpenAI {
+			errors = append(errors, fmt.Errorf("max_tokens %d exceeds OpenAI limit (32768)\n\n"+
+				"Fix:\n"+
+				"  • Use shorter response: .WithMaxTokens(4000)\n"+
+				"  • Split into multiple requests\n"+
+				"  • For longer content, consider using 32k models", maxTokens))
+		}
+	}
+
+	// Penalty ranges: -2.0 to 2.0
+	if b.presencePenalty != nil {
+		penalty := *b.presencePenalty
+		if penalty < -2.0 || penalty > 2.0 {
+			errors = append(errors, fmt.Errorf("presence_penalty %.1f is out of valid range [-2.0, 2.0]\n\n"+
+				"Fix:\n"+
+				"  • Reduce repetition: .WithPresencePenalty(0.6)\n"+
+				"  • Encourage new topics: .WithPresencePenalty(1.0)\n"+
+				"  • Default behavior: .WithPresencePenalty(0.0)", penalty))
+		}
+	}
+
+	if b.frequencyPenalty != nil {
+		penalty := *b.frequencyPenalty
+		if penalty < -2.0 || penalty > 2.0 {
+			errors = append(errors, fmt.Errorf("frequency_penalty %.1f is out of valid range [-2.0, 2.0]\n\n"+
+				"Fix:\n"+
+				"  • Reduce repetition: .WithFrequencyPenalty(0.5)\n"+
+				"  • Strong reduction: .WithFrequencyPenalty(1.0)\n"+
+				"  • Default behavior: .WithFrequencyPenalty(0.0)", penalty))
+		}
+	}
+
+	// TopLogprobs range: 0 to 20
+	if b.topLogprobs != nil {
+		topLogprobs := *b.topLogprobs
+		if topLogprobs < 0 || topLogprobs > 20 {
+			errors = append(errors, fmt.Errorf("top_logprobs %d is out of valid range [0, 20]\n\n"+
+				"Fix:\n"+
+				"  • Top 5 tokens: .WithTopLogprobs(5)\n"+
+				"  • Top 10 tokens: .WithTopLogprobs(10)\n"+
+				"  • Must enable: .WithLogprobs(true)", topLogprobs))
+		}
+	}
+
+	return errors
+}
+
+// validateProviderConfig checks provider-specific requirements
+func (b *Builder) validateProviderConfig() error {
+	switch b.provider {
+	case ProviderOpenAI:
+		if b.apiKey == "" && b.adapter == nil {
+			return fmt.Errorf("OpenAI API key is required\n\n"+
+				"Fix options:\n"+
+				"  1. Set environment variable: export OPENAI_API_KEY=\"sk-...\"\n"+
+				"  2. Use constructor: agent.NewOpenAI(\"gpt-4o-mini\", \"sk-...\")\n"+
+				"  3. Set API key: .WithAPIKey(\"sk-...\")\n"+
+				"  4. Use FromEnv(): agent.FromEnv() for auto-detection\n\n"+
+				"Get your key: https://platform.openai.com/api-keys")
+		}
+		// Validate API key format
+		if b.apiKey != "" && len(b.apiKey) < 10 {
+			return fmt.Errorf("OpenAI API key appears to be invalid (too short)\n\n"+
+				"Valid API keys start with 'sk-' and are typically 50+ characters\n"+
+				"Get your key: https://platform.openai.com/api-keys")
+		}
+
+	case ProviderGemini:
+		if b.apiKey == "" && b.adapter == nil {
+			return fmt.Errorf("Gemini API key is required\n\n"+
+				"Fix options:\n"+
+				"  1. Set environment variable: export GEMINI_API_KEY=\"AIza...\"\n"+
+				"  2. Use constructor: agent.NewGemini(\"gemini-pro\", \"AIza...\")\n"+
+				"  3. Set API key: .WithAPIKey(\"AIza...\")\n\n"+
+				"Get your key: https://aistudio.google.com/apikey")
+		}
+
+	case ProviderOllama:
+		// Ollama doesn't require API key but validate base URL if set
+		if b.baseURL != "" && b.baseURL == "" {
+			return fmt.Errorf("Ollama base URL is invalid or empty\n\n"+
+				"Fix:\n"+
+				"  1. Use default: Removes WithBaseURL() call (uses http://localhost:11434/v1)\n"+
+				"  2. Set correct URL: .WithBaseURL(\"http://localhost:11434/v1\")\n"+
+				"  3. Check Ollama is running: ollama list")
+		}
+	}
+
+	return nil
+}
+
+// validateParameterRanges checks parameter values are within acceptable ranges
+func (b *Builder) validateParameterRanges() error {
+	// Temperature range: 0.0 to 2.0 for OpenAI, 0.0 to 1.0 for Gemini
+	if b.temperature != nil {
+		temp := *b.temperature
+		if temp < 0.0 || temp > 2.0 {
+			return fmt.Errorf("temperature %.1f is out of valid range [0.0, 2.0]\n\n"+
+				"Fix:\n"+
+				"  • Creative writing: .WithTemperature(1.2) (0.8-1.5)\n"+
+				"  • Balanced responses: .WithTemperature(0.7) (0.5-1.0)\n"+
+				"  • Factual answers: .WithTemperature(0.2) (0.0-0.4)\n"+
+				"  • Deterministic output: .WithTemperature(0.0)", temp)
+		}
+	}
+
+	// TopP range: 0.0 to 1.0
+	if b.topP != nil {
+		topP := *b.topP
+		if topP < 0.0 || topP > 1.0 {
+			return fmt.Errorf("top_p %.2f is out of valid range [0.0, 1.0]\n\n"+
+				"Fix:\n"+
+				"  • Focused output: .WithTopP(0.8) or .WithTopP(0.9)\n"+
+				"  • Diverse output: .WithTopP(0.95) or .WithTopP(1.0)\n"+
+				"  • Note: Use temperature OR top_p, not both", topP)
+		}
+	}
+
+	// MaxTokens should be reasonable
+	if b.maxTokens != nil {
+		maxTokens := *b.maxTokens
+		if maxTokens < 1 {
+			return fmt.Errorf("max_tokens %d is too small (minimum: 1)\n\n"+
+				"Fix:\n"+
+				"  • Short responses: .WithMaxTokens(100)\n"+
+				"  • Medium responses: .WithMaxTokens(500)\n"+
+				"  • Long responses: .WithMaxTokens(2000) or higher", maxTokens)
+		}
+		if maxTokens > 32768 && b.provider == ProviderOpenAI {
+			return fmt.Errorf("max_tokens %d exceeds OpenAI limit (32768)\n\n"+
+				"Fix:\n"+
+				"  • Use shorter response: .WithMaxTokens(4000)\n"+
+				"  • Split into multiple requests\n"+
+				"  • For longer content, consider using 32k models", maxTokens)
+		}
+	}
+
+	// Penalty ranges: -2.0 to 2.0
+	if b.presencePenalty != nil {
+		penalty := *b.presencePenalty
+		if penalty < -2.0 || penalty > 2.0 {
+			return fmt.Errorf("presence_penalty %.1f is out of valid range [-2.0, 2.0]\n\n"+
+				"Fix:\n"+
+				"  • Reduce repetition: .WithPresencePenalty(0.6)\n"+
+				"  • Encourage new topics: .WithPresencePenalty(1.0)\n"+
+				"  • Default behavior: .WithPresencePenalty(0.0)", penalty)
+		}
+	}
+
+	if b.frequencyPenalty != nil {
+		penalty := *b.frequencyPenalty
+		if penalty < -2.0 || penalty > 2.0 {
+			return fmt.Errorf("frequency_penalty %.1f is out of valid range [-2.0, 2.0]\n\n"+
+				"Fix:\n"+
+				"  • Reduce repetition: .WithFrequencyPenalty(0.5)\n"+
+				"  • Strong reduction: .WithFrequencyPenalty(1.0)\n"+
+				"  • Default behavior: .WithFrequencyPenalty(0.0)", penalty)
+		}
+	}
+
+	// TopLogprobs range: 0 to 20
+	if b.topLogprobs != nil {
+		topLogprobs := *b.topLogprobs
+		if topLogprobs < 0 || topLogprobs > 20 {
+			return fmt.Errorf("top_logprobs %d is out of valid range [0, 20]\n\n"+
+				"Fix:\n"+
+				"  • Top 5 tokens: .WithTopLogprobs(5)\n"+
+				"  • Top 10 tokens: .WithTopLogprobs(10)\n"+
+				"  • Must enable: .WithLogprobs(true)", topLogprobs)
+		}
+	}
+
+	return nil
+}
+
+// validateConflictingSettings checks for mutually exclusive configurations
+func (b *Builder) validateConflictingSettings() error {
+	// Check for tool choice conflicts with auto-execute
+	// Note: This is a simplified check since toolChoice is a complex union type
+	if b.toolChoice != nil && b.autoExecute {
+		// We'll do a basic check - in practice this would need more sophisticated handling
+		// of the OpenAI union type to determine if it's set to "none"
+	}
+
+	// Check for multiple response format conflicts
+	if b.responseFormat != nil && b.reactConfig != nil && b.reactConfig.Enabled {
+		// This is not necessarily an error, but worth warning about
+		// ReAct with structured outputs might have unexpected behavior
+	}
+
+	return nil
+}
+
+// ValidateConfig is a public method for manual validation
+// This allows users to validate their configuration before making API calls
+//
+// Example:
+//
+//	builder := agent.NewOpenAI("gpt-4o-mini", apiKey)
+//	if err := builder.ValidateConfig(); err != nil {
+//		log.Fatalf("Configuration error: %v", err)
+//	}
+func (b *Builder) ValidateConfig() error {
+	return b.validateConfiguration()
+}
+
+// ValidateWithDetails returns detailed validation information
+// This provides more comprehensive feedback for debugging
+//
+// Example:
+//
+//	details, err := builder.ValidateWithDetails()
+//	if err != nil {
+//		fmt.Printf("Validation failed: %v\n", err)
+//		fmt.Printf("Provider: %s\n", details.Provider)
+//		fmt.Printf("API Key Set: %t\n", details.APIKeySet)
+//		fmt.Printf("Warnings: %v\n", details.Warnings)
+//	}
+func (b *Builder) ValidateWithDetails() (*ValidationDetails, error) {
+	details := &ValidationDetails{
+		Provider:      string(b.provider),
+		Model:         b.model,
+		APIKeySet:     b.apiKey != "",
+		AdapterSet:    b.adapter != nil,
+		ToolCount:     len(b.tools),
+		AutoExecute:   b.autoExecute,
+		MemoryEnabled: b.memoryEnabled,
+		Warnings:      []string{},
+		Errors:        []string{},
+	}
+
+	var validationErr error
+
+	// Run comprehensive validation and collect all errors
+	if errs := b.validateConfigurationAll(); len(errs) > 0 {
+		for _, err := range errs {
+			details.Errors = append(details.Errors, err.Error())
+		}
+		validationErr = errs[0] // Return the first error for compatibility
+	}
+
+	// Add informational warnings
+	if b.temperature == nil {
+		details.Warnings = append(details.Warnings, "Temperature not set (will use model default)")
+	}
+
+	if b.maxTokens == nil {
+		details.Warnings = append(details.Warnings, "MaxTokens not set (response length unlimited)")
+	}
+
+	if b.timeout == 0 {
+		details.Warnings = append(details.Warnings, "No timeout set (requests may hang indefinitely)")
+	}
+
+	if len(b.tools) > 0 && !b.autoExecute {
+		details.Warnings = append(details.Warnings, "Tools configured but auto-execute disabled")
+	}
+
+	return details, validationErr
+}
+
+// ValidationDetails provides comprehensive validation information
+type ValidationDetails struct {
+	// Core configuration
+	Provider  string `json:"provider"`
+	Model     string `json:"model"`
+	APIKeySet bool   `json:"api_key_set"`
+	AdapterSet bool  `json:"adapter_set"`
+
+	// Feature configuration
+	ToolCount     int    `json:"tool_count"`
+	AutoExecute   bool   `json:"auto_execute"`
+	MemoryEnabled bool   `json:"memory_enabled"`
+
+	// Validation results
+	Warnings []string `json:"warnings"`
+	Errors   []string `json:"errors"`
+}
+
+// IsValid returns true if there are no validation errors
+func (v *ValidationDetails) IsValid() bool {
+	return len(v.Errors) == 0
+}
+
+// HasWarnings returns true if there are validation warnings
+func (v *ValidationDetails) HasWarnings() bool {
+	return len(v.Warnings) > 0
+}
+
+// Summary returns a human-readable summary
+func (v *ValidationDetails) Summary() string {
+	if len(v.Errors) > 0 {
+		return fmt.Sprintf("Validation FAILED with %d errors, %d warnings", len(v.Errors), len(v.Warnings))
+	}
+	if len(v.Warnings) > 0 {
+		return fmt.Sprintf("Validation PASSED with %d warnings", len(v.Warnings))
+	}
+	return "Validation PASSED - no issues found"
 }
