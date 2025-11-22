@@ -247,6 +247,34 @@ func (mp *MultiProvider) createBuilderForProvider(config *ProviderConfig) (*Buil
 			WithRetryDelay(config.RetryDelay).
 			WithBaseURL(config.BaseURL), nil
 
+	case "gemini":
+		if config.APIKey == "" {
+			return nil, fmt.Errorf("API key is required for Gemini provider %s", config.Name)
+		}
+		// Create production-ready Gemini V3 adapter
+		geminiAdapter, err := NewGeminiV3Adapter(config.APIKey, config.Model)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create Gemini V3 adapter for provider %s: %w", config.Name, err)
+		}
+		// Return as custom adapter provider
+		config.Adapter = geminiAdapter
+		config.Type = "adapter"
+		return nil, nil
+
+	case "gemini-v3":
+		if config.APIKey == "" {
+			return nil, fmt.Errorf("API key is required for Gemini V3 provider %s", config.Name)
+		}
+		// Explicitly create V3 adapter
+		geminiAdapter, err := NewGeminiV3Adapter(config.APIKey, config.Model)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create Gemini V3 adapter for provider %s: %w", config.Name, err)
+		}
+		// Return as custom adapter provider
+		config.Adapter = geminiAdapter
+		config.Type = "adapter"
+		return nil, nil
+
 	default:
 		return nil, fmt.Errorf("unsupported provider type: %s", config.Type)
 	}
