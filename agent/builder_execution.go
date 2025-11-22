@@ -70,57 +70,7 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 		return "", err
 	}
 
-	// CRITICAL FIX: Use adapter if available for Ask method
-	if b.adapter != nil {
-		// Build unified messages for adapter (excluding system prompt)
-		unifiedMessages := []Message{}
-
-		// Add existing conversation history
-		unifiedMessages = append(unifiedMessages, b.messages...)
-
-		// Add current message
-		unifiedMessages = append(unifiedMessages, User(message))
-
-		// Create completion request for adapter with all parameters
-		req := &CompletionRequest{
-			Model:            b.model,
-			Messages:         unifiedMessages,
-			System:           b.systemPrompt, // Use dedicated System field
-			Temperature:      b.getTemperature(),
-			MaxTokens:        b.getMaxTokens(),
-			TopP:             b.getTopP(),
-			PresencePenalty:  b.getPresencePenalty(),
-			FrequencyPenalty: b.getFrequencyPenalty(),
-			Seed:             b.getSeed(),
-			Tools:            b.tools,
-		}
-
-		// Handle timeout for adapter
-		adapterCtx := ctx
-		if b.timeout > 0 {
-			var cancel context.CancelFunc
-			adapterCtx, cancel = context.WithTimeout(ctx, b.timeout)
-			defer cancel()
-		}
-
-		// Execute with adapter
-		resp, err := b.adapter.Complete(adapterCtx, req)
-		if err != nil {
-			logger.Error(ctx, "Adapter completion failed", F("error", err.Error()))
-			return "", err
-		}
-
-		// Update conversation history if auto-memory is enabled
-		if b.autoMemory {
-			b.messages = append(b.messages, Message{Role: "user", Content: message})
-			if resp.Content != "" {
-				b.messages = append(b.messages, Message{Role: "assistant", Content: resp.Content})
-			}
-		}
-
-		return resp.Content, nil
-	}
-
+	
 	// Ensure client is initialized
 	if err := b.ensureClient(); err != nil {
 		logger.Error(ctx, "Failed to initialize client", F("error", err.Error()))
@@ -159,6 +109,59 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 		}
 
 		return b.askWithToolExecution(ctx, message)
+	}
+
+	// ADAPTER FALLBACK: If adapter is available but no auto-execute/tools, use simple adapter completion
+	if b.adapter != nil {
+		logger.Debug(ctx, "Using adapter for simple completion (no tool execution)")
+
+		// Build unified messages for adapter (excluding system prompt)
+		unifiedMessages := []Message{}
+
+		// Add existing conversation history
+		unifiedMessages = append(unifiedMessages, b.messages...)
+
+		// Add current message
+		unifiedMessages = append(unifiedMessages, User(message))
+
+		// Create completion request for adapter with all parameters
+		req := &CompletionRequest{
+			Model:            b.model,
+			Messages:         unifiedMessages,
+			System:           b.systemPrompt, // Use dedicated System field
+			Temperature:      b.getTemperature(),
+			MaxTokens:        b.getMaxTokens(),
+			TopP:             b.getTopP(),
+			PresencePenalty:  b.getPresencePenalty(),
+			FrequencyPenalty: b.getFrequencyPenalty(),
+			Seed:             b.getSeed(),
+			Tools:            b.tools, // Include tools but don't auto-execute
+		}
+
+		// Handle timeout for adapter
+		adapterCtx := ctx
+		if b.timeout > 0 {
+			var cancel context.CancelFunc
+			adapterCtx, cancel = context.WithTimeout(ctx, b.timeout)
+			defer cancel()
+		}
+
+		// Execute with adapter
+		resp, err := b.adapter.Complete(adapterCtx, req)
+		if err != nil {
+			logger.Error(ctx, "Adapter completion failed", F("error", err.Error()))
+			return "", err
+		}
+
+		// Update conversation history if auto-memory is enabled
+		if b.autoMemory {
+			b.messages = append(b.messages, Message{Role: "user", Content: message})
+			if resp.Content != "" {
+				b.messages = append(b.messages, Message{Role: "assistant", Content: resp.Content})
+			}
+		}
+
+		return resp.Content, nil
 	}
 
 	// RAG: Retrieve and inject relevant context if enabled
