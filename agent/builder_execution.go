@@ -71,10 +71,12 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 	}
 
 	
-	// Ensure client is initialized
-	if err := b.ensureClient(); err != nil {
-		logger.Error(ctx, "Failed to initialize client", F("error", err.Error()))
-		return "", fmt.Errorf("failed to initialize client: %w", err)
+	// Ensure client is initialized ONLY if no adapter is present
+	if b.adapter == nil {
+		if err := b.ensureClient(); err != nil {
+			logger.Error(ctx, "Failed to initialize client", F("error", err.Error()))
+			return "", fmt.Errorf("failed to initialize client: %w", err)
+		}
 	}
 
 	// Check cache first if enabled
