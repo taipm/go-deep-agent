@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/openai/openai-go/v3"
@@ -150,7 +151,13 @@ func (b *Builder) Ask(ctx context.Context, message string) (string, error) {
 
 	// If auto-execute is enabled and we have tools, use tool execution loop
 	if b.autoExecute && len(b.tools) > 0 {
-		logger.Debug(ctx, "Using tool execution loop", F("tool_count", len(b.tools)))
+		logger.Debug(ctx, "Using tool execution loop", F("tool_count", len(b.tools)), F("has_adapter", b.adapter != nil))
+
+		// CRITICAL FIX: Use adapter-based tool execution if adapter is available
+		if b.adapter != nil {
+			return b.askWithToolExecutionAdapter(ctx, message)
+		}
+
 		return b.askWithToolExecution(ctx, message)
 	}
 
@@ -1131,4 +1138,228 @@ func (b *Builder) ensureRateLimiter() error {
 
 	b.rateLimiter = limiter
 	return nil
+}
+
+// askWithToolExecutionAdapter implements tool execution using LLMAdapter interface
+// This is the CRITICAL FIX that enables adapter-based tool execution
+func (b *Builder) askWithToolExecutionAdapter(ctx context.Context, message string) (string, error) {
+	logger := b.getLogger()
+	logger.Debug(ctx, "Adapter tool execution loop started",
+		F("model", b.model),
+		F("max_rounds", b.maxToolRounds),
+		F("tool_count", len(b.tools)))
+
+	// Build unified messages for adapter
+	unifiedMessages := []Message{}
+
+	// Add system prompt if present
+	if b.systemPrompt != "" {
+		unifiedMessages = append(unifiedMessages, System(b.systemPrompt))
+	}
+
+	// Add existing conversation history
+	unifiedMessages = append(unifiedMessages, b.messages...)
+
+	// Add current user message
+	unifiedMessages = append(unifiedMessages, User(message))
+
+	// Tool execution loop using ADAPTER
+	for round := 0; round < b.maxToolRounds; round++ {
+		logger.Debug(ctx, "Adapter tool execution round",
+			F("round", round+1),
+			F("messages_count", len(unifiedMessages)))
+
+		// Create completion request for adapter
+		req := &CompletionRequest{
+			Model:            b.model,
+			Messages:         unifiedMessages,
+			Temperature:      b.getTemperature(),
+			MaxTokens:        b.getMaxTokens(),
+			TopP:             b.getTopP(),
+			PresencePenalty:  b.getPresencePenalty(),
+			FrequencyPenalty: b.getFrequencyPenalty(),
+			Seed:             b.getSeed(),
+			Tools:            b.tools,
+		}
+
+		// Handle timeout for adapter
+		adapterCtx := ctx
+		if b.timeout > 0 {
+			var cancel context.CancelFunc
+			adapterCtx, cancel = context.WithTimeout(ctx, b.timeout)
+			defer cancel()
+		}
+
+		// Execute with adapter
+		resp, err := b.adapter.Complete(adapterCtx, req)
+		if err != nil {
+			logger.Error(ctx, "Adapter completion failed in tool loop",
+				F("round", round+1),
+				F("error", err.Error()))
+			return "", fmt.Errorf("adapter completion failed: %w", err)
+		}
+
+		// Check if there are tool calls in ADAPTER RESPONSE
+		if len(resp.ToolCalls) == 0 {
+			// No tool calls, return the final response
+			result := resp.Content
+			logger.Info(ctx, "Adapter tool execution completed",
+				F("rounds", round+1),
+				F("response_length", len(result)))
+
+			// Auto-memory: store conversation
+			if b.autoMemory {
+				b.addMessage(User(message))
+				b.addMessage(Assistant(result))
+			}
+
+			return result, nil
+		}
+
+		logger.Debug(ctx, "Adapter tool calls received",
+			F("round", round+1),
+			F("tool_call_count", len(resp.ToolCalls)))
+
+		// Execute tools using unified format
+		toolResults, err := b.executeAdapterTools(ctx, resp.ToolCalls)
+		if err != nil {
+			logger.Error(ctx, "Adapter tool execution failed",
+				F("round", round+1),
+				F("error", err.Error()))
+			return "", fmt.Errorf("adapter tool execution failed: %w", err)
+		}
+
+		// Add assistant message with tool calls to conversation
+		assistantMsg := Message{
+			Role:      "assistant",
+			Content:   resp.Content,
+			ToolCalls: resp.ToolCalls,
+		}
+		unifiedMessages = append(unifiedMessages, assistantMsg)
+
+		// Add tool results to conversation
+		for i, toolCall := range resp.ToolCalls {
+			toolResultMsg := Message{
+				Role:       "tool",
+				Content:    toolResults[i],
+				ToolCallID: toolCall.ID,
+			}
+			unifiedMessages = append(unifiedMessages, toolResultMsg)
+		}
+	}
+
+	return "", fmt.Errorf("max tool rounds (%d) exceeded", b.maxToolRounds)
+}
+
+// executeAdapterTools executes tools using unified ToolCall format
+func (b *Builder) executeAdapterTools(ctx context.Context, toolCalls []ToolCall) ([]string, error) {
+	logger := b.getLogger()
+	logger.Debug(ctx, "Executing adapter tools",
+		F("tool_count", len(toolCalls)),
+		F("parallel_enabled", b.enableParallel),
+		F("max_workers", b.maxWorkers))
+
+	if b.enableParallel && len(toolCalls) > 1 {
+		return b.executeAdapterToolsParallel(ctx, toolCalls)
+	}
+	return b.executeAdapterToolsSequential(ctx, toolCalls)
+}
+
+// executeAdapterToolsSequential executes tools one by one
+func (b *Builder) executeAdapterToolsSequential(ctx context.Context, toolCalls []ToolCall) ([]string, error) {
+	results := make([]string, len(toolCalls))
+
+	for i, toolCall := range toolCalls {
+		result, err := b.executeSingleAdapterTool(ctx, toolCall)
+		if err != nil {
+			return nil, fmt.Errorf("tool execution failed for %s: %w", toolCall.Name, err)
+		}
+		results[i] = result
+	}
+
+	return results, nil
+}
+
+// executeAdapterToolsParallel executes tools concurrently
+func (b *Builder) executeAdapterToolsParallel(ctx context.Context, toolCalls []ToolCall) ([]string, error) {
+	results := make([]string, len(toolCalls))
+	errors := make([]error, len(toolCalls))
+
+	// Create worker pool
+	workerCount := b.maxWorkers
+	if workerCount > len(toolCalls) {
+		workerCount = len(toolCalls)
+	}
+
+	type workItem struct {
+		index int
+		tool  ToolCall
+	}
+
+	workQueue := make(chan workItem, len(toolCalls))
+	wg := sync.WaitGroup{}
+
+	// Start workers
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for work := range workQueue {
+				results[work.index], errors[work.index] = b.executeSingleAdapterTool(ctx, work.tool)
+			}
+		}()
+	}
+
+	// Queue work items
+	for i, toolCall := range toolCalls {
+		workQueue <- workItem{index: i, tool: toolCall}
+	}
+	close(workQueue)
+
+	// Wait for completion
+	wg.Wait()
+
+	// Check for errors
+	for i, err := range errors {
+		if err != nil {
+			return nil, fmt.Errorf("tool execution failed for %s: %w", toolCalls[i].Name, err)
+		}
+	}
+
+	return results, nil
+}
+
+// executeSingleAdapterTool executes a single tool using unified format
+func (b *Builder) executeSingleAdapterTool(ctx context.Context, toolCall ToolCall) (string, error) {
+	logger := b.getLogger()
+	logger.Debug(ctx, "Executing single adapter tool",
+		F("tool_name", toolCall.Name),
+		F("tool_id", toolCall.ID))
+
+	// Find the tool by name
+	var targetTool *Tool
+	for _, tool := range b.tools {
+		if tool.Name == toolCall.Name {
+			targetTool = tool
+			break
+		}
+	}
+
+	if targetTool == nil {
+		return "", fmt.Errorf("tool not found: %s", toolCall.Name)
+	}
+
+	// Apply tool timeout if configured
+	if b.toolTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, b.toolTimeout)
+		defer cancel()
+	}
+
+	// Execute the tool handler
+	if targetTool.Handler != nil {
+		return targetTool.Handler(toolCall.Arguments)
+	}
+
+	return "", fmt.Errorf("tool %s has no handler", toolCall.Name)
 }
