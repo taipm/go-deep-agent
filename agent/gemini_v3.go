@@ -196,19 +196,52 @@ func (a *GeminiV3Adapter) convertMessages(messages []Message) []*genai.Content {
 			content := genai.NewContentFromFunctionResponse(msg.ToolCallID, responseData, genai.RoleUser)
 			contents = append(contents, content)
 		} else {
-			// Regular text content
-			var role genai.Role
-			switch msg.Role {
-			case "user":
-				role = genai.RoleUser
-			case "assistant", "model":
-				role = genai.RoleModel
-			default:
-				role = genai.RoleUser
-			}
+			// Handle assistant messages with tool calls
+			if msg.Role == "assistant" && len(msg.ToolCalls) > 0 {
+				// Create parts with text and function calls
+				var parts []*genai.Part
 
-			content := genai.NewContentFromText(msg.Content, role)
-			contents = append(contents, content)
+				// Add text content if present
+				if msg.Content != "" {
+					parts = append(parts, &genai.Part{Text: msg.Content})
+				}
+
+				// Add function calls
+				for _, toolCall := range msg.ToolCalls {
+					// Parse arguments from JSON string
+					var argsMap map[string]interface{}
+					if err := json.Unmarshal([]byte(toolCall.Arguments), &argsMap); err != nil {
+						// Fallback to empty map if parsing fails
+						argsMap = make(map[string]interface{})
+					}
+
+					funcCall := &genai.FunctionCall{
+						Name: toolCall.Name,
+						Args: argsMap,
+					}
+					parts = append(parts, &genai.Part{FunctionCall: funcCall})
+				}
+
+				content := &genai.Content{
+					Role:  genai.RoleModel,
+					Parts: parts,
+				}
+				contents = append(contents, content)
+			} else {
+				// Regular text content
+				var role genai.Role
+				switch msg.Role {
+				case "user":
+					role = genai.RoleUser
+				case "assistant", "model":
+					role = genai.RoleModel
+				default:
+					role = genai.RoleUser
+				}
+
+				content := genai.NewContentFromText(msg.Content, role)
+				contents = append(contents, content)
+			}
 		}
 	}
 
